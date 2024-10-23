@@ -1,6 +1,8 @@
 """Defines the Drone class for the state machine."""
 
+import asyncio
 import dronekit
+from flight.waypoint.calculate_distance import calculate_distance
 
 
 class Drone:
@@ -109,6 +111,54 @@ class Drone:
             if self.baud is None
             else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
         )
+
+    async def arm_and_takeoff(self, takeoff_alt: float) -> None:
+        """
+        Arm the drone and takeoff vertically to passed altitude
+
+        Parameters
+        ----------
+        takeoff_alt: float
+            Altitude to reach in meters
+        """
+        while not self.vehicle.is_armable:
+            # Vehicle is not ready to accept code
+            print("Waiting for vehicle to initialize...")
+        
+        self.vehicle.mode = dronekit.VehicleMode("GUIDED")
+        self.vehicle.armed = True
+
+        # Confirm vehicle is properly armed
+        while not self.vehicle.armed:
+            print("Waiting for arming...")
+            await asyncio.sleep(1)
+        
+        self.vehicle.simple_takeoff(takeoff_alt)
+
+        # Verify vehicle reaches target altitude
+        while True:
+            if self.vehicle.location.global_relative_frame.alt >= takeoff_alt * 0.95: # 95% of takeoff altitude for error margins
+                print("Reached target altitude.")
+                break
+            await asyncio.sleep(0.5)
+        return
+    
+    async def return_to_launch(self) -> None:
+        """
+        Method to move vehicle above home location, then descend vertically
+        """
+        home_loc = dronekit.LocationGlobalRelative(self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23)  # Min alt should be in constants file
+        self.vehicle.simple_goto(home_loc)
+        while calculate_distance(self.vehicle.location.global_relative_frame.lat, self.vehicle.location.global_relative_frame.lon, self.vehicle.location.global_relative_frame.alt, home_loc.lat, home_loc.lon, home_loc.alt) > 0.1:
+            print("Moving to home location...")
+            await asyncio.sleep(0.5)
+        self.vehicle.mode = dronekit.VehicleMode("RTL")
+        while True:
+            if self.vehicle.location.global_relative_frame.alt <= 0.1:
+                print("Reached ground.")
+                break
+            await asyncio.sleep(0.5)
+        return
 
     async def close(self) -> None:
         """Close the owned DroneKit Vehicle object."""
