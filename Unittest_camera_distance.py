@@ -4,6 +4,7 @@ from vision.common.constants import CameraParameters, Point, ObjectType
 from vision.common.bounding_box import BoundingBox
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 
+
 class TestVisionFunctions(unittest.TestCase):
 
     def setUp(self) -> None:  # Added return type annotation
@@ -21,9 +22,9 @@ class TestVisionFunctions(unittest.TestCase):
         center_pixel = (960, 540)
         expected_coordinates = (37.77, -122.211)
         result = get_coordinates(center_pixel, self.image_shape, self.camera_params)
-        
+
         self.assertIsNotNone(result, "Coordinates should not be None")
-        
+
         if result is not None:  # Check if result is valid before indexing
             self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
             self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
@@ -32,7 +33,7 @@ class TestVisionFunctions(unittest.TestCase):
         # Test bounding area calculation with a specific scenario
         self.box = BoundingBox(
             obj_type=ObjectType.rectangle,  # Use the ObjectType enum instead of a string
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300))
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
         )
         expected_area = 10000  # Expected area for given parameters
         result = bounding_area(self.box, self.image_shape, self.camera_params)
