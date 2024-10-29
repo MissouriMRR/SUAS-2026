@@ -39,7 +39,9 @@ class TestVisionFunctions(unittest.TestCase):
 
         # Ensure result is not None before asserting
         self.assertIsNotNone(result, "Result should not be None for valid bounding box")
-        self.assertAlmostEqual(result, expected_area, msg="Bounding area calculation failed")
+        
+        if result is not None:  # This check is redundant due to the previous line but keeps the logic clear
+            self.assertAlmostEqual(result, expected_area, msg="Bounding area calculation failed")
 
     def test_calculate_distance(self) -> None:
         # Test calculate distance with valid pixel coordinates
