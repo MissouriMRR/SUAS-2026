@@ -1,14 +1,12 @@
 import unittest
 import numpy as np
-from vision.common.constants import CameraParameters, Point
+from vision.common.constants import CameraParameters, Point, ObjectType
 from vision.common.bounding_box import BoundingBox
-import vision.deskew as deskew
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
-
 
 class TestVisionFunctions(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:  # Added return type annotation
         # Set up the camera parameters and other constants for each test to avoid cross-contamination
         self.camera_params = CameraParameters(
             focal_length=35.0,
@@ -18,27 +16,38 @@ class TestVisionFunctions(unittest.TestCase):
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
 
-    def test_get_coordinates(self) -> None:
+    def test_get_coordinates(self) -> None:  # Added return type annotation
         # Test the coordinates calculation at the center of the image
         center_pixel = (960, 540)
         expected_coordinates = (37.77, -122.211)
         result = get_coordinates(center_pixel, self.image_shape, self.camera_params)
+        
         self.assertIsNotNone(result, "Coordinates should not be None")
-        self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
-        self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
-        self.assertal
+        
+        if result is not None:  # Check if result is valid before indexing
+            self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
+            self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
 
     def test_bounding_area(self) -> None:
         # Test bounding area calculation with a specific scenario
-        self.camera_params.rotation_deg = [0, 0, 0]
-        self.camera_params.drone_coordinates = [0, 0, 100]
-        self.camera_params.altitude_f = 100.0
         self.box = BoundingBox(
-            obj_type="rectangle", vertices=((100, 200), (200, 200), (200, 300), (100, 300))
+            obj_type=ObjectType.rectangle,  # Use the ObjectType enum instead of a string
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300))
         )
-        expected_area = 10000  # area for given parameters
+        expected_area = 10000  # Expected area for given parameters
         result = bounding_area(self.box, self.image_shape, self.camera_params)
+
+        # Ensure result is not None before asserting
+        self.assertIsNotNone(result, "Result should not be None for valid bounding box")
         self.assertAlmostEqual(result, expected_area, msg="Bounding area calculation failed")
+
+    def test_calculate_distance(self) -> None:
+        # Test calculate distance with valid pixel coordinates
+        pixel1 = (100, 100)
+        pixel2 = (200, 200)  # Valid pixel coordinates
+        result = calculate_distance(pixel1, pixel2, self.image_shape, self.camera_params)
+        self.assertIsNotNone(result, "Result should not be None for valid pixel coordinates")
+        self.assertGreaterEqual(result, 0, "Distance should be non-negative")
 
     def test_calculate_distance_invalid(self) -> None:
         # Test calculate distance with invalid pixel coordinates
