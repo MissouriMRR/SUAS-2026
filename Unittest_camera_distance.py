@@ -26,7 +26,7 @@ class TestVisionFunctions(unittest.TestCase):
         self.assertIsNotNone(result, "Coordinates should not be None")
         self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
         self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
-
+        self.assertal
     def test_bounding_area(self) -> None:
         # Test bounding area calculation with a specific scenario
         self.camera_params.rotation_deg = [0, 0, 0]
