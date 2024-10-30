@@ -6,8 +6,11 @@ import time
 #Should be map image
 map_image = Image.open('map_image.png')
 #Should be any drone placeholder image
-drone_image = Image.open('test3.png')
+drone_image = Image.open('drone.png')
 
+square_image = Image.open('redsquare.png')
+
+resized_square = square_image.resize((10,10))
 resized_drone_img = drone_image.resize((50, 50)) 
 modifiable_map_image = map_image
 
@@ -36,10 +39,16 @@ modifiable_map_image.paste(resized_drone_img, (longitude_map_position, latitude_
 
 modifiable_map_image.save('modded_map.png')
 
+final_map_image = Image.open('map_image.png')
+final_map_image.save('in_progress_map.png')
+
 while(True):
   #Save updated map image with drone position 
   time.sleep(2)
   modifiable_map_image.save('modded_map.png')
+  modifiable_map_image = Image.open('in_progress_map.png')
+  final_map_image.paste(resized_square, (longitude_map_position+20, latitude_map_position+20))
+  final_map_image.save('in_progress_map.png')
   longitude_map_position = (randint(1, 500))
   latitude_map_position = (randint(1, 500))
   print(longitude_map_position, latitude_map_position)
