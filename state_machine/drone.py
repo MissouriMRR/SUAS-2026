@@ -124,7 +124,7 @@ class Drone:
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
             print("Waiting for vehicle to initialize...")
-        
+
         self.vehicle.mode = dronekit.VehicleMode("GUIDED")
         self.vehicle.armed = True
 
@@ -132,27 +132,42 @@ class Drone:
         while not self.vehicle.armed:
             print("Waiting for arming...")
             await asyncio.sleep(1)
-        
+
         self.vehicle.simple_takeoff(takeoff_alt)
 
         # Verify vehicle reaches target altitude
         while True:
-            if self.vehicle.location.global_relative_frame.alt >= takeoff_alt * 0.95: # 95% of takeoff altitude for error margins
+            if (
+                self.vehicle.location.global_relative_frame.alt >= takeoff_alt * 0.95
+            ):  # 95% of takeoff altitude for error margins
                 print("Reached target altitude.")
                 break
             await asyncio.sleep(0.5)
         return
-    
+
     async def return_to_launch(self) -> None:
         """
         Method to move vehicle above home location, then descend vertically
         """
-        home_loc = dronekit.LocationGlobalRelative(self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23)  # Min alt should be in constants file
+        home_loc = dronekit.LocationGlobalRelative(
+            self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23
+        )  # Min alt should be in constants file
         self.vehicle.simple_goto(home_loc)
-        while calculate_distance(self.vehicle.location.global_relative_frame.lat, self.vehicle.location.global_relative_frame.lon, self.vehicle.location.global_relative_frame.alt, home_loc.lat, home_loc.lon, home_loc.alt) > 0.1:
-            print("Moving to home location...")
+        print("Moving to home location...")
+        while (
+            calculate_distance(
+                self.vehicle.location.global_relative_frame.lat,
+                self.vehicle.location.global_relative_frame.lon,
+                self.vehicle.location.global_relative_frame.alt,
+                home_loc.lat,
+                home_loc.lon,
+                home_loc.alt,
+            )
+            > 1
+        ):  # Get within 1 meter above home location
             await asyncio.sleep(0.5)
         self.vehicle.mode = dronekit.VehicleMode("RTL")
+        print("Returning to launch...")
         while True:
             if self.vehicle.location.global_relative_frame.alt <= 0.1:
                 print("Reached ground.")
