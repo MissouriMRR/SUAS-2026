@@ -1,13 +1,12 @@
 import unittest
 import numpy as np
-from vision.common.constants import CameraParameters, Point, ObjectType
+from vision.common.constants import CameraParameters
 from vision.common.bounding_box import BoundingBox
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 
-
 class TestVisionFunctions(unittest.TestCase):
 
-    def setUp(self) -> None:  # Added return type annotation
+    def setUp(self) -> None:
         # Set up the camera parameters and other constants for each test to avoid cross-contamination
         self.camera_params = CameraParameters(
             focal_length=35.0,
@@ -17,14 +16,14 @@ class TestVisionFunctions(unittest.TestCase):
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
 
-    def test_get_coordinates(self) -> None:  # Added return type annotation
+    def test_get_coordinates(self) -> None:
         # Test the coordinates calculation at the center of the image
         center_pixel = (960, 540)
         expected_coordinates = (37.77, -122.211)
         result = get_coordinates(center_pixel, self.image_shape, self.camera_params)
 
         self.assertIsNotNone(result, "Coordinates should not be None")
-
+        
         if result is not None:  # Check if result is valid before indexing
             self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
             self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
@@ -33,17 +32,15 @@ class TestVisionFunctions(unittest.TestCase):
         # Test bounding area calculation with a specific scenario
         self.box = BoundingBox(
             obj_type=ObjectType.rectangle,  # Use the ObjectType enum instead of a string
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300))
         )
         expected_area = 10000  # Expected area for given parameters
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting
         self.assertIsNotNone(result, "Result should not be None for valid bounding box")
-
-        if (
-            result is not None
-        ):  # This check is redundant due to the previous line but keeps the logic clear
+        
+        if result is not None:  # This check is redundant due to the previous line but keeps the logic clear
             self.assertAlmostEqual(result, expected_area, msg="Bounding area calculation failed")
 
     def test_calculate_distance(self) -> None:
@@ -55,8 +52,8 @@ class TestVisionFunctions(unittest.TestCase):
         # Ensure result is not None before asserting
         self.assertIsNotNone(result, "Result should not be None for valid pixel coordinates")
 
-        # Check that the distance is greater than or equal to 0
-        self.assertGreaterEqual(result, 0, "Distance should be non-negative")
+        if result is not None:  # Check if result is valid before asserting
+            self.assertGreaterEqual(result, 0, "Distance should be non-negative")
 
     def test_calculate_distance_invalid(self) -> None:
         # Test calculate distance with invalid pixel coordinates
