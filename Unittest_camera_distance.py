@@ -31,7 +31,7 @@ class TestVisionFunctions(unittest.TestCase):
     def test_bounding_area(self) -> None:
         # Test bounding area calculation with a specific scenario
         self.box = BoundingBox(
-            obj_type=ODLCDict,  # Use the ObjectType enum instead of a string
+            obj_type=ODLCDict,  
             vertices=((100, 200), (200, 200), (200, 300), (100, 300))
         )
         expected_area = 10000  # Expected area for given parameters
