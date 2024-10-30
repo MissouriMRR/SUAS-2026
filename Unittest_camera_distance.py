@@ -2,13 +2,8 @@ import unittest
 import numpy as np
 from enum import Enum
 from vision.common.constants import Point, CameraParameters, ODLCDict
-from vision.common.bounding_box import BoundingBox
+from vision.common.bounding_box import BoundingBox, ObjectType
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
-
-
-class ObjectType(Enum):
-    rectangle = "rectangle"
-    circle = "circle"
 
 
 class TestVisionFunctions(unittest.TestCase):
@@ -37,19 +32,18 @@ class TestVisionFunctions(unittest.TestCase):
 
     def test_bounding_area(self) -> None:
         # Test bounding area calculation with a specific scenario
+        obj_type = ObjectType(value="")  # Provide the necessary argument
         self.box = BoundingBox(
-            obj_type=ObjectType.rectangle,
+            obj_type=obj_type,
             vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
         )
-        expected_area = 10000  # Expected area for given parameters
+        expected_area = 10000
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting
         self.assertIsNotNone(result, "Result should not be None for valid bounding box")
 
-        if (
-            result is not None
-        ):  # This check is redundant due to the previous line but keeps the logic clear
+        if result is not None:
             self.assertAlmostEqual(result, expected_area, msg="Bounding area calculation failed")
 
     def test_calculate_distance(self) -> None:
@@ -61,7 +55,7 @@ class TestVisionFunctions(unittest.TestCase):
         # Ensure result is not None before asserting
         self.assertIsNotNone(result, "Result should not be None for valid pixel coordinates")
 
-        if result is not None:  # Check if result is valid before asserting
+        if result is not None:
             self.assertGreaterEqual(result, 0, "Distance should be non-negative")
 
     def test_calculate_distance_invalid(self) -> None:
