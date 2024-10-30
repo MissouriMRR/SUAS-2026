@@ -2,6 +2,7 @@
 
 import asyncio
 import dronekit
+import logging
 from flight.waypoint.calculate_distance import calculate_distance
 
 
@@ -123,26 +124,24 @@ class Drone:
         """
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
-            print("Waiting for vehicle to initialize...")
+            logging.info("Waiting for vehicle to initialize...")
 
         self.vehicle.mode = dronekit.VehicleMode("GUIDED")
         self.vehicle.armed = True
 
         # Confirm vehicle is properly armed
         while not self.vehicle.armed:
-            print("Waiting for arming...")
+            logging.info("Waiting for arming...")
             await asyncio.sleep(1)
 
         self.vehicle.simple_takeoff(takeoff_alt)
 
         # Verify vehicle reaches target altitude
-        while True:
-            if (
-                self.vehicle.location.global_relative_frame.alt >= takeoff_alt * 0.95
-            ):  # 95% of takeoff altitude for error margins
-                print("Reached target altitude.")
-                break
+        while (
+            self.vehicle.location.global_relative_frame.alt <= takeoff_alt * 0.95
+        ):  # 95% takeoff alt for margin of error
             await asyncio.sleep(0.5)
+        logging.info(f"Reached target altitude ({takeoff_alt} m).")
         return
 
     async def return_to_launch(self) -> None:
@@ -153,7 +152,7 @@ class Drone:
             self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23
         )  # Min alt should be in constants file
         self.vehicle.simple_goto(home_loc)
-        print("Moving to home location...")
+        logging.info("Moving to home location...")
         while (
             calculate_distance(
                 self.vehicle.location.global_relative_frame.lat,
@@ -167,12 +166,10 @@ class Drone:
         ):  # Get within 1 meter above home location
             await asyncio.sleep(0.5)
         self.vehicle.mode = dronekit.VehicleMode("RTL")
-        print("Returning to launch...")
-        while True:
-            if self.vehicle.location.global_relative_frame.alt <= 0.1:
-                print("Reached ground.")
-                break
+        logging.info("Returning to launch...")
+        while self.vehicle.location.global_relative_frame.alt > 0.1:
             await asyncio.sleep(0.5)
+        logging.info("Reached ground.")
         return
 
     async def close(self) -> None:
