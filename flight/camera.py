@@ -11,6 +11,7 @@ from datetime import datetime
 
 import gphoto2
 import airsim
+from PIL import Image
 
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.drone import Drone
@@ -238,6 +239,29 @@ class CameraAirSim(Camera):
         logging.info("Camera initialized")
 
     async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
+        """
+        Capture a photo and save it to the specified path.
+
+        Parameters
+        ----------
+        path : str, optional
+            The path to save the image to, by default f"{os.getcwd()}/images/"
+
+
+        Returns
+        -------
+        tuple[str, str]
+            The file name and the file path.
+        """
         os.makedirs(path, mode=0o777, exist_ok=True)
-        png_image = self.client.simGetImage("down", airsim.ImageType.Scene)
-        
+        cam_file = self.client.simGetImage("down", airsim.ImageType.Scene)
+        photo_name: str = (
+            f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
+        )
+        target_name: str = f"{path}{photo_name}"
+        with Image.open(cam_file, mode='r', formats=None) as im:
+            im.save(target_name)
+        self.image_id += 1
+        logging.info("Image is being saved to %s", target_name)
+        return target_name, photo_name
+
