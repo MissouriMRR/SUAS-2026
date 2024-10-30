@@ -4,6 +4,7 @@ from vision.common.constants import Point, CameraParameters, ODLCDict
 from vision.common.bounding_box import BoundingBox
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 
+
 class TestVisionFunctions(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -23,14 +24,15 @@ class TestVisionFunctions(unittest.TestCase):
         result = get_coordinates(center_pixel, self.image_shape, self.camera_params)
 
         self.assertIsNotNone(result, "Coordinates should not be None")
-        
+
         if result is not None:  # Check if result is valid before indexing
             self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
             self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
 
     def test_bounding_area(self) -> None:
         # Test bounding area calculation with a specific scenario
-        self.box = BoundingBox(
+        self.box = BoundingBox
+        (
             obj_type=ODLCDict
             vertices=((100, 200), (200, 200), (200, 300), (100, 300))
         )
@@ -39,8 +41,10 @@ class TestVisionFunctions(unittest.TestCase):
 
         # Ensure result is not None before asserting
         self.assertIsNotNone(result, "Result should not be None for valid bounding box")
-        
-        if result is not None:  # This check is redundant due to the previous line but keeps the logic clear
+
+        if (
+            result is not None
+        ):  # This check is redundant due to the previous line but keeps the logic clear
             self.assertAlmostEqual(result, expected_area, msg="Bounding area calculation failed")
 
     def test_calculate_distance(self) -> None:
