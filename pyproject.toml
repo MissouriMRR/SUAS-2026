@@ -39,6 +39,7 @@ pyserial = "3.5"
 pathfinding = "1.0.1"
 gphoto2 = "2.5.0"
 torchvision = "0.14.1"
+airsim = {git = "https://github.com/heitmeih/AirSim-fixed-pyinstall", rev = "main", subdirectory = "PythonClient"}
 
 [tool.poetry.dev-dependencies]
 black = "21.12b0"

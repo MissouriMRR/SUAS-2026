@@ -39,6 +39,7 @@ class FlightManager:
     async def run_manager(
         self,
         sim_flag: bool,
+        airsim_flag: bool,
         path_data_path: str = "flight/data/waypoint_data.json",
         skip_waypoint: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
@@ -50,7 +51,9 @@ class FlightManager:
         Parameters
         ----------
         sim_flag : bool
-            A flag representing if the drone is a simulation.
+            A flag representing if the drone is an ArduPilot simulation.
+        airsim_flag : bool
+            A flag representing if the drone is an AirSim simulation.
         path_data_path : str, default "flight/data/waypoint_data.json"
             The path to the JSON file containing the boundary and waypoint data.
         skip_waypoint : bool, default False
@@ -60,11 +63,14 @@ class FlightManager:
         """
         if sim_flag:
             self.drone.address = "udp://:14540"
+        elif airsim_flag:
+            self.drone.address = "udp://:14030"
         else:
             self.drone.address = "serial:///dev/ttyFTDI:921600"
 
         flight_settings_obj: FlightSettings = FlightSettings(
             sim_flag=sim_flag,
+            airsim_flag=airsim_flag,
             path_data_path=path_data_path,
             skip_waypoint=skip_waypoint,
             standard_object_count=standard_object_count,

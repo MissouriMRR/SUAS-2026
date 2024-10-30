@@ -24,7 +24,9 @@ class FlightSettings:
     __standard_object_count: int
         The number of standard objects to attempt to find.
     __sim_flag: bool
-        A flag representing if the connected drone is a simulation
+        A flag representing if the connected drone is an ArduPilot simulation
+    __airsim_flag: bool
+        A flag representing if the connected drone is an AirSim simulation
     __path_data_path: str
         The path to the JSON file containing the boundary and waypoint data.
 
@@ -51,9 +53,13 @@ class FlightSettings:
     run_description(new_description: str) -> None
         Sets a new description for the new flight
     sim_flag() -> bool
-        Returns the flag for the simulation
+        Returns the flag for the ArduPilot simulation
+    airsim_flag() -> bool
+        Returns the flag for the AirSim simulation
     sim_flag(sim_flag: bool) -> None
-        Sets the flag for the simulation
+        Sets the flag for the ArduPilot simulation
+    airsim_flag(sim_flag: bool) -> None
+        Sets the flag for the AirSim simulation
     path_data_path() -> str
         Return the path to the JSON file containing the boundary and waypoint data.
     path_data_path(path_data_path: str) -> None
@@ -68,6 +74,7 @@ class FlightSettings:
         skip_waypoint: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
         sim_flag: bool = False,
+        airsim_flag: bool = False,
         path_data_path: str = "flight/data/waypoint_data.json",
     ) -> None:
         """
@@ -86,7 +93,9 @@ class FlightSettings:
         standard_object_count : int
             The number of standard objects to attempt to find.
         sim_flag : bool, default False
-            A flag representing if the connected drone is a simulation
+            A flag representing if the connected drone is an ArduPilot simulation
+        airsim_flag : bool, default False
+            A flag representing if the connected drone is an AirSim simulation
         path_data_path : str, default "flight/data/waypoint_data.json"
             The path to the JSON file containing the boundary and waypoint data.
         """
@@ -96,6 +105,7 @@ class FlightSettings:
         self.__skip_waypoint: bool = skip_waypoint
         self.__standard_object_count: int = standard_object_count
         self.__sim_flag: bool = sim_flag
+        self.__airsim_flag: bool = airsim_flag
         self.__path_data_path: str = path_data_path
 
     # ----- Takeoff Settings ----- #
@@ -225,26 +235,50 @@ class FlightSettings:
     @property
     def sim_flag(self) -> bool:
         """
-        Returns the flag for the simulation
+        Returns the flag for the ArduPilot simulation
 
         Returns
         -------
         sim_flag : bool
-            Flag for the simulation
+            Flag for the ArduPilot simulation
         """
         return self.__sim_flag
+    
+    @property
+    def airsim_flag(self) -> bool:
+        """
+        Returns the flag for the AirSim simulation
+
+        Returns
+        -------
+        airsim_flag : bool
+            Flag for the AirSim simulation
+        """
+        return self.__airsim_flag
 
     @sim_flag.setter
     def sim_flag(self, sim_flag: bool) -> None:
         """
-        Sets the flag for the simulation
+        Sets the flag for the ArduPilot simulation
 
         Parameters
         ----------
         sim_flag : bool
-            Flag for the simulation
+            Flag for the ArduPilot simulation
         """
         self.__sim_flag = sim_flag
+    
+    @airsim_flag.setter
+    def airsim_flag(self, airsim_flag: bool) -> None:
+        """
+        Sets the flag for the AirSim simulation
+
+        Parameters
+        ----------
+        sim_flag : bool
+            Flag for the AirSim simulation
+        """
+        self.__airsim_flag = airsim_flag
 
     @property
     def path_data_path(self) -> str:
