@@ -1,8 +1,14 @@
 import unittest
 import numpy as np
+from enum import Enum
 from vision.common.constants import Point, CameraParameters, ODLCDict
 from vision.common.bounding_box import BoundingBox
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
+
+
+class ObjectType(Enum):
+    rectangle = "rectangle"
+    circle = "circle"
 
 
 class TestVisionFunctions(unittest.TestCase):
@@ -31,10 +37,9 @@ class TestVisionFunctions(unittest.TestCase):
 
     def test_bounding_area(self) -> None:
         # Test bounding area calculation with a specific scenario
-        self.box = BoundingBox
-        (
-            obj_type=ODLCDict
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300))
+        self.box = BoundingBox(
+            obj_type=ObjectType.rectangle,  
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
         )
         expected_area = 10000  # Expected area for given parameters
         result = bounding_area(self.box, self.image_shape, self.camera_params)
