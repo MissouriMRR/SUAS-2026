@@ -312,8 +312,6 @@ class TestBoundingBox(unittest.TestCase):
                 msg=fail_msg,
             )
 
-            print(test_obj_type)
-
     def test_properties(self) -> None:
         """
         This test is used to test all properties of the BoundingBox class.
