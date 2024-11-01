@@ -26,6 +26,7 @@ import time
 import sys
 from typing import Final
 
+import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 
 from flight.extract_gps import BoundaryPoint, GPSData, extract_gps

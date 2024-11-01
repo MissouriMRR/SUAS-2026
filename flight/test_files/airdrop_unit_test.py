@@ -5,6 +5,7 @@ File for the airdrop unit test
 import asyncio
 import logging
 
+import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 
 from state_machine.flight_settings import FlightSettings
