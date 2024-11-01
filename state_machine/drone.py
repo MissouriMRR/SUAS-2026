@@ -1,5 +1,6 @@
 """Defines the Drone class for the state machine."""
 
+import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 
 
