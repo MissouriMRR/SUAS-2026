@@ -122,24 +122,23 @@ class Drone:
         takeoff_alt: float
             Altitude to reach in meters
         """
+        logging.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
-            logging.info("Waiting for vehicle to initialize...")
+            await asyncio.sleep(0.5)
 
         self.vehicle.mode = dronekit.VehicleMode("GUIDED")
         self.vehicle.armed = True
 
         # Confirm vehicle is properly armed
-        while not self.vehicle.armed:
-            logging.info("Waiting for arming...")
-            await asyncio.sleep(1)
+        logging.info("Waiting for arming...")
+        while not self.vehicle.armed or self.vehicle.mode.name != "GUIDED":
+            await asyncio.sleep(0.5)
 
         self.vehicle.simple_takeoff(takeoff_alt)
 
         # Verify vehicle reaches target altitude
-        while (
-            self.vehicle.location.global_relative_frame.alt <= takeoff_alt * 0.95
-        ):  # 95% takeoff alt for margin of error
+        while self.vehicle.location.global_relative_frame.alt <= takeoff_alt:
             await asyncio.sleep(0.5)
         logging.info(f"Reached target altitude ({takeoff_alt} m).")
         return
@@ -152,7 +151,7 @@ class Drone:
             self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23
         )  # Min alt should be in constants file
         self.vehicle.simple_goto(home_loc)
-        logging.info("Moving to home location...")
+        logging.info("Moving to home lat/lon...")
         while (
             calculate_distance(
                 self.vehicle.location.global_relative_frame.lat,
@@ -166,8 +165,10 @@ class Drone:
         ):  # Get within 1 meter above home location
             await asyncio.sleep(0.5)
         self.vehicle.mode = dronekit.VehicleMode("RTL")
-        logging.info("Returning to launch...")
-        while self.vehicle.location.global_relative_frame.alt > 0.1:
+        logging.info("Descending...")
+        while (
+            self.vehicle.location.global_relative_frame.alt > 0.2
+        ):  # Ensure drone gets within 8in above ground
             await asyncio.sleep(0.5)
         logging.info("Reached ground.")
         return
