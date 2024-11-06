@@ -9,7 +9,6 @@ import logging
 import asyncio
 import utm
 
-import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 from shapely.geometry import Polygon
 

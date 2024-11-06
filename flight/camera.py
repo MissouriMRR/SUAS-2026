@@ -10,7 +10,6 @@ import logging
 import os
 from datetime import datetime
 
-import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 import gphoto2
 

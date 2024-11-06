@@ -2,8 +2,6 @@
 
 # pylint: disable=too-many-locals
 
-from __future__ import annotations
-
 import cv2
 from nptyping import NDArray, Shape, UInt8
 import numpy as np
