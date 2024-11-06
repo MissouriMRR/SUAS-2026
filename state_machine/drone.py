@@ -2,6 +2,7 @@
 
 import asyncio
 import dronekit
+import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import logging
 from flight.waypoint.calculate_distance import calculate_distance
 

@@ -9,7 +9,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.10"
 pip = "^22.0.4"
-mavsdk = "*"
+dronekit = "*"
 numpy = "^1.21.2"
 opencv-python = "^4.8.0.76"
 pytesseract = "^0.3.9"

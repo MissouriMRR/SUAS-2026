@@ -7,6 +7,7 @@ import logging
 import traceback
 from typing import Final
 
+import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 
 import utm
