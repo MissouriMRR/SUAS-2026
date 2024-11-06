@@ -6,7 +6,6 @@ for moving the drone to a certain waypoint and stopping there for 15 secs
 import asyncio
 import logging
 
-import dronekit_fixes  # pylint: disable=wrong-import-order, unused-import
 import dronekit
 
 from flight.waypoint.calculate_distance import calculate_distance
