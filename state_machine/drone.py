@@ -135,10 +135,10 @@ class Drone:
         while not self.vehicle.armed or self.vehicle.mode.name != "GUIDED":
             await asyncio.sleep(0.5)
 
-        self.vehicle.simple_takeoff(takeoff_alt)
+        self.vehicle.simple_takeoff(takeoff_alt + 1.5)  # Add 5ft for margin of error
 
         # Verify vehicle reaches target altitude
-        while self.vehicle.location.global_relative_frame.alt <= takeoff_alt:
+        while self.vehicle.location.global_relative_frame.alt < takeoff_alt:
             await asyncio.sleep(0.5)
         logging.info(f"Reached target altitude ({takeoff_alt} m).")
         return
