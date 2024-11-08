@@ -13,6 +13,7 @@ from datetime import datetime
 import dronekit
 import gphoto2
 
+from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
 
 WAYPOINT_TOLERANCE: int = 1  # in meters
@@ -118,7 +119,7 @@ class Camera:
         altitude: float,
         interval: float,
         heading: float = 0,
-    ):
+    ) -> None:
         """
         Moves to the drone to the requested waypoint while taking photos for the mapping state.
 
@@ -139,9 +140,13 @@ class Camera:
         """
 
         goto_task: asyncio.Task[None] = asyncio.ensure_future(
-            drone.simple_goto(
-                dronekit.LocationGlobalRelative(latitude, longitude, altitude),
-                groundspeed=5.0,
+            move_to(
+                drone,
+                latitude,
+                longitude,
+                altitude,
+                airspeed=5.0,
+                tolerance=WAYPOINT_TOLERANCE,
             )
         )
 
@@ -195,98 +200,72 @@ class Camera:
         Parameters
         ----------
         drone : dronekit.Vehicle
-            a drone object that has all offboard data needed for computation
+            The drone object with the camera.
         latitude : float
-            a float containing the requested latitude to move to
+            The requested latitude to move to, in degrees.
         longitude : float
-            a float containing the requested longitude to move to
+            The requested longitude to move to, in degrees.
         altitude : float
-            a float contatining the requested altitude to go to in meters
+            The requested altitude to go to, in meters.
         take_photos : bool
-            will take photos with the camera until the position has been reached
+            Whether to take a photo once the waypoint has been reached.
         heading : float, default 0
-            the yaw in degrees (0 is north, 90 is west)
+            The yaw in which the camera should point, in degrees (0 is north, 90 is west).
         """
         info: dict[str, dict[str, int | list[int | float] | float]] = {}
 
-        drone.simple_goto(
-            dronekit.LocationGlobalRelative(latitude, longitude, altitude),
-            groundspeed=5.0 if take_photos else None,
+        await move_to(
+            drone,
+            latitude,
+            longitude,
+            altitude,
+            airspeed=5.0,
+            tolerance=WAYPOINT_TOLERANCE,
         )
-        # TODO: See if setting the yaw like this actually works
-        location_reached: bool = False
-        # First determine if we need to move fast through waypoints or need to slow down at each one
-        # Then loops until the waypoint is reached
-        while not location_reached:
-            logging.info("Going to waypoint")
-            while True:
-                position: dronekit.LocationGlobalRelative = (
-                    drone.location.global_relative_frame
-                )
 
-                # continuously checks current latitude, longitude and altitude of the drone
-                drone_lat: float = position.lat
-                drone_long: float = position.lon
-                drone_alt: float = position.alt
+        if take_photos:
+            # Point the gimbal straight down
+            drone.gimbal.rotate(
+                -drone.gimbal.pitch - 90,  # pitch is relative to the drone
+                drone.gimbal.roll,
+                heading,
+            )
 
-                total_distance: float = calculate_distance(
-                    drone_lat, drone_long, drone_alt, latitude, longitude, altitude
-                )
+        await asyncio.sleep(2)
 
-                if total_distance < WAYPOINT_TOLERANCE:  # within 1 meter of the point
-                    location_reached = True
-                    logging.info("Arrived %sm away from waypoint", total_distance)
-                    break
+        if not take_photos:
+            return
 
-            if take_photos:
-                # Point the gimbal straight down
-                drone.gimbal.rotate(
-                    -drone.gimbal.pitch - 90,  # pitch is relative to the drone
-                    drone.gimbal.roll,
-                    heading,
-                )
+        file_path: str
+        _, file_path = await self.capture_photo()
 
-            await asyncio.sleep(2)
+        attitude: dronekit.Attitude = drone.attitude
+        roll_deg: float = math.degrees(attitude.roll)
+        pitch_deg: float = math.degrees(attitude.pitch)
+        yaw_deg: float = math.degrees(attitude.yaw)
 
-            if take_photos:
-                _full_path: str
-                file_path: str
-                _full_path, file_path = await self.capture_photo()
+        point: dict[str, dict[str, int | list[int | float] | float]] = {
+            file_path: {
+                "focal_length": 24,
+                "rotation_deg": [
+                    roll_deg,
+                    pitch_deg,
+                    yaw_deg,
+                ],
+                "drone_coordinates": [latitude, longitude],
+                "altitude_f": drone.location.global_relative_frame.alt,
+            }
+        }
 
-                attitude: dronekit.Attitude = drone.attitude
-                roll_deg: float = math.degrees(attitude.roll)
-                pitch_deg: float = math.degrees(attitude.pitch)
-                yaw_deg: float = math.degrees(attitude.yaw)
+        info.update(point)
 
-                point: dict[str, dict[str, int | list[int | float] | float]] = {
-                    file_path: {
-                        "focal_length": 24,
-                        "rotation_deg": [
-                            roll_deg,
-                            pitch_deg,
-                            yaw_deg,
-                        ],
-                        "drone_coordinates": [latitude, longitude],
-                        "altitude_f": drone_alt,
-                    }
-                }
+        current_photos: dict[str, dict[str, int | list[int | float] | float]] = {}
+        if os.path.exists("flight/data/camera.json"):
+            with open("flight/data/camera.json", "r", encoding="utf8") as current_data:
+                try:
+                    current_photos = json.load(current_data)
+                except json.JSONDecodeError:
+                    pass
 
-                info.update(point)
-
-                current_photos: dict[
-                    str, dict[str, int | list[int | float] | float]
-                ] = {}
-                if os.path.exists("flight/data/camera.json"):
-                    with open(
-                        "flight/data/camera.json", "r", encoding="utf8"
-                    ) as current_data:
-                        try:
-                            current_photos = json.load(current_data)
-                        except json.JSONDecodeError:
-                            pass
-
-                with open("flight/data/camera.json", "w", encoding="ascii") as camera:
-                    json.dump(current_photos | info, camera)
-
-            # tell machine to sleep to prevent constant polling, preventing battery drain
-            await asyncio.sleep(1)
+        with open("flight/data/camera.json", "w", encoding="ascii") as camera:
+            json.dump(current_photos | info, camera)

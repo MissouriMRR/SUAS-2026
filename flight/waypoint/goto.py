@@ -23,6 +23,7 @@ async def move_to(
     longitude: float,
     altitude: float,
     airspeed: float | None = None,
+    tolerance: float | None = None,
 ) -> None:
     """
     This function takes in a latitude, longitude and altitude and autonomously
@@ -31,18 +32,23 @@ async def move_to(
 
     Parameters
     ----------
-    drone: dronekit.Vehicle
-        a drone object that has all offboard data needed for computation
-    latitude: float
-        a float containing the requested latitude to move to
-    longitude: float
-        a float containing the requested longitude to move to
-    altitude: float
-        a float containing the requested altitude to go to in meters
-    airspeed: float, default None
-        a float containing the requested airspeed in meters per second,
-        or None to let DroneKit decide the airspeed
+    drone : dronekit.Vehicle
+        The drone to move.
+    latitude : float
+        The requested latitude to move to, in degrees.
+    longitude : float
+        The requested longitude to move to, in degrees.
+    altitude : float
+        The requested altitude to go to, in meters.
+    airspeed : float, default None
+        The requested airspeed in meters per second,
+        or None to let DroneKit decide the airspeed.
+    tolerance : float, default None
+        The tolerance in meters, or None to use the default tolerance of 6 meters.
     """
+    if tolerance is None:
+        tolerance = 6
+
     drone.simple_goto(
         dronekit.LocationGlobalRelative(latitude, longitude, altitude),
         airspeed=airspeed,
@@ -68,7 +74,7 @@ async def move_to(
             altitude,
         )
 
-        if total_distance < WAYPOINT_TOLERANCE:  # 6 meters = 19.685 feet.
+        if total_distance < tolerance:
             location_reached = True
             logging.info("Arrived %sm away from waypoint", total_distance)
             break
