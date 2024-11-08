@@ -18,6 +18,7 @@ from state_machine.drone import Drone
 
 WAYPOINT_TOLERANCE: int = 1  # in meters
 
+
 class Camera:
     def __init__(self) -> None:
         pass
@@ -133,7 +134,7 @@ class Camera:
             # tell machine to sleep to prevent constant polling, preventing battery drain
             await asyncio.sleep(1)
         return
-    
+
     def session_init(self):
         self.session_id: int = 0
         if os.path.exists(f"{os.getcwd()}/images/"):
@@ -143,7 +144,6 @@ class Camera:
                         self.session_id = int(file.split("_")[1]) + 1
 
         self.image_id: int = 0
-
 
 
 class CameraIRL(Camera):
@@ -230,6 +230,7 @@ class CameraIRL(Camera):
                 logging.info("Image is being saved to %s", target_name)
                 return target_name, photo_name
 
+
 class CameraAirSim(Camera):
     def __init__(self) -> None:
         self.client = airsim.MultirotorClient()
@@ -259,9 +260,8 @@ class CameraAirSim(Camera):
             f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
         )
         target_name: str = f"{path}{photo_name}"
-        with Image.open(cam_file, mode='r', formats=None) as im:
+        with Image.open(cam_file, mode="r", formats=None) as im:
             im.save(target_name)
         self.image_id += 1
         logging.info("Image is being saved to %s", target_name)
         return target_name, photo_name
-

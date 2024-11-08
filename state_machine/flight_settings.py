@@ -243,7 +243,7 @@ class FlightSettings:
             Flag for the ArduPilot simulation
         """
         return self.__sim_flag
-    
+
     @property
     def airsim_flag(self) -> bool:
         """
@@ -267,7 +267,7 @@ class FlightSettings:
             Flag for the ArduPilot simulation
         """
         self.__sim_flag = sim_flag
-    
+
     @airsim_flag.setter
     def airsim_flag(self, airsim_flag: bool) -> None:
         """

@@ -183,7 +183,9 @@ async def run_test(_sim: bool, _airsim: bool) -> None:  # Temporary fix for unus
 
     drone: Drone = Drone()
     drone.odlc_scan = False
-    flight_settings: FlightSettings = FlightSettings(sim_flag=_sim, airsim_flag=_airsim, path_data_path=path_data_path)
+    flight_settings: FlightSettings = FlightSettings(
+        sim_flag=_sim, airsim_flag=_airsim, path_data_path=path_data_path
+    )
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(

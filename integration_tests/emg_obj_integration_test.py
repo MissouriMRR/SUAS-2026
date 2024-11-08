@@ -31,7 +31,9 @@ async def run_test(_sim: bool, _airsim: bool) -> None:  # Temporary fix for unus
 
 
 if __name__ == "__main__":
-    print("Pass argument --sim to enable the ardupilot simulation flag or --airsim to enable the airsim simulation flag.")
+    print(
+        "Pass argument --sim to enable the ardupilot simulation flag or --airsim to enable the airsim simulation flag."
+    )
     print("When the ardupilot simulation flag is not set, golf data is used.")
     print(
         "Running in simulation mode probably won't work, but is supported by the integration test."
