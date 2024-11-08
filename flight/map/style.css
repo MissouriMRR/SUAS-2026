@@ -10,3 +10,7 @@ html {
   top: 0;
   left: 0;
 }
+
+#map_image {
+  width: 100%;
+}
