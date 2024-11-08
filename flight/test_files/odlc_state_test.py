@@ -10,7 +10,7 @@ from state_machine.states import Start
 from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(_sim: bool, odlc_count: int = 5) -> None:
+async def run_test(_sim: bool, _airsim: bool, odlc_count: int = 5) -> None:
     """
     Tests the the ODLC state in the State Machine. Runs through an example run of the ODLC
     and its functions, testing if the drone can find 5 waypoints, as well as checking to make
@@ -19,11 +19,13 @@ async def run_test(_sim: bool, odlc_count: int = 5) -> None:
     Parameters
     ----------
     _sim: bool
-        Whether or not the test is being run in a simulation
+        Whether or not the test is being run in an ardupilot simulation
+    _airsim: bool
+        Whether or not the test is being run in an airsim simulation
     """
     logging.basicConfig(level=logging.INFO)
     drone: Drone = Drone()
-    flight_settings: FlightSettings = FlightSettings(sim_flag=_sim, skip_waypoint=True)
+    flight_settings: FlightSettings = FlightSettings(sim_flag=_sim, airsim_flag=_airsim, skip_waypoint=True)
     await drone.connect_drone()
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()

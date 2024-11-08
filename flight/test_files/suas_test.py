@@ -12,6 +12,7 @@ from mavsdk import System
 
 
 SIM_ADDR: str = "udp://:14540"
+AIRSIM_ADDR: str = "udp://:14030"
 CON_ADDR: str = "serial:///dev/ttyFTDI:921600"
 
 
