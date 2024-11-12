@@ -18,12 +18,17 @@ Test_IHAT: Vector = np.array([1, 0, 0], dtype=np.float64)
 
 class TestIHAT(unittest.TestCase):
     """
-    Unit test for the IHAT constant
+    Testing the IHAT constant from the vector utils module
     """
 
     def test_ihat_type(self) -> None:
         """
-        Test the type of IHAT
+        Asserts that IHAT is of type Vector
+
+        Raises
+        ------
+        AssertionError
+            If IHAT is not of type Vector
         """
 
         # Fail message
@@ -33,7 +38,12 @@ class TestIHAT(unittest.TestCase):
 
     def test_ihat_value(self) -> None:
         """
-        Test the value of IHAT
+        Asserts that IHAT has the value of np.array([1, 0, 0])
+
+        Raises
+        ------
+        AssertionError
+            If IHAT does not have the value of np.array([1, 0, 0])
         """
 
         # This doesn't need a fail message as we will use the one that numpy
@@ -48,12 +58,17 @@ class TestIHAT(unittest.TestCase):
 
 class TestPixelAngle(unittest.TestCase):
     """
-    Unit test for pixel_angle
+    Testing the pixel_angle function from the vector utils module
     """
 
     def test_pixel_angle(self) -> None:
         """
-        Test pixel_angle with a known example
+        Asserts that pixel_angle returns the expected value
+
+        Raises
+        ------
+        AssertionError
+            If pixel_angle returns a value other than what was calculated
         """
 
         # Test values
@@ -74,12 +89,17 @@ class TestPixelAngle(unittest.TestCase):
 
 class TestPlaneCollision(unittest.TestCase):
     """
-    Unit test for plane_collision
+    Testing the plane_collision function from the vector utils module
     """
 
     def test_plane_collision(self) -> None:
         """
         Test plane_collision with a known example
+
+        Raises
+        ------
+        AssertionError
+            If plane_collision returns a value other than what was calculated
         """
 
         # Test values
@@ -125,12 +145,17 @@ class TestPlaneCollision(unittest.TestCase):
 
 class TestGetFOV(unittest.TestCase):
     """
-    Unit test for get_fov
+    Testing the get_fov function from the vector utils module
     """
 
     def test_get_fov(self) -> None:
         """
         Test get_fov with a known example
+
+        Raises
+        ------
+        AssertionError
+            If get_fov returns a value other than what was calculated
         """
 
         # Test values
@@ -151,12 +176,17 @@ class TestGetFOV(unittest.TestCase):
 
 class TestEdgeAngle(unittest.TestCase):
     """
-    Unit test for edge_angle
+    Testing the edge_angle function from the vector utils module
     """
 
     def test_edge_angle(self) -> None:
         """
         Test edge_angle with a known example
+
+        Raises
+        ------
+        AssertionError
+            If edge_angle returns a value other than what was calculated
         """
 
         # Test values
@@ -177,12 +207,17 @@ class TestEdgeAngle(unittest.TestCase):
 
 class TestRotateRadians(unittest.TestCase):
     """
-    Unit test for rotate_radians
+    Testing the rotate_radians function from the vector utils module
     """
 
     def test_rotate_radians(self) -> None:
         """
         Test rotate_radians with a known example
+
+        Raises
+        ------
+        AssertionError
+            If rotate_radians returns a value other than what was calculated
         """
 
         # Test values
@@ -216,12 +251,17 @@ class TestRotateRadians(unittest.TestCase):
 
 class TestRotateDegrees(unittest.TestCase):
     """
-    Unit test for rotate_degrees
+    Testing the rotate_degrees function from the vector utils module
     """
 
     def test_rotate_degrees(self) -> None:
         """
         Test rotate_degrees with a known example
+
+        Raises
+        ------
+        AssertionError
+            If rotate_degrees returns a value other than what was calculated
         """
 
         # Test values
@@ -251,12 +291,17 @@ class TestRotateDegrees(unittest.TestCase):
 
 class TestCameraVector(unittest.TestCase):
     """
-    Unit test for camera_vector
+    Testing the camera_vector function from the vector utils module
     """
 
     def test_camera_vector(self) -> None:
         """
         Test camera_vector with a known example
+
+        Raises
+        ------
+        AssertionError
+            If camera_vector returns a value other than what was calculated
         """
 
         # Test values
@@ -288,12 +333,17 @@ class TestCameraVector(unittest.TestCase):
 
 class TestFocalLengthToFOVs(unittest.TestCase):
     """
-    Unit test for focal_length_to_fovs
+    Testing the focal_length_to_fovs function from the vector utils module
     """
 
     def test_focal_length_to_fovs(self) -> None:
         """
         Test focal_length_to_fovs with a known example
+
+        Raises
+        ------
+        AssertionError
+            If focal_length_to_fovs returns a value other than what was calculated
         """
 
         # Test values
@@ -317,12 +367,17 @@ class TestFocalLengthToFOVs(unittest.TestCase):
 
 class TestPixelVector(unittest.TestCase):
     """
-    Unit test for pixel_vector
+    Testing the pixel_vector function from the vector utils module
     """
 
     def test_pixel_vector(self) -> None:
         """
         Test pixel_vector with a known example
+
+        Raises
+        ------
+        AssertionError
+            If pixel_vector returns a value other than what was calculated
         """
 
         # Test values
@@ -358,12 +413,17 @@ class TestPixelVector(unittest.TestCase):
 
 class TestPixelIntersect(unittest.TestCase):
     """
-    Unit test for pixel_intersect
+    Testing the pixel_intersect function from the vector utils module
     """
 
     def test_pixel_intersect(self) -> None:
         """
         Test pixel_intersect with a known example
+
+        Raises
+        ------
+        AssertionError
+            If pixel_intersect returns a value other than what was calculated
         """
 
         # Test values
