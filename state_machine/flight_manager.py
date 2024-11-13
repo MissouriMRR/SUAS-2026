@@ -69,8 +69,7 @@ class FlightManager:
             self.drone.address = "serial:///dev/ttyFTDI:921600"
 
         flight_settings_obj: FlightSettings = FlightSettings(
-            sim_flag=sim_flag,
-            airsim_flag=airsim_flag,
+            sim_flags=(sim_flag, airsim_flag),
             path_data_path=path_data_path,
             skip_waypoint=skip_waypoint,
             standard_object_count=standard_object_count,

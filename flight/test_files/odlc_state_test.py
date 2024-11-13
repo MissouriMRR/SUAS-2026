@@ -25,9 +25,7 @@ async def run_test(_sim: bool, _airsim: bool, odlc_count: int = 5) -> None:
     """
     logging.basicConfig(level=logging.INFO)
     drone: Drone = Drone()
-    flight_settings: FlightSettings = FlightSettings(
-        sim_flag=_sim, airsim_flag=_airsim, skip_waypoint=True
-    )
+    flight_settings: FlightSettings = FlightSettings(sim_flags=(_sim, _airsim), skip_waypoint=True)
     await drone.connect_drone()
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
@@ -57,4 +55,4 @@ async def run_test(_sim: bool, _airsim: bool, odlc_count: int = 5) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(run_test(True))
+    asyncio.run(run_test(True, False))
