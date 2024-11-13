@@ -2,6 +2,15 @@
 
 import asyncio
 import logging
+import math
+from typing import Final
+
+import utm
+
+from flight.camera import Camera
+from flight.extract_gps import extract_gps, GPSData
+from flight.extract_gps import BoundaryPointUtm
+from flight.waypoint.goto import move_to
 
 from state_machine.state_tracker import (
     update_state,
@@ -11,6 +20,11 @@ from state_machine.state_tracker import (
 from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
+
+# TODO: Determine good values
+MAPPING_ALTITUDE: Final[float] = 30  # meters
+HORIZONTAL_PHOTO_SPACING: Final[float] = 15  # meters
+VERTICAL_PHOTO_SPACING: Final[float] = 15  # meters
 
 
 async def run(self: Mapping) -> State:
@@ -31,8 +45,97 @@ async def run(self: Mapping) -> State:
 
         logging.info("Mapping")
 
-        # TODO: Implement the mapping state
-        raise NotImplementedError("Mapping state not implemented yet")
+        gps_dict: GPSData = extract_gps(self.flight_settings.path_data_path)
+        mapping_boundary_utm: list[BoundaryPointUtm] = gps_dict["mapping_boundary_utm"]
+
+        # The mapping area should be roughly rectangular with 4 vertices
+        # We are going to travel in line segments parallel to the long edges
+
+        is_long_edge_first: bool = math.hypot(
+            mapping_boundary_utm[1].easting - mapping_boundary_utm[0].easting,
+            mapping_boundary_utm[1].northing - mapping_boundary_utm[0].northing,
+        ) >= math.hypot(
+            mapping_boundary_utm[2].easting - mapping_boundary_utm[0].easting,
+            mapping_boundary_utm[2].northing - mapping_boundary_utm[0].northing,
+        )
+
+        # Ensure the first edge is long
+        if not is_long_edge_first:
+            mapping_boundary_utm[1], mapping_boundary_utm[3] = (
+                mapping_boundary_utm[3],
+                mapping_boundary_utm[1],
+            )
+
+        # Take the max because it's better to take too many photos than too few
+        short_edge_length = max(
+            math.hypot(
+                mapping_boundary_utm[3].easting - mapping_boundary_utm[0].easting,
+                mapping_boundary_utm[3].northing - mapping_boundary_utm[0].northing,
+            ),
+            math.hypot(
+                mapping_boundary_utm[2].easting - mapping_boundary_utm[1].easting,
+                mapping_boundary_utm[2].northing - mapping_boundary_utm[1].northing,
+            ),
+        )
+
+        # Get average direction of short edges
+        camera_heading: float = (
+            math.degrees(
+                math.atan2(
+                    (mapping_boundary_utm[3].northing - mapping_boundary_utm[0].northing)
+                    + (mapping_boundary_utm[2].northing - mapping_boundary_utm[1].northing),
+                    (mapping_boundary_utm[3].easting - mapping_boundary_utm[0].easting)
+                    + (mapping_boundary_utm[2].easting - mapping_boundary_utm[1].easting),
+                )
+            )
+            - 90.0
+        ) % 360.0
+        step_count: int = math.ceil(short_edge_length / VERTICAL_PHOTO_SPACING)
+
+        utm_zone_number = mapping_boundary_utm[0].zone_number
+        utm_zone_letter = mapping_boundary_utm[0].zone_letter
+        camera: Camera = Camera()
+        reverse_direction: bool = False
+        for i in range(step_count + 1):
+            lerp_t = i / step_count
+
+            # Linearly interpolate along the short edges
+            start_easting: float = (1 - lerp_t) * mapping_boundary_utm[
+                0
+            ].easting + lerp_t * mapping_boundary_utm[3].easting
+            start_northing: float = (1 - lerp_t) * mapping_boundary_utm[
+                0
+            ].northing + lerp_t * mapping_boundary_utm[3].northing
+            end_easting: float = (1 - lerp_t) * mapping_boundary_utm[
+                1
+            ].easting + lerp_t * mapping_boundary_utm[2].easting
+            end_northing: float = (1 - lerp_t) * mapping_boundary_utm[
+                1
+            ].northing + lerp_t * mapping_boundary_utm[2].northing
+
+            # Move in a serpentine pattern
+            if reverse_direction:
+                start_easting, end_easting = end_easting, start_easting
+                start_northing, end_northing = end_northing, start_northing
+
+            lat: float
+            lon: float
+            lat, lon = utm.to_latlon(
+                start_easting, start_northing, utm_zone_number, utm_zone_letter
+            )
+            await move_to(self.drone.vehicle, lat, lon, MAPPING_ALTITUDE)
+
+            lat, lon = utm.to_latlon(end_easting, end_northing, utm_zone_number, utm_zone_letter)
+            await camera.mapping_move_to(
+                self.drone.vehicle,
+                lat,
+                lon,
+                MAPPING_ALTITUDE,
+                HORIZONTAL_PHOTO_SPACING,
+                camera_heading,
+            )
+
+            reverse_direction = not reverse_direction
 
         logging.info("Mapping state complete.")
     except asyncio.CancelledError as ex:

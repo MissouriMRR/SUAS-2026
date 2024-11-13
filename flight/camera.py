@@ -42,16 +42,27 @@ class Camera:
         The default path is the images folder in the current working directory.
         The file name will be the file format attribute.
         Returns the file name and the file path.
-    odlc_move_to(
-        drone: Drone,
+    mapping_move_to(
+        drone: dronekit.Vehicle,
         latitude: float,
         longitude: float,
         altitude: float,
-        fast_param: float,
-        take_photos: float
+        interval: float,
+        heading: float,
     )
         Move the drone to the specified latitude, longitude, and altitude.
-        Takes photos along the way if take_photos is True.
+        Takes photos along the way.
+
+    odlc_move_to(
+        drone: dronekit.Vehicle,
+        latitude: float,
+        longitude: float,
+        altitude: float,
+        take_photos: bool,
+        heading: float,
+    )
+        Move the drone to the specified latitude, longitude, and altitude.
+        Takes a photo at the end if take_photos is True.
     """
 
     def __init__(self) -> None:
@@ -69,9 +80,7 @@ class Camera:
 
         logging.info("Camera initialized")
 
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str]:
+    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -139,6 +148,7 @@ class Camera:
             The yaw in which the camera should point, in degrees (0 is north, 90 is west).
         """
 
+        await self.capture_photo(f"{os.getcwd()}/mapping_images/")
         goto_task: asyncio.Task[None] = asyncio.ensure_future(
             move_to(
                 drone,
@@ -150,9 +160,7 @@ class Camera:
             )
         )
 
-        start_pos: dronekit.LocationGlobalRelative = (
-            drone.location.global_relative_frame
-        )
+        start_pos: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
         start_lat: float = start_pos.lat
         start_lon: float = start_pos.lon
@@ -165,9 +173,7 @@ class Camera:
                 -drone.attitude.pitch - 90, 0, heading  # pitch is relative to the drone
             )
 
-            position: dronekit.LocationGlobalRelative = (
-                drone.location.global_relative_frame
-            )
+            position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
             drone_lat: float = position.lat
             drone_long: float = position.lon
@@ -183,6 +189,8 @@ class Camera:
 
             await asyncio.sleep(0.25)
 
+        await self.capture_photo(f"{os.getcwd()}/mapping_images/")
+
     async def odlc_move_to(
         self,
         drone: dronekit.Vehicle,
@@ -194,8 +202,8 @@ class Camera:
     ) -> None:
         """
         This function takes in a latitude, longitude and altitude and autonomously
-        moves the drone to that waypoint. It will take photos along the path if passed
-        true in take_photos and add the point and name of photo to a json.
+        moves the drone to that waypoint. It will take a photo at the end if passed
+        True in take_photos and add the point and name of photo to a json.
 
         Parameters
         ----------
