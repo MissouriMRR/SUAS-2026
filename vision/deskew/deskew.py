@@ -33,6 +33,7 @@ def get_relative_intersects(
 ):
     """
     Calculates the pixel locations on the ground relative to the drone
+    Units are same as `height`
     """
 
     # Numpy converts `None` to NaN
@@ -74,8 +75,7 @@ def perspective_matrix(
         The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
         camera, stored in constants.py, will be applied first
     scale: float | None
-        Scales the resolution of the output. A value of 1 makes the area inside the camera view
-        equal to the original image. Defaults to 1.
+        The scale of the projected image in pixels per foot
     interpolation: int | None
         The cv2 interpolation type to be used when deskewing.
 
@@ -97,9 +97,6 @@ def perspective_matrix(
 
             Returns None if no valid matrix could be generated.
     """
-
-    orig_height: int = image_shape[0]
-    orig_width: int = image_shape[1]
     
     intersects = get_relative_intersects(image_shape, focal_length, rotation_deg)
 
@@ -113,13 +110,8 @@ def perspective_matrix(
     # Subtract the minimum on both axes so the minimum values on each axis are 0
     intersects -= np.min(intersects, axis=0)
 
-    # Find the area using cv2 contour tools
-    area: float = cv2.contourArea(intersects)
-
-    # Scale the output so the area of the important pixels is about the same as the starting image
-    target_area: float = orig_height * orig_width * scale
-    intersect_scale: np.float64 = np.float64(np.sqrt(target_area / area))
-    dst_pts: Corners = intersects * intersect_scale
+    # Scale the 
+    dst_pts: Corners = intersects * scale
 
     matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(corner_points(image_shape), dst_pts)
 
