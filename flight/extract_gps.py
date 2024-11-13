@@ -119,6 +119,8 @@ GPSData = TypedDict(
         "odlc_waypoints": list[OdlcWaypoint],
         "boundary_points": list[BoundaryPoint],
         "boundary_points_utm": list[BoundaryPointUtm],
+        "mapping_boundary": list[BoundaryPoint],
+        "mapping_boundary_utm": list[BoundaryPointUtm],
         "altitude_limits": list[int],
         "odlc_altitude": int,
         "odlc_heading": float,
@@ -184,6 +186,8 @@ def extract_gps(path: str) -> GPSData:
             list[OdlcWaypoint[float, float]],
             list[BoundaryPoint[float, float]],
             list[BoundaryPointUtm[float, float, int, str]],
+            list[BoundaryPoint[float, float]],
+            list[BoundaryPointUtm[float, float, int, str]],
             list[int, int, int],
         ]
         The data in the waypoint data file
@@ -229,6 +233,22 @@ def extract_gps(path: str) -> GPSData:
                     The zone number of the boundary point.
                 zone_letter : str
                     The zone letter of the boundary point.
+        mapping_boundary : list[BoundaryPoint[float, float]]
+            BoundaryPoint : BoundaryPoint[float, float]
+                latitude : float
+                    The latitude of the mapping area boundary point.
+                longitude : float
+                    The longitude of the mapping area boundary point.
+        mapping_boundary_utm : list[BoundaryPointUtm[float, float, int, str]]
+            BoundaryPointUtm : BoundaryPointUtm[float, float, int, str]
+                easting : float
+                    The easting of the mapping area boundary point.
+                northing : float
+                    The northing of the mapping area boundary point.
+                zone_number : int
+                    The zone number of the mapping area boundary point.
+                zone_letter : str
+                    The zone letter of the mapping area boundary point.
         altitude_limits : list[int, int]
             altitude_min : int
                 The minimum altitude that the drone must fly at all times, in feet.
@@ -248,6 +268,8 @@ def extract_gps(path: str) -> GPSData:
     odlc_waypoints: list[OdlcWaypoint] = []
     boundary_points: list[BoundaryPoint] = []
     boundary_points_utm: list[BoundaryPointUtm] = []
+    mapping_boundary: list[BoundaryPoint] = []
+    mapping_boundary_utm: list[BoundaryPointUtm] = []
 
     # Get forced UTM zone number and zone letter
     forced_zone_number: int
@@ -266,15 +288,26 @@ def extract_gps(path: str) -> GPSData:
         odlc_waypoints.append(OdlcWaypoint(latitude, longitude))
 
     boundary_point: dict[str, float]
+    full_boundary_point_utm: BoundaryPointUtm
     for boundary_point in json_data["flyzones"]["boundaryPoints"]:
         latitude = boundary_point["latitude"]
         longitude = boundary_point["longitude"]
 
         boundary_points.append(BoundaryPoint(latitude, longitude))
-        full_boundary_point_utm: BoundaryPointUtm = BoundaryPointUtm(
+        full_boundary_point_utm = BoundaryPointUtm(
             *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
         )
         boundary_points_utm.append(full_boundary_point_utm)
+
+    for boundary_point in json_data["flyzones"]["mappingBoundary"]:
+        latitude = boundary_point["latitude"]
+        longitude = boundary_point["longitude"]
+
+        mapping_boundary.append(BoundaryPoint(latitude, longitude))
+        full_boundary_point_utm = BoundaryPointUtm(
+            *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
+        )
+        mapping_boundary_utm.append(full_boundary_point_utm)
 
     # Package all data into the GPSData TypedDict to be exported
     waypoint_data: GPSData = {
@@ -283,6 +316,8 @@ def extract_gps(path: str) -> GPSData:
         "odlc_waypoints": odlc_waypoints,
         "boundary_points": boundary_points,
         "boundary_points_utm": boundary_points_utm,
+        "mapping_boundary": mapping_boundary,
+        "mapping_boundary_utm": mapping_boundary_utm,
         "altitude_limits": [
             json_data["flyzones"]["altitudeMin"],
             json_data["flyzones"]["altitudeMax"],
