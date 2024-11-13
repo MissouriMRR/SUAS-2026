@@ -9,6 +9,45 @@ from vision.deskew.vector_utils import pixel_intersect
 from vision.common.constants import Image, Corners
 
 
+def corner_points(image_shape):
+    orig_height: int = image_shape[0]
+    orig_width: int = image_shape[1]
+
+    # Generate points in the format
+    # 1--2
+    # |  |
+    # 4--3
+    corner_points: Corners = np.array(
+        [[0, 0], [orig_width, 0], [orig_width, orig_height], [0, orig_height]], dtype=np.float32
+    )
+    
+    return corner_points
+
+
+
+def get_relative_intersects(
+        image_shape: tuple[int, int, int] | tuple[int, int],
+        focal_length: float,
+        rotation_deg: list[float],
+        height: float = 1
+):
+    """
+    Calculates the pixel locations on the ground relative to the drone
+    """
+
+    # Numpy converts `None` to NaN
+    intersects: Corners = np.array(
+        [
+            pixel_intersect(point, image_shape, focal_length, rotation_deg, height)
+            for point in corner_points(image_shape)
+        ],
+        dtype=np.float32,
+    )
+    
+    return intersects
+    
+
+
 def perspective_matrix(
     image_shape: tuple[int, int, int] | tuple[int, int],
     focal_length: float,
@@ -61,30 +100,15 @@ def perspective_matrix(
 
     orig_height: int = image_shape[0]
     orig_width: int = image_shape[1]
-
-    # Generate points in the format
-    # 1--2
-    # |  |
-    # 4--3
-    source_pts: Corners = np.array(
-        [[0, 0], [orig_width, 0], [orig_width, orig_height], [0, orig_height]], dtype=np.float32
-    )
-
-    # Numpy converts `None` to NaN
-    intersects: Corners = np.array(
-        [
-            pixel_intersect(point, image_shape, focal_length, rotation_deg, 1)
-            for point in source_pts
-        ],
-        dtype=np.float32,
-    )
+    
+    intersects = get_relative_intersects(image_shape, focal_length, rotation_deg)
 
     # Return (None, None) if any elements are NaN - camera vectors don't intersect the ground
     if np.any(np.isnan(intersects)):
         return None, None
 
     # Flip the endpoints over the X axis (top left is 0,0 for images)
-    intersects[:, 1] *= -1
+    # intersects[:, 0] *= -1
 
     # Subtract the minimum on both axes so the minimum values on each axis are 0
     intersects -= np.min(intersects, axis=0)
@@ -97,7 +121,7 @@ def perspective_matrix(
     intersect_scale: np.float64 = np.float64(np.sqrt(target_area / area))
     dst_pts: Corners = intersects * intersect_scale
 
-    matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(source_pts, dst_pts)
+    matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(corner_points(image_shape), dst_pts)
 
     return matrix, dst_pts
 

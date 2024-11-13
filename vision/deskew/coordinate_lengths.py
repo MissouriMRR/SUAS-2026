@@ -1,11 +1,12 @@
 """Functions for calculating coordinate degree lengths"""
 
 import numpy as np
+from vision.common.constants import FEET_PER_METER
 
 
 def latitude_length(latitude_deg: float) -> float:
     """
-    Returns the distance in meters of one degree of latitude at a particular latitude
+    Returns the distance in feet of one degree of latitude at a particular latitude
 
     Parameters
     ---------
@@ -15,7 +16,7 @@ def latitude_length(latitude_deg: float) -> float:
     Returns
     -------
     latitude_length
-        The length of a degree of latitude in meters at the given latitude
+        The length of a degree of latitude in feet at the given latitude
 
     References
     ----------
@@ -31,14 +32,14 @@ def latitude_length(latitude_deg: float) -> float:
         - 559.82 * np.cos(2 * latitude_rad)
         + 1.175 * np.cos(4 * latitude_rad)
         - 0.0023 * np.cos(6 * latitude_rad)
-    )
+    ) * FEET_PER_METER
 
     return distance
 
 
 def longitude_length(latitude_deg: float) -> float:
     """
-    Calculates the distance in meters of one degree of longitude at that latitude
+    Calculates the distance in feet of one degree of longitude at that latitude
 
     Parameters
     ---------
@@ -48,7 +49,7 @@ def longitude_length(latitude_deg: float) -> float:
     Returns
     -------
     longitude_length
-        The length of a degree of longitude in meters at the given latitude
+        The length of a degree of longitude in feet at the given latitude
 
     References
     ----------
@@ -63,6 +64,6 @@ def longitude_length(latitude_deg: float) -> float:
         111412.84 * np.cos(latitude_rad)
         - 93.5 * np.cos(3 * latitude_rad)
         + 0.118 * np.cos(5 * latitude_rad)
-    )
+    ) * FEET_PER_METER
 
     return distance

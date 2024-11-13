@@ -7,6 +7,21 @@ from vision.common.bounding_box import BoundingBox
 
 from vision.deskew import coordinate_lengths
 from vision.deskew import vector_utils
+from vision.deskew.deskew import corner_points
+
+def corner_coords(
+    image_shape,
+    camera_parameters
+):
+    coords = np.array(
+        [
+            get_coordinates(point, image_shape, camera_parameters)
+            for point in corner_points(image_shape)
+        ],
+        dtype=np.float64,
+    )
+    
+    return coords
 
 
 def get_coordinates(

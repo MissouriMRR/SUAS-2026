@@ -3,14 +3,23 @@
 from typing import TypeAlias, TypedDict
 from nptyping import NDArray, Shape, UInt8, Float64, IntC, Bool8
 
+# ordinary three channel image
 Image: TypeAlias = NDArray[Shape["*, *, 3"], UInt8]
+
+# image with alpha channel
+ImageWAlpha: TypeAlias = NDArray[Shape["*, *, 4"], UInt8]
+
 # single channel image type
 ScImage: TypeAlias = NDArray[Shape["*, *"], UInt8]
+
 # single channel image of booleans
 Mask: TypeAlias = NDArray[Shape["*, *"], Bool8]
 
 Point: TypeAlias = NDArray[Shape["2"], Float64]
 Vector: TypeAlias = NDArray[Shape["3"], Float64]
+
+# Point representing a pixel index
+ImgPoint: TypeAlias = NDArray[Shape["2"], IntC]
 
 # return types for cv2.findContours() -> tuple[tuple[Contour, ...], Hierarchy]
 Contour: TypeAlias = NDArray[Shape["*, 1, 2"], IntC]
@@ -75,3 +84,5 @@ SENSOR_HEIGHT: float = 8.8
 # In degrees of [roll, pitch, yaw]
 # Set to [0.0, -90.0, 0.0] when the camera is facing directly downwards
 ROTATION_OFFSET: list[float] = [0.0, -90.0, 90.0]
+
+FEET_PER_METER: float = 3.28084
