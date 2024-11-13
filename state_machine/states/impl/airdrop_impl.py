@@ -8,8 +8,9 @@ from state_machine.state_tracker import update_state
 
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.land import Land
-from state_machine.states.waypoint import Waypoint
+from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
+from state_machine.states.waypoint import Waypoint
 
 # uncomment if automatic
 # from flight.maestro.air_drop import AirdropControl
@@ -30,6 +31,9 @@ async def run(self: Airdrop) -> State:
     This method is responsible for initiating the Airdrop process of the drone and transitioning
     it back to the Waypoint state.
     """
+    if self.flight_settings.skip_odlc_and_airdrop:
+        return Mapping(self.drone, self.flight_settings)
+
     try:
         update_state("Airdrop")
         logging.info("Airdrop")
@@ -106,7 +110,7 @@ async def run(self: Airdrop) -> State:
 
         if continue_run:
             return Waypoint(self.drone, self.flight_settings)
-        return Land(self.drone, self.flight_settings)
+        return Mapping(self.drone, self.flight_settings)
 
     except asyncio.CancelledError as ex:
         logging.error("Airdrop state canceled")

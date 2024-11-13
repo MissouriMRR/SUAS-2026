@@ -21,6 +21,8 @@ class FlightSettings:
         A small description for the current flight
     __skip_waypoint: bool
         Whether to skip the waypoint state.
+    __skip_odlc_and_airdrop: bool
+        Whether to skip the ODLC and airdrop states.
     __standard_object_count: int
         The number of standard objects to attempt to find.
     __sim_flag: bool
@@ -36,6 +38,8 @@ class FlightSettings:
         Sets the parameter for a simple or diagonal takeoff
     skip_waypoint() -> bool
         Returns whether to skip the waypoint state.
+    skip_odlc_and_airdrop() -> bool
+        Returns whether to skip the ODLC and airdrop states.
     skip_waypoint(flag: bool) -> None
         Setter for configuring whether to skip the waypoint state.
     standard_object_count() -> int
@@ -60,12 +64,14 @@ class FlightSettings:
         Set the path to the JSON file containing the boundary and waypoint data.
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         simple_takeoff: bool = False,
         title: str = DEFAULT_RUN_TITLE,
         description: str = DEFAULT_RUN_DESCRIPTION,
         skip_waypoint: bool = False,
+        skip_odlc_and_airdrop: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
         sim_flag: bool = False,
         path_data_path: str = "flight/data/waypoint_data.json",
@@ -83,6 +89,8 @@ class FlightSettings:
             Sets a descriptive explanation for the current flight execution
         skip_waypoint : bool
             Whether to skip the waypoint state.
+        skip_odlc_and_airdrop : bool
+            Whether to skip the ODLC and airdrop states.
         standard_object_count : int
             The number of standard objects to attempt to find.
         sim_flag : bool, default False
@@ -94,6 +102,7 @@ class FlightSettings:
         self.__run_title: str = title
         self.__run_description: str = description
         self.__skip_waypoint: bool = skip_waypoint
+        self.__skip_odlc_and_airdrop: bool = skip_odlc_and_airdrop
         self.__standard_object_count: int = standard_object_count
         self.__sim_flag: bool = sim_flag
         self.__path_data_path: str = path_data_path
@@ -149,6 +158,30 @@ class FlightSettings:
         self.__skip_waypoint = flag
 
     # ----- ODLC Settings ----- #
+    @property
+    def skip_odlc_and_airdrop(self) -> bool:
+        """
+        Gets whether to skip the ODLC and airdrop states as a private member variable.
+
+        Returns
+        -------
+        skip_odlc_and_airdrop : bool
+            Whether to skip the ODLC and airdrop states.
+        """
+        return self.__skip_waypoint
+
+    @skip_odlc_and_airdrop.setter
+    def skip_odlc_and_airdrop(self, flag: bool) -> None:
+        """
+        Sets whether to skip the ODLC and airdrop states.
+
+        Parameters
+        ----------
+        flag : bool
+            Whether to skip the ODLC and airdrop states.
+        """
+        self.__skip_odlc_and_airdrop = flag
+
     @property
     def standard_object_count(self) -> int:
         """

@@ -17,6 +17,7 @@ from integration_tests.emg_obj_vision import emg_integration_pipeline
 from state_machine.flight_settings import FlightSettings
 from state_machine.state_tracker import update_state
 from state_machine.states.airdrop import Airdrop
+from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from vision.flyover_vision_pipeline import flyover_pipeline
@@ -49,6 +50,10 @@ async def run(self: ODLC) -> State:
     The type hinting for the capture_status variable is broken, see
     https://github.com/python/typeshed/issues/8799
     """
+
+    if self.flight_settings.skip_odlc_and_airdrop:
+        return Mapping(self.drone, self.flight_settings)
+
     try:
         update_state("ODLC")
         # Syncronized type hint is broken, see https://github.com/python/typeshed/issues/8799
@@ -132,7 +137,6 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
 
             if camera:
                 await camera.odlc_move_to(
-                    # TODO: Convert to Dronekit
                     self.drone,
                     gps_data["odlc_waypoints"][point].latitude,
                     gps_data["odlc_waypoints"][point].longitude,

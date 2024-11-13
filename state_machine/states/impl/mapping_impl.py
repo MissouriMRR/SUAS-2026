@@ -3,17 +3,17 @@
 import asyncio
 import logging
 
-import dronekit
-
 from state_machine.state_tracker import (
     update_state,
     update_drone,
     update_flight_settings,
 )
+from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
+from state_machine.states.state import State
 
 
-async def run(self: Mapping) -> None:
+async def run(self: Mapping) -> State:
     """
     Implements the run method for the Mapping state.
 
@@ -38,6 +38,8 @@ async def run(self: Mapping) -> None:
     except asyncio.CancelledError as ex:
         logging.error("Mapping state canceled")
         raise ex
+
+    return Land(self.drone, self.flight_settings)
 
 
 # Setting the run_callable attribute of the Mapping class to the run function
