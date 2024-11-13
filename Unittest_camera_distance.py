@@ -7,9 +7,20 @@ from vision.deskew.camera_distances import get_coordinates, bounding_area, calcu
 
 
 class TestVisionFunctions(unittest.TestCase):
+    """
+     Tests to verify the functionality of calculations 
+    concerning object positioning and distances in images captured by a camera.
+
+    Attributes:
+        The dimensions of the image used in tests, specified as (height, width, channels).
+    """
 
     def setUp(self) -> None:
-        # Set up the camera parameters and other constants for each test to avoid cross-contamination
+    
+        """
+        Initializes common properties for all test methods. Sets up camera parameters
+        and image dimensions that simulate a typical usage scenario.
+        """
         self.camera_params = CameraParameters(
             focal_length=35.0,
             rotation_deg=[0, 0, 0],
@@ -18,8 +29,17 @@ class TestVisionFunctions(unittest.TestCase):
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
 
+
     def test_get_coordinates(self) -> None:
-        # Test the coordinates calculation at the center of the image
+
+        """
+        
+        Verifies that the accurately calculates  coordinates
+        from a center pixel. Asserts correct type and closeness to expected values.
+
+        Returns:
+            None: This method does not return a value but asserts the correctness of the output.
+        """
         center_pixel = (960, 540)
         expected_coordinates = (37.77, -122.211)
         result = get_coordinates(center_pixel, self.image_shape, self.camera_params)
@@ -31,14 +51,20 @@ class TestVisionFunctions(unittest.TestCase):
             self.assertEqual(len(result), 2, "Result tuple should have two elements")
             self.assertIsInstance(result[0], float, "Latitude is float")
             self.assertIsInstance(result[1], float, "Longitude is float")
-
-        # Assert that the coordinates are almost equal to the expected values
+        # Make sure to get the expected value
         if result is not None:
             self.assertAlmostEqual(result[0], expected_coordinates[0], places=2)
             self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
 
     def test_bounding_area(self) -> None:
-        # Test bounding area calculation with a specific scenario
+        
+        """
+        Tests the  function to calculate the area of a bounding box
+        within the image, simulating an object detection scenario.
+        
+        Returns:
+            None: This method does not return a value but asserts the area calculation is correct.
+        """
         obj_type = ObjectType(value="")  # Provide the necessary argument
         self.box = BoundingBox(
             obj_type=obj_type,
@@ -51,7 +77,10 @@ class TestVisionFunctions(unittest.TestCase):
         self.assertIsNotNone(result, "Result should not be None for valid bounding box")
 
     def test_calculate_distance(self) -> None:
-        # Test calculate distance with valid pixel coordinates
+        """
+        Tests distance calculation between two points in an image. Ensures the method
+        returns a valid result.
+        """
         pixel1 = (100, 100)
         pixel2 = (200, 200)  # Valid pixel coordinates
         result = calculate_distance(pixel1, pixel2, self.image_shape, self.camera_params)
