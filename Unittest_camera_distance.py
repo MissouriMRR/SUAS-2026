@@ -8,7 +8,7 @@ from vision.deskew.camera_distances import get_coordinates, bounding_area, calcu
 
 class TestVisionFunctions(unittest.TestCase):
     """
-     Tests to verify the functionality of calculations 
+     Tests to verify the functionality of calculations
     concerning object positioning and distances in images captured by a camera.
 
     Attributes:
@@ -16,7 +16,6 @@ class TestVisionFunctions(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-    
         """
         Initializes common properties for all test methods. Sets up camera parameters
         and image dimensions that simulate a typical usage scenario.
@@ -29,11 +28,9 @@ class TestVisionFunctions(unittest.TestCase):
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
 
-
     def test_get_coordinates(self) -> None:
-
         """
-        
+
         Verifies that the accurately calculates  coordinates
         from a center pixel. Asserts correct type and closeness to expected values.
 
@@ -57,11 +54,10 @@ class TestVisionFunctions(unittest.TestCase):
             self.assertAlmostEqual(result[1], expected_coordinates[1], places=2)
 
     def test_bounding_area(self) -> None:
-        
         """
         Tests the  function to calculate the area of a bounding box
         within the image, simulating an object detection scenario.
-        
+
         Returns:
             None: This method does not return a value but asserts the area calculation is correct.
         """
