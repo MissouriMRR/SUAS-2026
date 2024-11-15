@@ -20,7 +20,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/waypoint_data.json" if _sim else "flight/data/golf_data.json"
+    path_data_path: str = "flight/data/golf_data.json"
 
     flight_manager: FlightManager = FlightManager()
     await flight_manager.run_manager(
@@ -30,7 +30,6 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
 
 if __name__ == "__main__":
     print("Pass argument --sim to enable the simulation flag.")
-    print("When the simulation flag is not set, golf data is used.")
     print(
         "Running in simulation mode probably won't work, but is supported by the integration test."
     )
