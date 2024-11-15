@@ -20,7 +20,7 @@ class TestVisionFunctions(unittest.TestCase):
         """
         Initializes common properties for all test methods. Sets up camera parameters
         and image dimensions that simulate a typical usage scenario.
-    
+
         """
         self.camera_params = CameraParameters(
             focal_length=35.0,
@@ -32,7 +32,7 @@ class TestVisionFunctions(unittest.TestCase):
 
     def test_get_coordinates(self) -> None:
         """
-        
+
         Verifies that the accurately calculates  coordinates
         from a center pixel. Asserts correct type and closeness to expected values.
 
