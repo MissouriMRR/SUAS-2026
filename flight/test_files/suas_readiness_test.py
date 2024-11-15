@@ -1,5 +1,5 @@
 """
-Main driver code for moving drone to each waypoint
+Tests if the drone can fly 12 miles, which is required to compete in SUAS.
 """
 
 import asyncio

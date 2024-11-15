@@ -1,5 +1,5 @@
 """
-Main driver code for moving drone to each waypoint
+Tests the waypoint move_to() function.
 """
 
 import asyncio

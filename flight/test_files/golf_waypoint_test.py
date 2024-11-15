@@ -1,5 +1,5 @@
 """
-Main driver code for moving drone to each waypoint
+Tests moving to waypoints over the golf course.
 """
 
 import asyncio
