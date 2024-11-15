@@ -1,5 +1,5 @@
 """
-Main driver code for moving drone to each waypoint
+Tests the waypoint move_to() function.
 """
 
 import asyncio
@@ -13,7 +13,7 @@ from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 
 # Defining file path constant for extract_gps
-MOVE_TO_TEST_PATH: str = "./data/waypoint_data.json"
+MOVE_TO_TEST_PATH: str = "flight/data/golf_data.json"
 
 # Defining altitude and speed
 MOVE_TO_TEST_ALTITUDE: int = 12

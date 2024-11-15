@@ -48,7 +48,7 @@ async def run() -> None:
     # wait for drone to take off
     await asyncio.sleep(10)
 
-    flight_settings: FlightSettings = FlightSettings()
+    flight_settings: FlightSettings = FlightSettings(path_data_path="flight/data/golf_data.json")
 
     logging.info("starting airdrop")
 

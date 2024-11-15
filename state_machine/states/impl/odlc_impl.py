@@ -15,7 +15,11 @@ from flight.extract_gps import extract_gps, GPSData
 from flight.waypoint.goto import move_to
 from integration_tests.emg_obj_vision import emg_integration_pipeline
 from state_machine.flight_settings import FlightSettings
-from state_machine.state_tracker import update_state
+from state_machine.state_tracker import (
+    update_state,
+    update_drone,
+    update_flight_settings,
+)
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
@@ -56,6 +60,10 @@ async def run(self: ODLC) -> State:
 
     try:
         update_state("ODLC")
+        update_drone(self.drone)
+        update_flight_settings(self.flight_settings)
+        logging.info("ODLC state running")
+
         # Syncronized type hint is broken, see https://github.com/python/typeshed/issues/8799
         capture_status: SynchronizedBase[c_bool] = Value(c_bool, False)  # type: ignore
 

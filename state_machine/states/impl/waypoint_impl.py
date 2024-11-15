@@ -26,7 +26,11 @@ from state_machine.states.airdrop import Airdrop
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
-from state_machine.state_tracker import update_state
+from state_machine.state_tracker import (
+    update_state,
+    update_drone,
+    update_flight_settings,
+)
 
 BOUNDARY_SHRINKAGE: Final[float] = 5.0  # in meters
 
@@ -79,6 +83,8 @@ async def waypoint_logic(self: Waypoint) -> None:
         The waypoint state object.
     """
     update_state("Waypoint")
+    update_drone(self.drone)
+    update_flight_settings(self.flight_settings)
     logging.info("Waypoint state running")
 
     gps_dict: GPSData = extract_gps(self.flight_settings.path_data_path)

@@ -1,12 +1,5 @@
 """
-This module contains the implementation of a state machine and a kill switch
-to test them in a simulated or real-world environment. It includes functionality
-to check waypoints and ensure the drone remains within predefined boundaries.
-
-Classes
--------
-BoundaryPoint
-    A point defining a boundary for the drone's operation.
+A unit test for the waypoint state.
 
 Functions
 ---------
@@ -179,7 +172,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/waypoint_data.json" if _sim else "flight/data/golf_data.json"
+    path_data_path: str = "flight/data/golf_data.json"
 
     drone: Drone = Drone()
     if _sim:
