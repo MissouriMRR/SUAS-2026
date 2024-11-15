@@ -153,7 +153,9 @@ class Camera:
         info: dict[str, CameraParameters] = {}
 
         drone.gimbal.rotate(
-            -drone.attitude.pitch - 90, 0, heading  # pitch is relative to the drone
+            -drone.attitude.pitch - 90,
+            -drone.attitude.roll,
+            heading,  # pitch and roll are relative to the drone
         )
         await asyncio.sleep(1.0)
 
@@ -183,9 +185,7 @@ class Camera:
         next_interval_count: int = 1
         while not goto_task.done():
             # Keep gimbal pointed straight down
-            drone.gimbal.rotate(
-                -drone.attitude.pitch - 90, 0, heading  # pitch is relative to the drone
-            )
+            drone.gimbal.rotate(-drone.attitude.pitch - 90, -drone.attitude.roll, heading)
 
             position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
@@ -206,9 +206,7 @@ class Camera:
 
             await asyncio.sleep(0.25)
 
-        drone.gimbal.rotate(
-            -drone.attitude.pitch - 90, 0, heading  # pitch is relative to the drone
-        )
+        drone.gimbal.rotate(-drone.attitude.pitch - 90, -drone.attitude.roll, heading)
         await asyncio.sleep(1.0)
 
         camera_parameters = await self._get_camera_parameters(drone)
@@ -271,7 +269,7 @@ class Camera:
             # Point the gimbal straight down
             drone.gimbal.rotate(
                 -drone.gimbal.pitch - 90,  # pitch is relative to the drone
-                drone.gimbal.roll,
+                -drone.gimbal.roll,
                 heading,
             )
 
