@@ -11,7 +11,8 @@ class TestVisionFunctions(unittest.TestCase):
      Tests to verify the functionality of calculations
     concerning object positioning and distances in images captured by a camera.
 
-    Attributes:
+    Attributes
+    ----------
         The dimensions of the image used in tests, specified as (height, width, channels).
     """
 
@@ -19,6 +20,7 @@ class TestVisionFunctions(unittest.TestCase):
         """
         Initializes common properties for all test methods. Sets up camera parameters
         and image dimensions that simulate a typical usage scenario.
+    
         """
         self.camera_params = CameraParameters(
             focal_length=35.0,
@@ -30,11 +32,12 @@ class TestVisionFunctions(unittest.TestCase):
 
     def test_get_coordinates(self) -> None:
         """
-
+        
         Verifies that the accurately calculates  coordinates
         from a center pixel. Asserts correct type and closeness to expected values.
 
         Returns:
+        -------
             None: This method does not return a value but asserts the correctness of the output.
         """
         center_pixel = (960, 540)
@@ -59,6 +62,7 @@ class TestVisionFunctions(unittest.TestCase):
         within the image, simulating an object detection scenario.
 
         Returns:
+        -------
             None: This method does not return a value but asserts the area calculation is correct.
         """
         obj_type = ObjectType(value="")  # Provide the necessary argument
