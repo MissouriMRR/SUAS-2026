@@ -256,6 +256,13 @@ def extract_gps(path: str) -> GPSData:
                 The maximum altitude that the drone must fly at all times, in feet.
         odlc_altitude : int
             The altitude to fly at during the ODLC state, in feet.
+
+    Raises
+    ------
+    KeyError
+        If the structure of the JSON is incorrect.
+    ValueError
+        If there are invalid values in the JSON.
     """
 
     # Load the JSON file as a Python dict to be able to easily access the data
@@ -279,7 +286,9 @@ def extract_gps(path: str) -> GPSData:
         json_data["flyzones"]["boundaryPoints"][0]["longitude"],
     )
 
-    waypoints, waypoints_utm = format_waypoints(json_data, forced_zone_number, forced_zone_letter)
+    waypoints, waypoints_utm = format_waypoints(
+        json_data, forced_zone_number, forced_zone_letter
+    )
 
     odlc_waypoint: dict[str, float]
     for odlc_waypoint in json_data["odlcWaypoints"]:
@@ -295,7 +304,9 @@ def extract_gps(path: str) -> GPSData:
 
         boundary_points.append(BoundaryPoint(latitude, longitude))
         full_boundary_point_utm = BoundaryPointUtm(
-            *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
+            *utm.from_latlon(
+                latitude, longitude, forced_zone_number, forced_zone_letter
+            )
         )
         boundary_points_utm.append(full_boundary_point_utm)
 
@@ -305,9 +316,14 @@ def extract_gps(path: str) -> GPSData:
 
         mapping_boundary.append(BoundaryPoint(latitude, longitude))
         full_boundary_point_utm = BoundaryPointUtm(
-            *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
+            *utm.from_latlon(
+                latitude, longitude, forced_zone_number, forced_zone_letter
+            )
         )
         mapping_boundary_utm.append(full_boundary_point_utm)
+
+    if len(mapping_boundary) != 4:
+        raise ValueError("the mapping boundary must have exactly 4 points")
 
     # Package all data into the GPSData TypedDict to be exported
     waypoint_data: GPSData = {
