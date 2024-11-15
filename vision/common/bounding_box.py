@@ -68,7 +68,7 @@ class BoundingBox:
         # Calculate the 4 vertices of the bounding box
         self.vertices: Vertices = tlwh_to_vertices(top_left[0], top_left[1], width, height)
 
-    def get_x_vals(self) -> list[int]:  # Used by this class only
+    def get_x_vals(self) -> list[int]:
         """
         Gets the x values of the 4 coordinates.
 
@@ -81,7 +81,7 @@ class BoundingBox:
         x_vals: list[int] = [vert[0] for vert in self.vertices]
         return x_vals
 
-    def get_y_vals(self) -> list[int]:  # Used by this class only
+    def get_y_vals(self) -> list[int]:
         """
         Gets the y values of the 4 coordinates.
 
@@ -94,7 +94,7 @@ class BoundingBox:
         y_vals: list[int] = [vert[1] for vert in self.vertices]
         return y_vals
 
-    def get_x_extremes(self) -> tuple[int, int]:  # Currently Used
+    def get_x_extremes(self) -> tuple[int, int]:
         """
         Gets the minimum and maximum x values of the BoundingBox
 
@@ -110,7 +110,7 @@ class BoundingBox:
 
         return min_x, max_x
 
-    def get_y_extremes(self) -> tuple[int, int]:  # Currently Used
+    def get_y_extremes(self) -> tuple[int, int]:
         """
         Gets the minimum and maximum y values of the BoundingBox
 
@@ -126,7 +126,7 @@ class BoundingBox:
 
         return min_y, max_y
 
-    def get_x_avg(self) -> int:  # Used by this class only
+    def get_x_avg(self) -> int:
         """
         Gets the average x coordinate of the bounding box.
 
@@ -138,7 +138,7 @@ class BoundingBox:
 
         return int(np.mean(self.get_x_vals()))
 
-    def get_y_avg(self) -> int:  # Used by this class only
+    def get_y_avg(self) -> int:
         """
         Gets the average y coordinate of the bounding box.
 
@@ -150,7 +150,7 @@ class BoundingBox:
 
         return int(np.mean(self.get_y_vals()))
 
-    def get_center_coord(self) -> tuple[int, int]:  # Currently Used
+    def get_center_coord(self) -> tuple[int, int]:
         """
         Gets the coordinate of the center of the BoundingBox
 
@@ -162,7 +162,7 @@ class BoundingBox:
 
         return (self.get_x_avg(), self.get_y_avg())
 
-    def get_width(self) -> int:  # Currently Used
+    def get_width(self) -> int:
         """
         Get the width of the BoundingBox.
 
@@ -181,7 +181,7 @@ class BoundingBox:
 
         return width
 
-    def get_height(self) -> int:  # Currently Used
+    def get_height(self) -> int:
         """
         Get the height of the BoundingBox.
 
@@ -200,7 +200,7 @@ class BoundingBox:
 
         return height
 
-    def get_width_height(self) -> tuple[int, int]:  # Currently Used
+    def get_width_height(self) -> tuple[int, int]:
         """
         Gets the width and height of the BoundingBox.
 
