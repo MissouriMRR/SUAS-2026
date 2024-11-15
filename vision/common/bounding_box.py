@@ -162,31 +162,6 @@ class BoundingBox:
 
         return (self.get_x_avg(), self.get_y_avg())
 
-    def get_rotation_angle(self) -> float:  # Currently Not Used
-        """
-        Calculates the angle of rotation of the BoundingBox
-        based on the top left and right coordinates.
-
-        Returns
-        -------
-        angle : float
-            The angle of rotation of the BoundingBox in degrees.
-        """
-
-        # Get the top left and right coordinates
-        tl_x: int = self.vertices[0][0]  # Top left x
-        tl_y: int = self.vertices[0][1]  # Top left y
-        tr_x: int = self.vertices[1][0]  # Top right x
-        tr_y: int = self.vertices[1][1]  # Top right y
-
-        angle: float = 0
-        if tr_x - tl_x == 0:  # Prevent division by 0
-            angle = 90.0 if (tr_y - tl_y > 0) else -90.0
-        else:
-            angle = np.rad2deg(np.arctan((tr_y - tl_y) / (tr_x - tl_x)))
-
-        return angle
-
     def get_width(self) -> int:  # Currently Used
         """
         Get the width of the BoundingBox.
@@ -237,32 +212,6 @@ class BoundingBox:
 
         return self.get_width(), self.get_height()
 
-    def get_tlwh(self) -> tuple[int, int, int, int]:  # Currently Not Used
-        """
-        Gets the BoundingBox formatted with top left coordinate, width, and height.
-
-        Returns
-        -------
-        tlwh_coord : tuple[int, int, int, int]
-            the bounding box in top left, width, height format
-
-            tl_x : int
-                the top-left x coordinate of the bounding box
-            tl_y : int
-                the top-left y coordinate of the bounding box
-            width : int
-                the width of the bounding box
-            height : int
-                the height of the bounding box
-        """
-
-        tl_x: int = self.vertices[0][0]
-        tl_y: int = self.vertices[0][1]
-        width: int = self.get_width()
-        height: int = self.get_height()
-
-        return tl_x, tl_y, width, height
-
 
 # Driver for testing functionality of BoundingBox object
 if __name__ == "__main__":
@@ -288,7 +237,6 @@ if __name__ == "__main__":
     print("X average:", object_bounds.get_x_avg())
     print("Y average:", object_bounds.get_y_avg())
 
-    # center and rotation
+    # center
     print()
     print("Center coordinate:", object_bounds.get_center_coord())
-    print("Rotation angle:", object_bounds.get_rotation_angle())
