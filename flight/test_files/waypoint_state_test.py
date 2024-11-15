@@ -179,7 +179,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/waypoint_data.json" if _sim else "flight/data/golf_data.json"
+    path_data_path: str = "flight/data/golf_data.json"
 
     drone: Drone = Drone()
     if _sim:
