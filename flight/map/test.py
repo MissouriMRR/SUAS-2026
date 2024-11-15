@@ -1,3 +1,6 @@
+import asyncio
+import websockets
+
 from PIL import Image, ImageDraw, ImageFilter
 from random import randint
 import time
@@ -42,9 +45,10 @@ modifiable_map_image.save('modded_map.png')
 final_map_image = Image.open('map_image.png')
 final_map_image.save('in_progress_map.png')
 
-while(True):
+
+def map_update():
   #Save updated map image with drone position 
-  time.sleep(2)
+  global modifiable_map_image, final_map_image, longitude_map_position, latitude_map_position
   modifiable_map_image.save('modded_map.png')
   modifiable_map_image = Image.open('in_progress_map.png')
   final_map_image.paste(resized_square, (longitude_map_position+20, latitude_map_position+20))
@@ -53,5 +57,24 @@ while(True):
   latitude_map_position = (randint(1, 500))
   print(longitude_map_position, latitude_map_position)
   modifiable_map_image.paste(resized_drone_img, (longitude_map_position, latitude_map_position))
+
+
+async def echo(websocket, path=None):
+    print("Client connected")
+    try:
+        async for message in websocket:
+            print(f"Received message from client: {message}")
+            map_update()
+            await websocket.send(f"Server says: {message}")
+    except websockets.exceptions.ConnectionClosed:
+        print("Client disconnected")
+
+async def main():
+    async with websockets.serve(echo, "localhost", 8765):
+        print("WebSocket server started on ws://localhost:8765")
+        await asyncio.Future()  
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 

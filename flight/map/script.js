@@ -1,14 +1,24 @@
-function loadImage(path){
-  let image = new Image();
-  image.src = path;
-  setTimeout(function(){}, 100)
-  return image;
+const ws = new WebSocket('ws://localhost:8765');
+
+ws.onopen = () => {
+    console.log("Connected to WebSocket server");
+};
+
+ws.onmessage = (event) => {
+    var myImageElement = document.getElementById('map_image');
+    myImageElement.src = 'modded_map.png?rand=' + Math.random();
+};
+
+function sendMessage() {
+    const message = "Update Map";
+    ws.send(message);
 }
 
-setInterval(function() {
- // var myImageElement = document.getElementById('map_image');
-  myImageElement = loadImage('modded_map.png?rand=' + Math.random());
-}, 3000);
+ws.onclose = () => {
+    console.log("Disconnected from WebSocket server");
+};
 
-//AHHH FLICKER AHHH
-// change html to not multiply cats
+setInterval(sendMessage, 2000);
+
+
+// client and server need to like actually update the image
