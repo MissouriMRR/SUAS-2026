@@ -9,7 +9,6 @@ import json
 import logging
 import math
 import os
-from typing import TypedDict
 
 import dronekit
 import gphoto2
@@ -17,23 +16,9 @@ import gphoto2
 from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
 
+from vision.common.constants import CameraParameters
+
 WAYPOINT_TOLERANCE: int = 1  # in meters
-
-
-class PhotoInfo(TypedDict):
-    """Basic information about a photo."""
-
-    focal_length: float
-    """The focal length, in millimeters."""
-
-    rotation_deg: tuple[float, float, float]
-    """The roll, pitch, and yaw, in degrees."""
-
-    drone_coordinates: tuple[float, float]
-    """The latitude and longitude, in degrees"""
-
-    altitude_f: float
-    """The altitude, in meters."""
 
 
 class Camera:
@@ -79,7 +64,7 @@ class Camera:
     )
         Move the drone to the specified latitude, longitude, and altitude.
         Takes a photo at the end if take_photos is True.
-    _get_photo_information(drone: dronekit.Vehicle)
+    _get_camera_parameters(drone: dronekit.Vehicle)
         Get the current camera information to associate with a photo.
     """
 
@@ -165,17 +150,17 @@ class Camera:
         heading : float, default 0
             The yaw in which the camera should point, in degrees (0 is north, 90 is west).
         """
-        info: dict[str, PhotoInfo] = {}
+        info: dict[str, CameraParameters] = {}
 
         drone.gimbal.rotate(
             -drone.attitude.pitch - 90, 0, heading  # pitch is relative to the drone
         )
         await asyncio.sleep(1.0)
 
-        photo_info: PhotoInfo = await self._get_photo_info(drone)
+        camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
         file_path: str
         _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
-        point: dict[str, PhotoInfo] = {file_path: photo_info}
+        point: dict[str, CameraParameters] = {file_path: camera_parameters}
         info.update(point)
 
         goto_task: asyncio.Task[None] = asyncio.ensure_future(
@@ -214,9 +199,9 @@ class Camera:
 
             if distance >= next_interval_count * interval:
                 next_interval_count += 1
-                photo_info = await self._get_photo_info(drone)
+                camera_parameters = await self._get_camera_parameters(drone)
                 _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
-                point = {file_path: photo_info}
+                point = {file_path: camera_parameters}
                 info.update(point)
 
             await asyncio.sleep(0.25)
@@ -226,12 +211,12 @@ class Camera:
         )
         await asyncio.sleep(1.0)
 
-        photo_info = await self._get_photo_info(drone)
+        camera_parameters = await self._get_camera_parameters(drone)
         _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
-        point = {file_path: photo_info}
+        point = {file_path: camera_parameters}
         info.update(point)
 
-        current_photos: dict[str, PhotoInfo] = {}
+        current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
             with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
                 try:
@@ -271,7 +256,7 @@ class Camera:
         heading : float, default 0
             The yaw in which the camera should point, in degrees (0 is north, 90 is west).
         """
-        info: dict[str, PhotoInfo] = {}
+        info: dict[str, CameraParameters] = {}
 
         await move_to(
             drone,
@@ -295,13 +280,13 @@ class Camera:
         if not take_photos:
             return
 
-        photo_info: PhotoInfo = await self._get_photo_info(drone)
+        camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
         file_path: str
         _, file_path = await self.capture_photo()
-        point: dict[str, PhotoInfo] = {file_path: photo_info}
+        point: dict[str, CameraParameters] = {file_path: camera_parameters}
         info.update(point)
 
-        current_photos: dict[str, PhotoInfo] = {}
+        current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/camera.json"):
             with open("flight/data/camera.json", "r", encoding="utf8") as current_data:
                 try:
@@ -312,7 +297,7 @@ class Camera:
         with open("flight/data/camera.json", "w", encoding="ascii") as camera:
             json.dump(current_photos | info, camera)
 
-    async def _get_photo_info(self, drone: dronekit.Vehicle) -> PhotoInfo:
+    async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
         """
         Gets the current camera information based on a drone's position.
 
@@ -323,7 +308,7 @@ class Camera:
 
         Returns
         -------
-        PhotoInfo
+        CameraParameters
             Camera information to be associated with a photo.
         """
         location: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
@@ -335,11 +320,11 @@ class Camera:
 
         return {
             "focal_length": 24,
-            "rotation_deg": (
+            "rotation_deg": [
                 roll_deg,
                 pitch_deg,
                 yaw_deg,
-            ),
-            "drone_coordinates": (location.lat, location.lon),
+            ],
+            "drone_coordinates": [location.lat, location.lon],
             "altitude_f": location.alt,
         }
