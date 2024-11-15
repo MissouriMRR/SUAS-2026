@@ -23,7 +23,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/waypoint_data.json" if _sim else "flight/data/golf_data.json"
+    path_data_path: str = "flight/data/golf_data.json"
 
     drone: Drone = Drone()
     if _sim:
@@ -49,6 +49,5 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
 
 if __name__ == "__main__":
     print("Pass argument --sim to enable the simulation flag.")
-    print("When the simulation flag is not set, golf data is used for the boundary and waypoints.")
     print()
     asyncio.run(run_test("--sim" in sys.argv))
