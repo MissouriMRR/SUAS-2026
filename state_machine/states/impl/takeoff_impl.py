@@ -4,7 +4,11 @@ import asyncio
 import logging
 
 from flight.extract_gps import extract_gps
-from state_machine.state_tracker import update_state
+from state_machine.state_tracker import (
+    update_state,
+    update_drone,
+    update_flight_settings,
+)
 from state_machine.states.state import State
 from state_machine.states.takeoff import Takeoff
 from state_machine.states.waypoint import Waypoint
@@ -34,6 +38,8 @@ async def run(self: Takeoff) -> State:
     """
     try:
         update_state("Takeoff")
+        update_drone(self.drone)
+        update_flight_settings(self.flight_settings)
         logging.info("Takeoff state running")
 
         # Set takeoff altitude to the minimum allowed altitude, plus one meter

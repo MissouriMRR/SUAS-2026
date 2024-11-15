@@ -34,8 +34,7 @@ async def run(self: Land) -> None:
         update_state("Land")
         update_drone(self.drone)
         update_flight_settings(self.flight_settings)
-
-        logging.info("Landing")
+        logging.info("Land state running")
 
         # Instruct the drone to land
         self.drone.vehicle.mode = dronekit.VehicleMode("RTL")
