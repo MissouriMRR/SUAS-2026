@@ -10,7 +10,7 @@ def calculate_padding(img1, img2, r12):
     # Pre-defined arbitrary offset r12: img1 top left corner - img2 top left corner
     """
     Calculates padding for adding img1 to img2
-    r12 = (offset_x, offset_y) = img1_tl - img2_tl
+    r12 = (offset_x, offset_y) = img1_topleft - img2_topleft
     """
     
     # Only need to pad img2
@@ -56,7 +56,7 @@ def rgb2rgba(img):
     return img_w_alpha
 
 
-def add_to_img(new_img, base_img, new_location):
+def offset_overlay(new_img, base_img, new_location):
     padding = calculate_padding(new_img, base_img, new_location)
     
     padded = pad_image(base_img, padding)
@@ -86,7 +86,7 @@ def main():
     
     offset = np.array([-200, 50])
     
-    padded = add_to_img(img1, img2, offset)
+    padded = offset_overlay(img1, img2, offset)
     
     cv2.imwrite("padded.png", padded)
 
