@@ -316,9 +316,9 @@ class Camera:
         location: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
         attitude: dronekit.Attitude = drone.attitude
-        roll_deg: float = math.degrees(attitude.roll)
-        pitch_deg: float = math.degrees(attitude.pitch)
-        yaw_deg: float = math.degrees(attitude.yaw)
+        roll_deg: float = math.degrees(attitude.roll) - drone.gimbal.roll
+        pitch_deg: float = math.degrees(attitude.pitch) - drone.gimbal.pitch
+        yaw_deg: float = math.degrees(attitude.yaw) - drone.gimbal.yaw
 
         return {
             "focal_length": 24,
