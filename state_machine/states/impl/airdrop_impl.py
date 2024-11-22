@@ -4,7 +4,11 @@ import asyncio
 import logging
 import json
 
-from state_machine.state_tracker import update_state
+from state_machine.state_tracker import (
+    update_state,
+    update_drone,
+    update_flight_settings,
+)
 
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.land import Land
@@ -32,7 +36,9 @@ async def run(self: Airdrop) -> State:
     """
     try:
         update_state("Airdrop")
-        logging.info("Airdrop")
+        update_drone(self.drone)
+        update_flight_settings(self.flight_settings)
+        logging.info("Airdrop state running")
         # uncomment if automatic
         # if self.drone.address == "serial:///dev/ttyFTDI:921600":
         #   setup airdrop
@@ -70,9 +76,10 @@ async def run(self: Airdrop) -> State:
             bottle_loc: dict[str, float] = bottle_locations[str(bottle)]
 
             # Move to the bottle with priority
-            await move_to(self.drone.system, bottle_loc["latitude"], bottle_loc["longitude"], 24)
+            await move_to(self.drone.vehicle, bottle_loc["latitude"], bottle_loc["longitude"], 24)
             logging.info(
-                "Starting bottle drop %s. Wait for drone to be stationary then drop.", bottle
+                "Starting bottle drop %s. Wait for drone to be stationary then drop.",
+                bottle,
             )
             # If bottle drop is automatic these would be used
             # if self.drone.address == "serial:///dev/ttyFTDI:921600":
