@@ -49,19 +49,7 @@ async def run(self: Takeoff) -> State:
         )
         logging.info("Using takeoff altitude of %f m", takeoff_altitude)
 
-        self.drone.vehicle.simple_takeoff(takeoff_altitude)
-
-        # Wait until the drone has stopped taking off
-        while True:
-            altitude: float = self.drone.vehicle.location.global_relative_frame.alt
-            logging.info(
-                "Current altitude: %f",
-                altitude,
-            )
-            if altitude >= takeoff_altitude - 0.5:
-                logging.info("Reached target altitude")
-                break
-            await asyncio.sleep(1.0)
+        await self.drone.takeoff(takeoff_altitude)
 
         return Waypoint(self.drone, self.flight_settings)
     except asyncio.CancelledError as ex:

@@ -3,8 +3,6 @@
 import asyncio
 import logging
 
-import dronekit
-
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -44,15 +42,7 @@ async def run(self: Start) -> State:
         logging.info("Waiting for drone to connect...")
         await self.drone.connect_drone()
 
-        logging.info("Waiting for pre-arm checks to pass...")
-        while not self.drone.vehicle.is_armable:
-            await asyncio.sleep(0.5)
-
-        logging.info("-- Arming")
-        self.drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
-        self.drone.vehicle.armed = True
-        while self.drone.vehicle.mode.name != "GUIDED" or not self.drone.vehicle.armed:
-            await asyncio.sleep(0.5)
+        await self.drone.arm()
 
         logging.info("Start state complete")
         return Takeoff(self.drone, self.flight_settings)

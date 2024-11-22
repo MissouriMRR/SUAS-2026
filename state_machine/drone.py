@@ -1,8 +1,10 @@
 """Defines the Drone class for the state machine."""
 
 import asyncio
-import dronekit
 import logging
+
+import dronekit
+
 from flight.waypoint.calculate_distance import calculate_distance
 
 
@@ -32,18 +34,22 @@ class Drone:
     -------
     __init__(connection_string: str) -> None
         Initialize a new Drone object, but do not connect to a drone.
-    vehicle(self) -> dronekit.Vehicle
-        Get the Dronekit Vehicle object owned by this Drone object.
-    is_connected(self) -> bool
-        Checks if a drone has been connected to.
-    connect_drone(self) -> Awaitable[None]
-        Connect to a drone.
+    arm(self) -> Awaitable[none]
+        Arm the drone.
     close(self) -> Awaitable[none]
         Close the owned DroneKit Vehicle object.
-    def use_sim_settings(self) -> None:
-        Modify the connection settings to connect to a simulated vehicle.
-    def use_real_settings(self) -> None:
+    connect_drone(self) -> Awaitable[None]
+        Connect to a drone.
+    is_connected(self) -> bool
+        Checks if a drone has been connected to.
+    takeoff(self, takeoff_alt: float) -> Awaitable[None]
+        Takeoff vertically to the passed altitude.
+    use_real_settings(self) -> None
         Modify the connection settings to connect to a real vehicle.
+    use_sim_settings(self) -> None
+        Modify the connection settings to connect to a simulated vehicle.
+    vehicle(self) -> dronekit.Vehicle
+        Get the Dronekit Vehicle object owned by this Drone object.
     """
 
     def __init__(self, address: str = "", baud: int | None = None) -> None:
@@ -113,14 +119,9 @@ class Drone:
             else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
         )
 
-    async def arm_and_takeoff(self, takeoff_alt: float) -> None:
+    async def arm(self) -> None:
         """
-        Arm the drone and takeoff vertically to passed altitude
-
-        Parameters
-        ----------
-        takeoff_alt: float
-            Altitude to reach in meters
+        Arm the drone
         """
         logging.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
@@ -135,13 +136,21 @@ class Drone:
         while not self.vehicle.armed or self.vehicle.mode.name != "GUIDED":
             await asyncio.sleep(0.5)
 
+    async def takeoff(self, takeoff_alt: float) -> None:
+        """
+        Takeoff vertically to the passed altitude
+
+        Parameters
+        ----------
+        takeoff_alt: float
+            Altitude to reach in meters
+        """
         self.vehicle.simple_takeoff(takeoff_alt + 1.5)  # Add 5ft for margin of error
 
         # Verify vehicle reaches target altitude
         while self.vehicle.location.global_relative_frame.alt < takeoff_alt:
             await asyncio.sleep(0.5)
-        logging.info(f"Reached target altitude ({takeoff_alt} m).")
-        return
+        logging.info("Reached target altitude (%f m).", takeoff_alt)
 
     async def return_to_launch(self) -> None:
         """
@@ -171,7 +180,6 @@ class Drone:
         ):  # Ensure drone gets within 8in above ground
             await asyncio.sleep(0.5)
         logging.info("Reached ground.")
-        return
 
     async def close(self) -> None:
         """Close the owned DroneKit Vehicle object."""

@@ -3,8 +3,6 @@
 import asyncio
 import logging
 
-import dronekit
-
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -37,15 +35,7 @@ async def run(self: Land) -> None:
         logging.info("Land state running")
 
         # Instruct the drone to land
-        self.drone.vehicle.mode = dronekit.VehicleMode("RTL")
-        while self.drone.vehicle.mode.name != "RTL":
-            await asyncio.sleep(0.5)
-
-        while self.drone.vehicle.system_status.state != "STANDBY":
-            await asyncio.sleep(0.5)
-
-        while self.drone.vehicle.armed:
-            await asyncio.sleep(0.5)
+        await self.drone.return_to_launch()
 
         logging.info("Land state complete.")
         return
