@@ -18,10 +18,13 @@ WAYPOINT_TOLERANCE: int = 6  #
 # pylint: disable=duplicate-code
 async def run(sim: bool) -> None:
     """
-    This function is a driver to test the goto function and runs through the
-    given waypoints in the lats and longs lists at the altitude of 100.
-    Makes the drone move to each location in the lats and longs arrays
-    at the altitude of 100 and
+    This function is a driver to test the move_to function and runs through the
+    given waypoints in the lats and longs lists at the altitude of 15 m.
+
+    Parameters
+    ----------
+    sim : bool
+        Specifies whether to run the state machine in simulation mode.
 
     Notes
     -----

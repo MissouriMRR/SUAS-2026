@@ -15,10 +15,13 @@ from state_machine.drone import Drone
 # pylint: disable=duplicate-code
 async def run(sim: bool) -> None:
     """
-    This function is a driver to test the goto function and runs through the
-    given waypoints in the lats and longs lists at the altitude of 100.
-    Makes the drone move to each location in the lats and longs arrays
-    at the altitude of 100 and
+    This function is a driver to test if the drone can take off to an altitude of 15 m
+    and then land.
+
+    Parameters
+    ----------
+    sim : bool
+        Specifies whether to run the state machine in simulation mode.
 
     Notes
     -----
