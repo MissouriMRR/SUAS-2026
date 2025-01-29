@@ -10,8 +10,10 @@ import logging
 import math
 import os
 
+import cv2
 import dronekit
-import gphoto2
+from siyi_sdk.siyi_sdk import SIYISDK
+from siyi_sdk.stream import SIYIRTSP
 
 from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
@@ -23,12 +25,14 @@ WAYPOINT_TOLERANCE: int = 1  # in meters
 
 class Camera:
     """
-    Initialize a new Camera object to control the Sony RX100-VII camera on the drone
+    Initialize a new Camera object to control the SIYI A8 Mini gimbal camera on the drone
 
     Attributes
     ----------
-    camera : gphoto2.Camera
-        The gphoto2 camera object.
+    camera : SIYISDK
+        The object that controls the camera.
+    stream : SIYIRSTP
+        The video stream from the camera.
     session_id : int
         The session id for the current session.
         This will start at 0 the first time pictures are taken on a given day.
@@ -69,8 +73,16 @@ class Camera:
     """
 
     def __init__(self) -> None:
-        self.camera: gphoto2.Camera = gphoto2.Camera()
-        self.camera.init()
+        self.camera: SIYISDK = SIYISDK()
+        if not self.camera.connect(max_retries=10):
+            logging.error("Failed to connect to the camera")
+
+        camera_name: str = self.camera.getCameraTypeString()
+        self.stream: SIYIRTSP = SIYIRTSP(
+            rtsp_url="rtsp://192.168.144.25:8554/main.264",
+            debug=False,
+            cam_name=camera_name,
+        )
 
         self.session_id: int = 0
         if os.path.exists(f"{os.getcwd()}/images/"):
@@ -83,7 +95,9 @@ class Camera:
 
         logging.info("Camera initialized")
 
-    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
+    async def capture_photo(
+        self, path: str = f"{os.getcwd()}/images/"
+    ) -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -101,27 +115,15 @@ class Camera:
         # So we have to make sure the images folder exists.
         os.makedirs(path, mode=0o777, exist_ok=True)
 
-        file_path = self.camera.capture(gphoto2.GP_CAPTURE_IMAGE)
-        while True:
-            event_type, _event_data = self.camera.wait_for_event(100)
-            if event_type == gphoto2.GP_EVENT_CAPTURE_COMPLETE:
-                photo_name: str = (
-                    f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
-                )
-
-                cam_file = gphoto2.check_result(
-                    gphoto2.gp_camera_file_get(
-                        self.camera,
-                        file_path.folder,
-                        file_path.name,
-                        gphoto2.GP_FILE_TYPE_NORMAL,
-                    )
-                )
-                target_name: str = f"{path}{photo_name}"
-                cam_file.save(target_name)
-                self.image_id += 1
-                logging.info("Image is being saved to %s", target_name)
-                return target_name, photo_name
+        photo_name: str = (
+            f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
+        )
+        target_name: str = f"{path}{photo_name}"
+        # TODO: check image quality
+        cv2.imwrite(target_name, self.stream.getFrame())
+        self.image_id += 1
+        logging.info("Image is being saved to %s", target_name)
+        return target_name, photo_name
 
     async def mapping_move_to(
         self,
@@ -176,7 +178,9 @@ class Camera:
             )
         )
 
-        start_pos: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+        start_pos: dronekit.LocationGlobalRelative = (
+            drone.location.global_relative_frame
+        )
 
         start_lat: float = start_pos.lat
         start_lon: float = start_pos.lon
@@ -186,10 +190,14 @@ class Camera:
         while not goto_task.done():
             # Keep gimbal pointed straight down
             drone.gimbal.rotate(
-                round(-drone.attitude.pitch - 90), round(-drone.attitude.roll), round(heading)
+                round(-drone.attitude.pitch - 90),
+                round(-drone.attitude.roll),
+                round(heading),
             )
 
-            position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+            position: dronekit.LocationGlobalRelative = (
+                drone.location.global_relative_frame
+            )
 
             drone_lat: float = position.lat
             drone_long: float = position.lon
@@ -202,14 +210,18 @@ class Camera:
             if distance >= next_interval_count * interval:
                 next_interval_count += 1
                 camera_parameters = await self._get_camera_parameters(drone)
-                _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
+                _, file_path = await self.capture_photo(
+                    f"{os.getcwd()}/mapping_images/"
+                )
                 point = {file_path: camera_parameters}
                 info.update(point)
 
             await asyncio.sleep(0.25)
 
         drone.gimbal.rotate(
-            round(-drone.attitude.pitch - 90), round(-drone.attitude.roll), round(heading)
+            round(-drone.attitude.pitch - 90),
+            round(-drone.attitude.roll),
+            round(heading),
         )
         await asyncio.sleep(1.0)
 
@@ -220,7 +232,9 @@ class Camera:
 
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
-            with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
+            with open(
+                "flight/data/mapping_photos.json", "r", encoding="utf8"
+            ) as current_data:
                 try:
                     current_photos = json.load(current_data)
                 except json.JSONDecodeError:

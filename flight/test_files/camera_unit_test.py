@@ -5,7 +5,9 @@ from datetime import datetime
 import logging
 import os
 
-import gphoto2
+import cv2
+from siyi_sdk.siyi_sdk import SIYISDK
+from siyi_sdk.stream import SIYIRTSP
 
 
 async def test_capture_image(photo_num: int = 5) -> None:
@@ -17,10 +19,19 @@ async def test_capture_image(photo_num: int = 5) -> None:
         The number of photos to take, by default 1
     """
     logging.info("Connecting to camera...")
-    camera: gphoto2.Camera = gphoto2.Camera()
+    camera: SIYISDK = SIYISDK()
+    if not camera.connect(max_retries=10):
+        logging.error("Failed to initialize camera. Exiting...")
+        return
+
     try:
-        camera.init()
-    except gphoto2.GPhoto2Error as ex:
+        camera_name: str = camera.getCameraTypeString()
+        stream: SIYIRTSP = SIYIRTSP(
+            rtsp_url="rtsp://192.168.144.25:8554/main.264",
+            debug=False,
+            cam_name=camera_name,
+        )
+    except Exception as ex:
         logging.error("Failed to initialize camera. Exiting...")
         logging.error(ex)
         return
@@ -42,25 +53,13 @@ async def test_capture_image(photo_num: int = 5) -> None:
     os.makedirs(path, mode=0o777, exist_ok=True)
 
     while image_id <= photo_num:
-        file_path = camera.capture(gphoto2.GP_CAPTURE_IMAGE)
-        event_type, _event_data = camera.wait_for_event(100)
-        if event_type == gphoto2.GP_EVENT_CAPTURE_COMPLETE:
-            photo_name: str = f"{datetime.now().strftime('%Y%m%d')}_{session_id}_{image_id:04d}.jpg"
-
-            cam_file = gphoto2.check_result(
-                gphoto2.gp_camera_file_get(
-                    camera,
-                    file_path.folder,
-                    file_path.name,
-                    gphoto2.GP_FILE_TYPE_NORMAL,
-                )
-            )
-            target_name: str = f"{path}{photo_name}"
-            cam_file.save(target_name)
-            logging.info("Image #%d is being saved to %s", image_id, target_name)
-            image_id += 1
-            await asyncio.sleep(1)
-            continue
+        photo_name: str = f"{datetime.now().strftime('%Y%m%d')}_{session_id}_{image_id:04d}.jpg"
+        target_name: str = f"{path}{photo_name}"
+        cv2.imwrite(target_name, stream.getFrame())
+        logging.info("Image #%d is being saved to %s", image_id, target_name)
+        image_id += 1
+        await asyncio.sleep(1)
+        continue
 
 
 if __name__ == "__main__":
