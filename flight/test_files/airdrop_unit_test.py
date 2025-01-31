@@ -16,7 +16,6 @@ async def run() -> None:
     Runs the Airdrop unit test
     """
 
-    logging.info("Creating the drone")
     # create a drone object
     drone: Drone = Drone()
     drone.use_sim_settings()
