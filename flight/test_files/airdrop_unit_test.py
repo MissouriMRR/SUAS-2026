@@ -5,8 +5,6 @@ File for the airdrop unit test
 import asyncio
 import logging
 
-import dronekit
-
 from state_machine.flight_settings import FlightSettings
 from state_machine.state_machine import StateMachine
 from state_machine.states import Airdrop
@@ -27,26 +25,9 @@ async def run() -> None:
     # initilize drone configurations
     drone.vehicle.airspeed = 20
 
-    # connect to the drone
-    logging.info("Waiting for pre-arm checks to pass...")
-    while not drone.vehicle.is_armable:
-        await asyncio.sleep(0.5)
+    await drone.arm()
 
-    logging.info("-- Arming")
-    drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
-    drone.vehicle.armed = True
-    while drone.vehicle.mode.name != "GUIDED" or not drone.vehicle.armed:
-        await asyncio.sleep(0.5)
-
-    logging.info("-- Taking off")
-    drone.vehicle.simple_takeoff(12)
-
-    # wait for drone to take off
-    while drone.vehicle.location.global_relative_frame.alt < 11.9:
-        await asyncio.sleep(1)
-
-    # wait for drone to take off
-    await asyncio.sleep(10)
+    await drone.takeoff(12)
 
     flight_settings: FlightSettings = FlightSettings(path_data_path="flight/data/golf_data.json")
 

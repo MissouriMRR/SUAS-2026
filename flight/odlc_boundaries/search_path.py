@@ -9,7 +9,6 @@ import logging
 import asyncio
 import utm
 
-import dronekit
 from shapely.geometry import Polygon
 
 from flight.waypoint.goto import move_to
@@ -114,26 +113,13 @@ async def run() -> None:
     }
 
     # create a drone object
-    logging.info("Waiting for drone to connect...")
     drone: Drone = Drone()
     drone.use_sim_settings()
     await drone.connect_drone()
 
-    logging.info("Waiting for pre-arm checks to pass...")
-    while not drone.vehicle.is_armable:
-        await asyncio.sleep(0.5)
+    await drone.arm()
 
-    logging.info("-- Arming")
-    drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
-    drone.vehicle.armed = True
-    while drone.vehicle.mode.name != "GUIDED" or not drone.vehicle.armed:
-        await asyncio.sleep(0.5)
-
-    logging.info("-- Taking off")
-    drone.vehicle.simple_takeoff(12.0)
-
-    # wait for drone to take off
-    await asyncio.sleep(10)
+    await drone.takeoff(12.0)
 
     # move to each waypoint in mission
     point: int

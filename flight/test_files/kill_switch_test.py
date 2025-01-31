@@ -3,8 +3,6 @@
 import asyncio
 import logging
 
-import dronekit
-
 from state_machine.flight_manager import FlightManager
 from state_machine.drone import Drone
 
@@ -16,23 +14,9 @@ async def run_flight_code() -> None:
     drone.use_sim_settings()
     await drone.connect_drone()
 
-    # connect to the drone
-    logging.info("Waiting for pre-arm checks to pass...")
-    while not drone.vehicle.is_armable:
-        await asyncio.sleep(0.5)
+    await drone.arm()
 
-    logging.info("-- Arming")
-    drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
-    drone.vehicle.armed = True
-    while drone.vehicle.mode.name != "GUIDED" or not drone.vehicle.armed:
-        await asyncio.sleep(0.5)
-
-    logging.info("-- Taking off")
-    drone.vehicle.simple_takeoff(12)
-
-    # wait for drone to take off
-    while drone.vehicle.location.global_relative_frame.alt < 11.9:
-        await asyncio.sleep(1)
+    await drone.takeoff(12)
 
     await asyncio.sleep(5)
     logging.info("Holding position. Test the kill switch now.")
