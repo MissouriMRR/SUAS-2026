@@ -38,10 +38,7 @@ async def run(self: Start) -> State:
         update_flight_settings(self.flight_settings)
         logging.info("Start state running")
 
-        # connect to the drone
-        logging.info("Waiting for drone to connect...")
         await self.drone.connect_drone()
-
         await self.drone.arm()
 
         logging.info("Start state complete")
