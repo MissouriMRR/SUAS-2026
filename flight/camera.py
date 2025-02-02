@@ -2,9 +2,6 @@
 
 # pylint: disable=too-many-locals
 # Not worth to deal with this with the time crunch we are in
-
-import aiofiles
-import aiohttp
 import asyncio
 from datetime import datetime
 import json
@@ -12,7 +9,8 @@ import logging
 import math
 import os
 
-import cv2
+import aiofiles
+import aiohttp
 import dronekit
 from siyi_sdk.siyi_sdk import SIYISDK
 from siyi_sdk.stream import SIYIRTSP
@@ -76,7 +74,7 @@ class Camera:
 
     def __init__(self) -> None:
         self.camera: SIYISDK = SIYISDK()
-        if not self.camera.connect(max_retries=10):
+        if not self.camera.connect(maxRetries=10):
             logging.error("Failed to connect to the camera")
 
         camera_name: str = self.camera.getCameraTypeString()
@@ -98,9 +96,7 @@ class Camera:
 
         logging.info("Camera initialized")
 
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str]:
+    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -117,44 +113,50 @@ class Camera:
         # If the images folder doesn't exist, we can't save images.
         # So we have to make sure the images folder exists.
         os.makedirs(path, mode=0o777, exist_ok=True)
-        
+
         photo_result = self.camera.requestPhoto()
         if photo_result is None:
             logging.error("Failed to take photo")
-            raise Exception("Failed to take photo")
-        
+            raise ValueError("Failed to take photo")
+
         # Retrieve the image from the gimbal SD card
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{self.base_api_url}/api/v1/getmediacount?media_type=0&path\"101SIYI_IMG\"") as response:
+            async with session.get(
+                f'{self.base_api_url}/api/v1/getmediacount?media_type=0&path"101SIYI_IMG"'
+            ) as response:
                 data = await response.json()
                 if response.status != 200:
                     logging.error("Failed to get media count. Response data: %s", data)
-                    raise Exception("Failed to get media count")
+                    raise ValueError("Failed to get media count")
                 media_count: int = data["data"]["count"]
-            
-            async with session.get(f"{self.base_api_url}/api/v1/getmedialist?media_type=0&path\"101SIYI_IMG\"&start={media_count-1}&count=1") as response:
+
+            async with session.get(
+                f"{self.base_api_url}/api/v1/getmedialist?"
+                f'media_type=0&path"101SIYI_IMG"&start={media_count-1}&count=1'
+            ) as response:
                 data = await response.json()
                 if response.status != 200:
                     logging.error("Failed to get media list. Response data: %s", data)
-                    raise Exception("Failed to get media list")
+                    raise ValueError("Failed to get media list")
                 try:
                     media_path: str = data["data"]["list"][0]["url"]
-                except IndexError:
+                except IndexError as exc:
                     logging.error("Failed to get media path. Response data: %s", data)
-            
+                    raise ValueError("Failed to get media path") from exc
+
             async with session.get(media_path) as response:
                 data = await response.read()
                 if response.status != 200:
                     logging.error("Failed to get media. Response data: %s", data)
-                    raise Exception("Failed to get media")
+                    raise ValueError("Failed to get media")
                 photo_name: str = (
                     f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
                 )
                 target_name: str = f"{path}{photo_name}"
-                
+
                 async with aiofiles.open(target_name, "wb") as file:
                     await file.write(data)
-                
+
                 logging.info("Image is being saved to %s", target_name)
                 self.image_id += 1
                 return target_name, photo_name
@@ -212,9 +214,7 @@ class Camera:
             )
         )
 
-        start_pos: dronekit.LocationGlobalRelative = (
-            drone.location.global_relative_frame
-        )
+        start_pos: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
         start_lat: float = start_pos.lat
         start_lon: float = start_pos.lon
@@ -229,9 +229,7 @@ class Camera:
                 round(heading),
             )
 
-            position: dronekit.LocationGlobalRelative = (
-                drone.location.global_relative_frame
-            )
+            position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
             drone_lat: float = position.lat
             drone_long: float = position.lon
@@ -244,9 +242,7 @@ class Camera:
             if distance >= next_interval_count * interval:
                 next_interval_count += 1
                 camera_parameters = await self._get_camera_parameters(drone)
-                _, file_path = await self.capture_photo(
-                    f"{os.getcwd()}/mapping_images/"
-                )
+                _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
                 point = {file_path: camera_parameters}
                 info.update(point)
 
@@ -266,9 +262,7 @@ class Camera:
 
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
-            with open(
-                "flight/data/mapping_photos.json", "r", encoding="utf8"
-            ) as current_data:
+            with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
                 try:
                     current_photos = json.load(current_data)
                 except json.JSONDecodeError:
