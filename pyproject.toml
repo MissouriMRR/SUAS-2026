@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = []
 license = "MIT"
-#package.mode = false
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -23,10 +23,10 @@ Shapely = "^1.8.1"
 nptyping = "^2.3.1"
 scipy = "^1.9.3"
 ticlib = "^0.2.2"
-torch = "^1.13.1"
 pandas = "^1.5.3"
 psutil = "^5.9.4"
-torchvision = "^0.14.1"
+torch = { version = "^2.3", source = "pytorch-cpu", markers = "extra=='cpu' and extra!='cuda'" }
+torchvision = { version = "^0.18", source = "pytorch-cpu", markers = "extra=='cpu' and extra!='cuda'" }
 pyyaml = "^6.0"
 seaborn = "^0.12.2"
 gitpython = "^3.1.31"
@@ -34,6 +34,31 @@ setuptools = "^67.4.0"
 geopy = "^2.3.0"
 pyserial = "^3.5"
 pathfinding = "^1.0.1"
+aiohttp = "^3.11.11"
+siyi_sdk = {file = "flight/siyi_sdk-2024.9.13-py3-none-any.whl" }
+aiofiles = "^24.1.0"
+
+[tool.poetry.group.cuda]
+# All of the following torch specific additions are from https://github.com/lucaspar/poetry-torch
+optional = true
+
+[tool.poetry.group.cuda.dependencies]
+    torch       = { version = "^2.3", source = "pytorch-cuda", markers = "extra=='cuda' and extra!='cpu'" }
+    torchvision = { version = "^0.18", source = "pytorch-cuda", markers = "extra=='cuda' and extra!='cpu'" }
+
+[tool.poetry.extras]
+    cpu  = ["torch", "torchvision"]
+    cuda = ["torch", "torchvision"]
+
+[[tool.poetry.source]]
+    name     = "pytorch-cuda"
+    priority = "explicit"
+    url      = "https://download.pytorch.org/whl/cu121"
+
+[[tool.poetry.source]]
+    name     = "pytorch-cpu"
+    priority = "explicit"
+    url      = "https://download.pytorch.org/whl/cpu"
 
 [tool.poetry.dev-dependencies]
 black = "^21.12b0"
