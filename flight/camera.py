@@ -74,7 +74,7 @@ class Camera:
 
     def __init__(self) -> None:
         self.camera: SIYISDK = SIYISDK()
-        if not self.camera.connect(max_retries=10):
+        if not self.camera.connect(maxRetries=10):
             logging.error("Failed to connect to the camera")
 
         camera_name: str = self.camera.getCameraTypeString()
@@ -95,9 +95,7 @@ class Camera:
 
         logging.info("Camera initialized")
 
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str]:
+    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -119,7 +117,6 @@ class Camera:
             f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
         )
         target_name: str = f"{path}{photo_name}"
-        # TODO: check image quality
         cv2.imwrite(target_name, self.stream.getFrame())
         self.image_id += 1
         logging.info("Image is being saved to %s", target_name)
@@ -178,9 +175,7 @@ class Camera:
             )
         )
 
-        start_pos: dronekit.LocationGlobalRelative = (
-            drone.location.global_relative_frame
-        )
+        start_pos: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
         start_lat: float = start_pos.lat
         start_lon: float = start_pos.lon
@@ -195,9 +190,7 @@ class Camera:
                 round(heading),
             )
 
-            position: dronekit.LocationGlobalRelative = (
-                drone.location.global_relative_frame
-            )
+            position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
             drone_lat: float = position.lat
             drone_long: float = position.lon
@@ -210,9 +203,7 @@ class Camera:
             if distance >= next_interval_count * interval:
                 next_interval_count += 1
                 camera_parameters = await self._get_camera_parameters(drone)
-                _, file_path = await self.capture_photo(
-                    f"{os.getcwd()}/mapping_images/"
-                )
+                _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
                 point = {file_path: camera_parameters}
                 info.update(point)
 
@@ -232,9 +223,7 @@ class Camera:
 
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
-            with open(
-                "flight/data/mapping_photos.json", "r", encoding="utf8"
-            ) as current_data:
+            with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
                 try:
                     current_photos = json.load(current_data)
                 except json.JSONDecodeError:
