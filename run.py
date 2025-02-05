@@ -16,11 +16,14 @@ if __name__ == "__main__":
     # Run multiprocessing function
     try:
         SIM_FLAG: bool = False
+        AIRSIM_FLAG: bool = False
         logging.basicConfig(level=logging.INFO)
         logging.info("Starting processes")
         flight_manager: FlightManager = FlightManager()
         if "-s" in sys.argv:
             SIM_FLAG = True
-        asyncio.run(flight_manager.run_manager(SIM_FLAG))
+        elif "-a" in sys.argv:
+            AIRSIM_FLAG = True
+        asyncio.run(flight_manager.run_manager(SIM_FLAG, AIRSIM_FLAG))
     finally:
         logging.info("Done!")

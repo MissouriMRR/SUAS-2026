@@ -11,6 +11,9 @@ import dronekit
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.drone import Drone
 
+SIM_ADDR: str = "udp://:14540"
+AIRSIM_ADDR: str = "udp://:14030"
+CON_ADDR: str = "serial:///dev/ttyFTDI:921600"
 WAYPOINT_TOLERANCE: int = 6
 
 

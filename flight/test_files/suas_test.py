@@ -6,10 +6,73 @@ import asyncio
 import logging
 import sys
 
-import dronekit
+from typing import List
 
-from flight.waypoint.goto import move_to
-from state_machine.drone import Drone
+from mavsdk import System
+
+
+SIM_ADDR: str = "udp://:14540"
+AIRSIM_ADDR: str = "udp://:14030"
+CON_ADDR: str = "serial:///dev/ttyFTDI:921600"
+
+
+async def move_to(
+    drone: System, latitude: float, longitude: float, altitude: float, fast_param: float
+) -> None:
+    """
+    This function takes in a latitude, longitude and altitude and autonomously
+    moves the drone to that waypoint.
+
+    Parameters
+    ----------
+    drone: System
+        a drone object that has all offboard data needed for computation
+    latitude: float
+        a float containing the requested latitude to move to
+    longitude: float
+        a float containing the requested longitude to move to
+    altitude: float
+        a float contatining the requested altitude to go to in meters
+    fast_param: float
+        a float that determines if the drone will take less time checking its precise location
+        before moving on to another waypoint. If its 1, it will move at normal speed,
+        if its less than 1(0.83), it will be faster.
+    """
+
+    # get current altitude
+    async for terrain_info in drone.telemetry.home():
+        absolute_altitude: float = terrain_info.absolute_altitude_m
+        break
+
+    await drone.action.goto_location(latitude, longitude, altitude + absolute_altitude, 0)
+    location_reached: bool = False
+    # First determine if we need to move fast through waypoints or need to slow down at each one
+    # Then loops until the waypoint is reached
+    while not location_reached:
+        logging.info("Going to waypoint")
+        print("Going to waypoint")
+        async for position in drone.telemetry.position():
+            # continuously checks current latitude, longitude and altitude of the drone
+            drone_lat: float = position.latitude_deg
+            drone_long: float = position.longitude_deg
+            drone_alt: float = position.relative_altitude_m
+
+            #  accurately checks if location is reached and stops for 15 secs and then moves on.
+            if (
+                (round(drone_lat, int(6 * fast_param)) == round(latitude, int(6 * fast_param)))
+                and (
+                    round(drone_long, int(6 * fast_param)) == round(longitude, int(6 * fast_param))
+                )
+                and (round(drone_alt, 1) == round(altitude, 1))
+            ):
+                location_reached = True
+                logging.info("arrived")
+                print("arrived")
+                break
+
+        # tell machine to sleep to prevent constant polling, preventing battery drain
+        await asyncio.sleep(1)
+    return
 
 
 async def run() -> None:

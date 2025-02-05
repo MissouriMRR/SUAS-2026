@@ -6,10 +6,10 @@ Functions
 in_bounds(boundary, latitude, longitude, altitude)
     Checks if a given point is within a specified boundary.
 
-waypoint_check(drone, _sim)
+waypoint_check(drone, _sim, _airsim)
     Verifies if a drone reaches each waypoint in a predefined path.
 
-run_test(_sim)
+run_test(_sim, _airsim)
     Initializes the state machine and starts the waypoint check.
 """
 
@@ -89,7 +89,7 @@ def in_bounds(
     return inside
 
 
-async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
+async def waypoint_check(drone: Drone, _sim: bool, _airsim: bool, path_data_path: str) -> None:
     """
     Checks if the drone reaches each waypoint in a list and remains
     within the specified boundary during its flight.
@@ -99,7 +99,9 @@ async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
     drone : Drone
         The drone object from the flight manager.
     _sim : bool
-        Specifies whether the function is being run in a simulation mode.
+        Specifies whether the function is being run in an Ardupilot simulation mode.
+    _airsim : bool
+        Specifies whether the function is being run in an AirSim simulation mode.
     path_data_path : str
         The path to the JSON file containing the boundary and waypoint data.
     """
@@ -159,7 +161,7 @@ async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
         logging.info("(Waypoint State Test) Waypoint %d reached.", waypoint_num)
 
 
-async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
+async def run_test(_sim: bool, _airsim: bool) -> None:  # Temporary fix for unused variable
     """
     Initialize and run the flight manager and waypoint check for testing
     the state machine in either simulated or real-world mode.
@@ -167,7 +169,9 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     Parameters
     ----------
     _sim : bool
-        Specifies whether to run the state machine in simulation mode.
+        Specifies whether to run the state machine in Ardupilot simulation mode.
+    _airsim : bool
+        Specifies whether to run the state machine in AirSim simulation mode.
     """
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
@@ -181,19 +185,23 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
         drone.use_real_settings()
 
     drone.odlc_scan = False
-    flight_settings: FlightSettings = FlightSettings(sim_flag=_sim, path_data_path=path_data_path)
+    flight_settings: FlightSettings = FlightSettings(
+        sim_flags=(_sim, _airsim), path_data_path=path_data_path
+    )
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
-    await waypoint_check(drone, _sim, path_data_path)
+    await waypoint_check(drone, _sim, _airsim, path_data_path)
 
     while not state_task.done():
         await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    print("Pass argument --sim to enable the simulation flag.")
+    print("Pass argument --sim to enable the Ardupilot simulation flag.")
+    print("Pass argument --airsim to enable the Ardupilot simulation flag.")
+    print("When the simulation flag is not set, golf data is used for the boundary and waypoints.")
     print()
-    asyncio.run(run_test("--sim" in sys.argv))
+    asyncio.run(run_test("--sim" in sys.argv, "--airsim" in sys.argv))
