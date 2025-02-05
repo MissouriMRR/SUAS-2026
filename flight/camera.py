@@ -73,6 +73,7 @@ class Camera:
     """
 
     def __init__(self) -> None:
+        logging.info("Connecting to camera...")
         self.camera: SIYISDK = SIYISDK()
         if not self.camera.connect(maxRetries=10):
             logging.error("Failed to connect to the camera")
@@ -157,7 +158,7 @@ class Camera:
                 async with aiofiles.open(target_name, "wb") as file:
                     await file.write(data)
 
-                logging.info("Image is being saved to %s", target_name)
+                logging.info("Image #%d is being saved to %s", self.image_id, target_name)
                 self.image_id += 1
                 return target_name, photo_name
 
