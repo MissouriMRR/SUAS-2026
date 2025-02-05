@@ -2,7 +2,6 @@
 
 # pylint: disable=too-many-locals
 # Not worth to deal with this with the time crunch we are in
-
 import asyncio
 from datetime import datetime
 import json
@@ -10,7 +9,8 @@ import logging
 import math
 import os
 
-import cv2
+import aiofiles
+import aiohttp
 import dronekit
 from siyi_sdk.siyi_sdk import SIYISDK
 from siyi_sdk.stream import SIYIRTSP
@@ -92,6 +92,7 @@ class Camera:
                         self.session_id = int(file.split("_")[1]) + 1
 
         self.image_id: int = 0
+        self.base_api_url: str = "http://192.168.144.25:82//cgi-bin/media.cgi"
 
         logging.info("Camera initialized")
 
@@ -113,14 +114,52 @@ class Camera:
         # So we have to make sure the images folder exists.
         os.makedirs(path, mode=0o777, exist_ok=True)
 
-        photo_name: str = (
-            f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
-        )
-        target_name: str = f"{path}{photo_name}"
-        cv2.imwrite(target_name, self.stream.getFrame())
-        self.image_id += 1
-        logging.info("Image is being saved to %s", target_name)
-        return target_name, photo_name
+        photo_result = self.camera.requestPhoto()
+        if photo_result is None:
+            logging.error("Failed to take photo")
+            raise ValueError("Failed to take photo")
+
+        # Retrieve the image from the gimbal SD card
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f'{self.base_api_url}/api/v1/getmediacount?media_type=0&path"101SIYI_IMG"'
+            ) as response:
+                data = await response.json()
+                if response.status != 200:
+                    logging.error("Failed to get media count. Response data: %s", data)
+                    raise ValueError("Failed to get media count")
+                media_count: int = data["data"]["count"]
+
+            async with session.get(
+                f"{self.base_api_url}/api/v1/getmedialist?"
+                f'media_type=0&path"101SIYI_IMG"&start={media_count-1}&count=1'
+            ) as response:
+                data = await response.json()
+                if response.status != 200:
+                    logging.error("Failed to get media list. Response data: %s", data)
+                    raise ValueError("Failed to get media list")
+                try:
+                    media_path: str = data["data"]["list"][0]["url"]
+                except IndexError as exc:
+                    logging.error("Failed to get media path. Response data: %s", data)
+                    raise ValueError("Failed to get media path") from exc
+
+            async with session.get(media_path) as response:
+                data = await response.read()
+                if response.status != 200:
+                    logging.error("Failed to get media. Response data: %s", data)
+                    raise ValueError("Failed to get media")
+                photo_name: str = (
+                    f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
+                )
+                target_name: str = f"{path}{photo_name}"
+
+                async with aiofiles.open(target_name, "wb") as file:
+                    await file.write(data)
+
+                logging.info("Image is being saved to %s", target_name)
+                self.image_id += 1
+                return target_name, photo_name
 
     async def mapping_move_to(
         self,
