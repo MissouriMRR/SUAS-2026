@@ -25,28 +25,38 @@ async def run_flight_code() -> None:
         await asyncio.sleep(1)
 
 
-async def start_1() -> None:
+async def start_flight() -> None:
     """Start the flight code in async."""
-    asyncio.run(run_flight_code())
+    await run_flight_code()
 
 
-async def start_2(flight_process: asyncio.Task[None]) -> None:
+async def start_kill_switch(flight_task: asyncio.Task[None]) -> None:
     """Start the kill switch in async.
 
-    Args:
-        flight_process (Process): The process running the flight code.
+    Parameters
+    ----------
+    flight_process : Process
+        The process running the flight code.
     """
+    for countdown in range(20, 0, -1):
+        logging.info("Activating the kill switch in %d...", countdown)
+        await asyncio.sleep(1)
+
     flight_manager: FlightManager = FlightManager()
     flight_manager.drone.use_sim_settings()
-    asyncio.run(FlightManager().kill_switch(flight_process))
+
+    await flight_manager.kill_switch(flight_task)
 
 
 async def start_test() -> None:
     """Start the unit test."""
     logging.basicConfig(level=logging.INFO)
 
-    flight_manager_task: asyncio.Task[None] = asyncio.ensure_future(start_1())
-    asyncio.ensure_future(start_2(flight_manager_task))
+    flight_task: asyncio.Task[None] = asyncio.ensure_future(start_flight())
+    kill_switch_task: asyncio.Task[None] = asyncio.ensure_future(start_kill_switch(flight_task))
+
+    while not kill_switch_task.done():
+        await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
