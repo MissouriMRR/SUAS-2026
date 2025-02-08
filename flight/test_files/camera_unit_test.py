@@ -16,7 +16,7 @@ async def test_capture_image(photo_count: int = 5) -> None:
         The number of photos to take, by default 1
     """
     camera: Camera = Camera()
-
+    logging.info("Current camera attitude: %s", camera.camera.getAttitude())
     logging.info("Capturing images...")
 
     # If the images folder doesn't exist, we can't save images.

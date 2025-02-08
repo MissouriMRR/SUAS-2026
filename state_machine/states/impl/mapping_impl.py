@@ -79,17 +79,6 @@ async def run(self: Mapping) -> State:
         )
 
         # Get average direction of short edges
-        camera_heading: float = (
-            math.degrees(
-                math.atan2(
-                    (mapping_boundary_utm[3].northing - mapping_boundary_utm[0].northing)
-                    + (mapping_boundary_utm[2].northing - mapping_boundary_utm[1].northing),
-                    (mapping_boundary_utm[3].easting - mapping_boundary_utm[0].easting)
-                    + (mapping_boundary_utm[2].easting - mapping_boundary_utm[1].easting),
-                )
-            )
-            - 90.0
-        ) % 360.0
         step_count: int = math.ceil(short_edge_length / VERTICAL_PHOTO_SPACING)
 
         utm_zone_number = mapping_boundary_utm[0].zone_number
@@ -132,10 +121,11 @@ async def run(self: Mapping) -> State:
                 lon,
                 MAPPING_ALTITUDE,
                 HORIZONTAL_PHOTO_SPACING,
-                camera_heading,
             )
 
             reverse_direction = not reverse_direction
+
+        camera.camera.disconnect()
 
         logging.info("Mapping state complete.")
     except asyncio.CancelledError as ex:

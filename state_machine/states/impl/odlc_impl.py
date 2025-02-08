@@ -145,12 +145,11 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
 
             if camera:
                 await camera.odlc_move_to(
-                    self.drone,
+                    self.drone.vehicle,
                     gps_data["odlc_waypoints"][point].latitude,
                     gps_data["odlc_waypoints"][point].longitude,
                     gps_data["odlc_altitude"],
                     take_photos,
-                    gps_data["odlc_heading"],
                 )
             else:
                 await move_to(
@@ -170,6 +169,8 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
         if airdrops >= self.flight_settings.standard_object_count:
             break
 
+    if camera:
+        camera.camera.disconnect()
     capture_status.value = c_bool(True)  # type: ignore
     self.drone.odlc_scan = False
     logging.info("ODLC scan complete")
