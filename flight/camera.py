@@ -166,7 +166,6 @@ class Camera:
         longitude: float,
         altitude: float,
         interval: float,
-        heading: float = 0,
     ) -> None:
         """
         Moves to the drone to the requested waypoint while taking photos for the mapping state.
@@ -188,12 +187,7 @@ class Camera:
         """
         info: dict[str, CameraParameters] = {}
 
-        drone.gimbal.rotate(
-            round(-drone.attitude.pitch - 90),  # must use integers
-            round(-drone.attitude.roll),
-            round(heading),  # pitch and roll are relative to the drone
-        )
-        await asyncio.sleep(1.0)
+        self.camera.requestSetAngles(0, -90)  # Point straight down if it isn't already
 
         camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
         file_path: str
@@ -220,13 +214,6 @@ class Camera:
 
         next_interval_count: int = 1
         while not goto_task.done():
-            # Keep gimbal pointed straight down
-            drone.gimbal.rotate(
-                round(-drone.attitude.pitch - 90),
-                round(-drone.attitude.roll),
-                round(heading),
-            )
-
             position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
             drone_lat: float = position.lat
@@ -245,12 +232,6 @@ class Camera:
                 info.update(point)
 
             await asyncio.sleep(0.25)
-
-        drone.gimbal.rotate(
-            round(-drone.attitude.pitch - 90),
-            round(-drone.attitude.roll),
-            round(heading),
-        )
         await asyncio.sleep(1.0)
 
         camera_parameters = await self._get_camera_parameters(drone)
@@ -276,7 +257,6 @@ class Camera:
         longitude: float,
         altitude: float,
         take_photos: bool,
-        heading: float = 0,
     ) -> None:
         """
         This function takes in a latitude, longitude and altitude and autonomously
@@ -311,11 +291,7 @@ class Camera:
 
         if take_photos:
             # Point the gimbal straight down
-            drone.gimbal.rotate(
-                round(-drone.gimbal.pitch - 90),
-                round(-drone.gimbal.roll),
-                round(heading),
-            )
+            self.camera.requestSetAngles(0, -90)
 
         await asyncio.sleep(2)
 
@@ -341,7 +317,7 @@ class Camera:
 
     async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
         """
-        Gets the current camera information based on a drone's position.
+        Gets the current camera information based on a drone's position_pitch.
 
         Parameters
         ----------
@@ -354,19 +330,16 @@ class Camera:
             Camera information to be associated with a photo.
         """
         location: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+        gimbal_attitude = self.camera.getAttitude()
 
         attitude: dronekit.Attitude = drone.attitude
-        roll_deg: float = math.degrees(attitude.roll) - drone.gimbal.roll
-        pitch_deg: float = math.degrees(attitude.pitch) - drone.gimbal.pitch
-        yaw_deg: float = math.degrees(attitude.yaw) - drone.gimbal.yaw
+        roll_deg: float = math.degrees(attitude.roll) - gimbal_attitude[2]
+        pitch_deg: float = math.degrees(attitude.pitch) - gimbal_attitude[1]
+        yaw_deg: float = math.degrees(attitude.yaw) - gimbal_attitude[0]
 
-        return {
-            "focal_length": 24,
-            "rotation_deg": [
-                roll_deg,
-                pitch_deg,
-                yaw_deg,
-            ],
-            "drone_coordinates": [location.lat, location.lon],
-            "altitude_f": location.alt,
-        }
+        return CameraParameters(
+            focal_length=24,
+            rotation_deg=[roll_deg, pitch_deg, yaw_deg],
+            drone_coordinates=[location.lat, location.lon],
+            altitude_f=location.alt,
+        )
