@@ -28,6 +28,8 @@ async def test_capture_image(photo_count: int = 5) -> None:
         await camera.capture_photo()
         await asyncio.sleep(1)
 
+    camera.camera.disconnect()
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

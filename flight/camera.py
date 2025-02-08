@@ -9,11 +9,10 @@ import logging
 import math
 import os
 
-import aiofiles
+import aiofiles  # type: ignore
 import aiohttp
 import dronekit
 from siyi_sdk.siyi_sdk import SIYISDK
-from siyi_sdk.stream import SIYIRTSP
 
 from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
@@ -78,13 +77,6 @@ class Camera:
         if not self.camera.connect(maxRetries=10):
             logging.error("Failed to connect to the camera")
 
-        camera_name: str = self.camera.getCameraTypeString()
-        self.stream: SIYIRTSP = SIYIRTSP(
-            rtsp_url="rtsp://192.168.144.25:8554/main.264",
-            debug=False,
-            cam_name=camera_name,
-        )
-
         self.session_id: int = 0
         if os.path.exists(f"{os.getcwd()}/images/"):
             for file in os.listdir(f"{os.getcwd()}/images/"):
@@ -94,6 +86,10 @@ class Camera:
 
         self.image_id: int = 0
         self.base_api_url: str = "http://192.168.144.25:82//cgi-bin/media.cgi"
+
+        # Set gimbal to point straight down for taking pictures
+        if not self.camera.requestSetAngles(0, -90):
+            logging.error("Failed to set gimbal angle")
 
         logging.info("Camera initialized")
 
@@ -123,7 +119,7 @@ class Camera:
         # Retrieve the image from the gimbal SD card
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'{self.base_api_url}/api/v1/getmediacount?media_type=0&path"101SIYI_IMG"'
+                f"{self.base_api_url}/api/v1/getmediacount?media_type=0&path=101SIYI_IMG"
             ) as response:
                 data = await response.json()
                 if response.status != 200:
@@ -131,16 +127,17 @@ class Camera:
                     raise ValueError("Failed to get media count")
                 media_count: int = data["data"]["count"]
 
+            # Have to request for all images in the directory due to a SIYI firmware bug
             async with session.get(
                 f"{self.base_api_url}/api/v1/getmedialist?"
-                f'media_type=0&path"101SIYI_IMG"&start={media_count-1}&count=1'
+                f"media_type=0&path=101SIYI_IMG&start=0&count={media_count}"
             ) as response:
                 data = await response.json()
                 if response.status != 200:
                     logging.error("Failed to get media list. Response data: %s", data)
                     raise ValueError("Failed to get media list")
                 try:
-                    media_path: str = data["data"]["list"][0]["url"]
+                    media_path: str = data["data"]["list"][-1]["url"]
                 except IndexError as exc:
                     logging.error("Failed to get media path. Response data: %s", data)
                     raise ValueError("Failed to get media path") from exc
