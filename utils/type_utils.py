@@ -47,11 +47,4 @@ def check_list_type(obj: object, item_type: Type[T]) -> TypeGuard[list[T]]:
         True if `obj` is a list whose items are all of the type given by `item_type`, otherwise
         False.
     """
-    if not isinstance(obj, list):
-        return False
-
-    for item in obj:
-        if not isinstance(item, item_type):
-            return False
-
-    return True
+    return isinstance(obj, list) and all(isinstance(item, item_type) for item in obj)
