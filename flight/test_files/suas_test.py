@@ -3,10 +3,7 @@ File for test way point path for SUAS 3 miles in length
 """
 
 import asyncio
-import logging
 import sys
-
-import dronekit
 
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
@@ -25,26 +22,9 @@ async def run() -> None:
     # initilize drone configurations
     drone.vehicle.airspeed = 30
 
-    # connect to the drone
-    logging.info("Waiting for pre-arm checks to pass...")
-    while not drone.vehicle.is_armable:
-        await asyncio.sleep(0.5)
+    await drone.arm()
 
-    logging.info("-- Arming")
-    drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
-    drone.vehicle.armed = True
-    while drone.vehicle.mode.name != "GUIDED" or not drone.vehicle.armed:
-        await asyncio.sleep(0.5)
-
-    logging.info("-- Taking off")
-    drone.vehicle.simple_takeoff(12)
-
-    # wait for drone to take off
-    while drone.vehicle.location.global_relative_frame.alt < 11.9:
-        await asyncio.sleep(1)
-
-    # wait for drone to take off
-    await asyncio.sleep(60)
+    await drone.takeoff(12)
 
     obj_altitude: float = 12
     points: list[tuple[float, float]] = [
@@ -64,11 +44,7 @@ async def run() -> None:
         await move_to(drone.vehicle, point[0], point[1], obj_altitude)
 
     # return home
-    drone.vehicle.mode = dronekit.VehicleMode("RTL")
-    while drone.vehicle.mode.name != "RTL":
-        await asyncio.sleep(0.5)
-    while drone.vehicle.system_status.state != "STANDBY":
-        await asyncio.sleep(0.5)
+    await drone.return_to_launch()
     print("Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect
