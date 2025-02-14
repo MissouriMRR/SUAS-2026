@@ -113,11 +113,13 @@ class Drone:
         if len(self.address) == 0:
             raise RuntimeError("no connection address specified")
 
+        logging.info("Waiting for drone to connect...")
         self._vehicle = (
             dronekit.connect(self.address, wait_ready=True)
             if self.baud is None
             else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
         )
+        logging.info("Drone discovered!")
 
     async def arm(self) -> None:
         """
@@ -145,6 +147,7 @@ class Drone:
         takeoff_alt: float
             Altitude to reach in meters
         """
+        logging.info("Using takeoff altitude of %f m", takeoff_alt)
         self.vehicle.simple_takeoff(takeoff_alt + 1.5)  # Add 5ft for margin of error
 
         # Verify vehicle reaches target altitude

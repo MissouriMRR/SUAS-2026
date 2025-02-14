@@ -88,29 +88,14 @@ async def run() -> None:
 
     drone: Drone = Drone()
     drone.use_real_settings()
-
-    # create a drone object
-    logging.info("Waiting for drone to connect...")
     await drone.connect_drone()
 
     # initilize drone configurations
     drone.vehicle.airspeed = 20
 
-    logging.info("Waiting for pre-arm checks to pass...")
-    while not drone.vehicle.is_armable:
-        await asyncio.sleep(0.5)
+    await drone.arm()
 
-    logging.info("-- Arming")
-    drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
-    drone.vehicle.armed = True
-    while drone.vehicle.mode.name != "GUIDED" or not drone.vehicle.armed:
-        await asyncio.sleep(0.5)
-
-    logging.info("-- Taking off")
-    drone.vehicle.simple_takeoff(25)
-
-    # wait for drone to take off
-    await asyncio.sleep(15)
+    await drone.takeoff(25)
 
     # Fly to first waypoint
     print("Going to first waypoint")
@@ -128,12 +113,7 @@ async def run() -> None:
 
     # return home
     logging.info("12 miles accomplished")
-    logging.info("Returning to home")
-    drone.vehicle.mode = dronekit.VehicleMode("RTL")
-    while drone.vehicle.mode.name != "RTL":
-        await asyncio.sleep(0.5)
-    while drone.vehicle.system_status.state != "STANDBY":
-        await asyncio.sleep(0.5)
+    await drone.return_to_launch()
 
     logging.info("Staying connected...")
     # infinite loop till forced disconnect
