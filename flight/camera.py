@@ -8,6 +8,7 @@ import json
 import logging
 import math
 import os
+from typing import Any, TextIO
 
 import aiofiles  # type: ignore
 import aiohttp
@@ -16,7 +17,6 @@ from siyi_sdk.siyi_sdk import SIYISDK
 
 from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
-
 from vision.common.constants import CameraParameters
 
 WAYPOINT_TOLERANCE: int = 1  # in meters
@@ -111,49 +111,54 @@ class Camera:
         # So we have to make sure the images folder exists.
         os.makedirs(path, mode=0o777, exist_ok=True)
 
-        photo_result = self.camera.requestPhoto()
-        if photo_result is None:
+        took_photo: bool = self.camera.requestPhoto()
+        if not took_photo:
             logging.error("Failed to take photo")
             raise ValueError("Failed to take photo")
 
         # Retrieve the image from the gimbal SD card
+        session: aiohttp.ClientSession
         async with aiohttp.ClientSession() as session:
+            response: aiohttp.client._RequestContextManager
+            json_data: dict[str, Any]
+
             async with session.get(
                 f"{self.base_api_url}/api/v1/getmediacount?media_type=0&path=101SIYI_IMG"
             ) as response:
-                data = await response.json()
+                json_data = await response.json()
                 if response.status != 200:
-                    logging.error("Failed to get media count. Response data: %s", data)
+                    logging.error("Failed to get media count. Response data: %s", json_data)
                     raise ValueError("Failed to get media count")
-                media_count: int = data["data"]["count"]
+                media_count: int = json_data["data"]["count"]
 
             # Have to request for all images in the directory due to a SIYI firmware bug
             async with session.get(
                 f"{self.base_api_url}/api/v1/getmedialist?"
                 f"media_type=0&path=101SIYI_IMG&start=0&count={media_count}"
             ) as response:
-                data = await response.json()
+                json_data = await response.json()
                 if response.status != 200:
-                    logging.error("Failed to get media list. Response data: %s", data)
+                    logging.error("Failed to get media list. Response data: %s", json_data)
                     raise ValueError("Failed to get media list")
                 try:
-                    media_path: str = data["data"]["list"][-1]["url"]
+                    media_path: str = json_data["data"]["list"][-1]["url"]
                 except IndexError as exc:
-                    logging.error("Failed to get media path. Response data: %s", data)
+                    logging.error("Failed to get media path. Response data: %s", json_data)
                     raise ValueError("Failed to get media path") from exc
 
             async with session.get(media_path) as response:
-                data = await response.read()
+                binary_data: bytes = await response.read()
                 if response.status != 200:
-                    logging.error("Failed to get media. Response data: %s", data)
+                    logging.error("Failed to get media. Response data: %s", binary_data)
                     raise ValueError("Failed to get media")
                 photo_name: str = (
                     f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
                 )
                 target_name: str = f"{path}{photo_name}"
 
+                file: aiofiles.base.AiofilesContextManager
                 async with aiofiles.open(target_name, "wb") as file:
-                    await file.write(data)
+                    await file.write(binary_data)
 
                 logging.info("Image #%d is being saved to %s", self.image_id, target_name)
                 self.image_id += 1
@@ -241,6 +246,7 @@ class Camera:
 
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
+            current_data: TextIO
             with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
                 try:
                     current_photos = json.load(current_data)
@@ -306,12 +312,14 @@ class Camera:
 
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/camera.json"):
+            current_data: TextIO
             with open("flight/data/camera.json", "r", encoding="utf8") as current_data:
                 try:
                     current_photos = json.load(current_data)
                 except json.JSONDecodeError:
                     pass
 
+        camera: TextIO
         with open("flight/data/camera.json", "w", encoding="ascii") as camera:
             json.dump(current_photos | info, camera)
 
