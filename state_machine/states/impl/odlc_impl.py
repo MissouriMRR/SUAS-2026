@@ -21,6 +21,7 @@ from state_machine.state_tracker import (
     update_flight_settings,
 )
 from state_machine.states.airdrop import Airdrop
+from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from vision.flyover_vision_pipeline import flyover_pipeline
@@ -53,6 +54,10 @@ async def run(self: ODLC) -> State:
     The type hinting for the capture_status variable is broken, see
     https://github.com/python/typeshed/issues/8799
     """
+
+    if self.flight_settings.skip_odlc_and_airdrop:
+        return Mapping(self.drone, self.flight_settings)
+
     try:
         update_state("ODLC")
         update_drone(self.drone)
@@ -140,12 +145,11 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
 
             if camera:
                 await camera.odlc_move_to(
-                    self.drone,
+                    self.drone.vehicle,
                     gps_data["odlc_waypoints"][point].latitude,
                     gps_data["odlc_waypoints"][point].longitude,
                     gps_data["odlc_altitude"],
                     take_photos,
-                    gps_data["odlc_heading"],
                 )
             else:
                 await move_to(
@@ -165,6 +169,8 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
         if airdrops >= self.flight_settings.standard_object_count:
             break
 
+    if camera:
+        camera.camera.disconnect()
     capture_status.value = c_bool(True)  # type: ignore
     self.drone.odlc_scan = False
     logging.info("ODLC scan complete")
