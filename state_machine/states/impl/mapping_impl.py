@@ -21,7 +21,7 @@ from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
 
-# TODO: Determine good values
+# These should be moved to a constants file
 MAPPING_ALTITUDE: Final[float] = 30  # meters
 HORIZONTAL_PHOTO_SPACING: Final[float] = 15  # meters
 VERTICAL_PHOTO_SPACING: Final[float] = 15  # meters
