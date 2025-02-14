@@ -168,7 +168,7 @@ class FlightSettings:
         skip_odlc_and_airdrop : bool
             Whether to skip the ODLC and airdrop states.
         """
-        return self.__skip_waypoint
+        return self.__skip_odlc_and_airdrop
 
     @skip_odlc_and_airdrop.setter
     def skip_odlc_and_airdrop(self, flag: bool) -> None:
