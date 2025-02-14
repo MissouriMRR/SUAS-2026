@@ -3,8 +3,11 @@
 import asyncio
 import logging
 
-from state_machine.state_tracker import update_state
-
+from state_machine.state_tracker import (
+    update_state,
+    update_drone,
+    update_flight_settings,
+)
 from state_machine.states.start import Start
 from state_machine.states.state import State
 from state_machine.states.takeoff import Takeoff
@@ -31,23 +34,12 @@ async def run(self: Start) -> State:
     """
     try:
         update_state("Start")
+        update_drone(self.drone)
+        update_flight_settings(self.flight_settings)
         logging.info("Start state running")
 
-        # connect to the drone
-        logging.info("Waiting for drone to connect...")
-        async for state in self.drone.system.core.connection_state():
-            if state.is_connected:
-                logging.info("Drone discovered!")
-                break
-
-        logging.info("Waiting for drone to have a global position estimate...")
-        async for health in self.drone.system.telemetry.health():
-            if health.is_global_position_ok:
-                logging.info("Global position estimate ok")
-                break
-
-        logging.info("-- Arming")
-        await self.drone.system.action.arm()
+        await self.drone.connect_drone()
+        await self.drone.arm()
 
         logging.info("Start state complete")
         return Takeoff(self.drone, self.flight_settings)

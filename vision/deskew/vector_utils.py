@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from utils import type_utils
 from vision.common.constants import Point, Vector, SENSOR_WIDTH, SENSOR_HEIGHT, ROTATION_OFFSET
 
 
@@ -266,7 +267,10 @@ def rotate_degrees(vector: Vector, rotation_deg: list[float]) -> Vector:
         The vector which has been rotated
     """
 
-    rotation_rad: list[float] = np.deg2rad(rotation_deg).tolist()
+    rotation_rad: list[float] = type_utils.assert_list_type(
+        np.deg2rad(rotation_deg).tolist(),
+        float,
+    )
 
     return rotate_radians(vector, rotation_rad)
 
