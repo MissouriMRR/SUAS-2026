@@ -3,7 +3,8 @@
     "run_description": "Test flight for SUAS 2023",
     "sim_flag": true,
     "mission_data_path": "flight/data/golf_data.json",
+    "standard_object_count": 5,
     "skip_waypoint": false,
     "skip_odlc_and_airdrop": false,
-    "standard_object_count": 5
+    "simple_takeoff": false
 }

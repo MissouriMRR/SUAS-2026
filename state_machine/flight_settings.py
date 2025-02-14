@@ -1,6 +1,8 @@
 """Class to contain setters, getters & parameters for current flight"""
 
-from typing import Final
+from typing import Final, Optional
+
+from state_machine import mission_config
 
 DEFAULT_RUN_TITLE: Final[str] = "SUAS Test Flight"
 DEFAULT_RUN_DESCRIPTION: Final[str] = "Test flight for SUAS 2023"
@@ -13,6 +15,8 @@ class FlightSettings:
 
     Attributes
     ----------
+    __config_cache: FlightSettings | None
+        Caches the FlightSettings object created by from_mission_config()
     __simple_takeoff: bool
         Sets if the drone will ascend vertically or at an angle
     __run_title: str
@@ -32,6 +36,8 @@ class FlightSettings:
 
     Methods
     -------
+    from_mission_config() -> FlightSettings
+        Creates a new FlightSettings object from the mission config
     simple_takeoff() -> bool
         Returns the status of the takeoff type for the flight
     simple_takeoff(simple_takeoff: bool) -> None
@@ -63,6 +69,8 @@ class FlightSettings:
     mission_data_path(mission_data_path: str) -> None
         Set the path to the JSON file containing the boundary and waypoint data.
     """
+
+    __config_cache: Optional["FlightSettings"] = None
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -106,6 +114,33 @@ class FlightSettings:
         self.__standard_object_count: int = standard_object_count
         self.__sim_flag: bool = sim_flag
         self.__mission_data_path: str = mission_data_path
+
+    @staticmethod
+    def from_mission_config() -> "FlightSettings":
+        """
+        Creates a new FlightSettings object from the mission config
+
+        Returns
+        -------
+        FlightSettings
+            A FlightSettings object with settings from mission_config.json.
+        """
+        if FlightSettings.__config_cache is not None:
+            return FlightSettings.__config_cache
+
+        config: mission_config.MissionConfig = mission_config.get_mission_config()
+        config_settings: FlightSettings = FlightSettings(
+            config["simple_takeoff"],
+            config["run_title"],
+            config["run_description"],
+            config["skip_waypoint"],
+            config["skip_odlc_and_airdrop"],
+            config["standard_object_count"],
+            config["sim_flag"],
+            config["mission_data_path"],
+        )
+        FlightSettings.__config_cache = config_settings
+        return config_settings
 
     # ----- Takeoff Settings ----- #
     @property
