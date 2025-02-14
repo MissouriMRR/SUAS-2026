@@ -66,7 +66,7 @@ class FlightManager:
         if sim_flag:
             self.drone.address = "udp://:14540"
         elif airsim_flag:
-            self.drone.address = "udp://:14030"
+            self.drone.address = "udp:127.0.0.1:14550"
         else:
             self.drone.use_real_settings()
 

@@ -354,7 +354,7 @@ class CameraAirSim(Camera):
 
     async def odlc_move_to(
         self,
-        drone: Drone,
+        drone: dronekit.Vehicle,
         latitude: float,
         longitude: float,
         altitude: float,
@@ -369,7 +369,7 @@ class CameraAirSim(Camera):
 
         Parameters
         ----------
-        drone: System
+        drone: dronekit.Vehicle
             a drone object that has all offboard data needed for computation
         latitude: float
             a float containing the requested latitude to move to
