@@ -1,0 +1,9 @@
+{
+    "run_title": "SUAS Test Flight",
+    "run_description": "Test flight for SUAS 2023",
+    "sim_flag": true,
+    "mission_data_path": "flight/data/golf_data.json",
+    "skip_waypoint": false,
+    "skip_odlc_and_airdrop": false,
+    "standard_object_count": 5
+}
