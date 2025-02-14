@@ -72,6 +72,8 @@ async def move_to(
         # tell machine to sleep to prevent constant polling, preventing battery drain
         await asyncio.sleep(1)
     return
+
+
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 

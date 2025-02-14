@@ -576,6 +576,7 @@ class CameraAirSim(Camera):
             # tell machine to sleep to prevent constant polling, preventing battery drain
             await asyncio.sleep(1)
         return
+
     async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
         """
         Gets the current camera information based on a drone's position_pitch.
