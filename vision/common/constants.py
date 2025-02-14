@@ -6,8 +6,8 @@ from nptyping import NDArray, Shape, UInt8, Float64, IntC, Bool8
 # ordinary three channel image
 Image: TypeAlias = NDArray[Shape["*, *, 3"], UInt8]
 
-# image with alpha channel
-ImageWAlpha: TypeAlias = NDArray[Shape["*, *, 4"], UInt8]
+# image for maps, uses float to store accurate depth data in 4th channel
+MapImage: TypeAlias = NDArray[Shape["*, *, 4"], Float64]
 
 # single channel image type
 ScImage: TypeAlias = NDArray[Shape["*, *"], UInt8]

@@ -2,25 +2,23 @@
 
 import numpy as np
 
-from vision.common.constants import Point, CameraParameters
+from vision.common.constants import Corners, Point, CameraParameters
 from vision.common.bounding_box import BoundingBox
 
 from vision.deskew import coordinate_lengths
 from vision.deskew import vector_utils
-from vision.deskew.deskew import corner_points
+from vision.deskew.deskew import get_corner_points
 
-def corner_coords(
-    image_shape,
-    camera_parameters
-):
-    coords = np.array(
+
+def corner_coords(image_shape, camera_parameters) -> Corners:
+    coords: Corners = np.array(
         [
             get_coordinates(point, image_shape, camera_parameters)
-            for point in corner_points(image_shape)
+            for point in get_corner_points(image_shape)
         ],
         dtype=np.float64,
     )
-    
+
     return coords
 
 

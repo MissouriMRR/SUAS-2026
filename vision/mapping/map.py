@@ -4,8 +4,10 @@ import vision.common.constants as consts
 from vision.deskew import camera_distances
 from vision.deskew import deskew
 from vision.deskew import coordinate_lengths
+from vision.deskew import vector_utils
 
 from vision.mapping import overlaying
+
 
 class Map:
     """
@@ -17,40 +19,69 @@ class Map:
     pixels_per_foot: float
         The scale of the map in pixel *edges* per foot - for example, a value of 2 means that one square foot will
         take up a square of 4 pixels
-    img: consts.ImageWAlpha
+    feather_width: float
+        Roughly the width of the fade between adjacent images
+    img: consts.MapImage
         The map image. Alpha channel will be used to store resolution data
     coord_min: consts.Point
         The minimum lat, lon of the map
     coord_max: consts.Point
         The maximum lat, lon of the map
     """
-    def __init__(self, pixels_per_foot) -> None:
+    def __init__(self, pixels_per_foot, feather_width = 10) -> None:
         self.pixels_per_foot: float = pixels_per_foot
-        self.img: consts.ImageWAlpha = None
+        self.feather_width = feather_width
+        
+        self.img: consts.MapImage = None
+        self.img_count = 0
         self.coord_min = None
         self.coord_max = None
-        self.img_count = 0
+    
+    
+    def prepare_image(self, img, camera_parameters):
+        
+        projected_image = deskew.deskew(
+            img,
+            camera_parameters["focal_length"],
+            camera_parameters["rotation_deg"],
+            scale=self.pixels_per_foot * camera_parameters["altitude_f"]
+        )
+        
+        blank_channel = np.zeros((projected_image.shape[0], projected_image.shape[1]))
+        projected_image_wdepth: consts.MapImage = np.dstack(projected_image, blank_channel)
+        
+        # Construct the distance map and put it in the 4th (alpha) channel
+        projected_image_wdepth[:, :, 3] = np.fromfunction(
+            lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
+                (x, y),
+                img.shape,
+                camera_parameters["focal_length"],
+                camera_parameters["rotation_deg"],
+                scale=self.pixels_per_foot * camera_parameters["altitude_f"]
+            )),
+            (img.shape[0], img.shape[1])
+        )
+        
+        return projected_image_wdepth
     
     
     def add_img(self, img, camera_parameters):
+        
         img_corner_coords = camera_distances.corner_coords(img.shape, camera_parameters)
         
         img_min_coord = np.min(img_corner_coords, axis=1)
         img_max_coord = np.max(img_corner_coords, axis=1)
         
-        projected_image = deskew.deskew(
-            img, 
-            camera_parameters["focal_length"],
-            camera_parameters["rotation_deg"],
-            scale=self.pixels_per_foot
-        )
+        projected_image_wdepth = self.prepare_image(img, camera_parameters)
         
         if self.img_count == 0:
-            self.img = projected_image
+            self.img = projected_image_wdepth
             self.coord_min = img_min_coord
             self.coord_max = img_max_coord
         else:
-            self.add_projected_image(projected_image, img_corner_coords)
+            self.add_projected_image(projected_image_wdepth, img_corner_coords)
+        
+        self.img_count += 1
         
         return
     
@@ -83,7 +114,7 @@ class Map:
         
         pixel_offset = np.round(relative_coord_ft * self.pixels_per_foot)
         
-        updated_map_img = overlaying.offset_overlay(proj_img, self.img, pixel_offset)
+        updated_map_img = overlaying.offset_overlay(proj_img, self.img, pixel_offset, self.feather_width)
         
         updated_map_min = np.minimum(self.coord_min, img_min_coord)
         updated_map_max = np.maximum(self.coord_max, img_max_coord)

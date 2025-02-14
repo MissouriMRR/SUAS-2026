@@ -69,24 +69,22 @@ async def flyover_pipeline(
         for image_path in image_parameters.keys():
             if image_path not in completed_images:
                 logging.info("Processing image: %s", image_path)
-                full_image_path: str = f"images/{image_path}"
+
                 # Save the image path as completed so it isn't processed again
                 completed_images.append(image_path)
 
                 # Load the image to process
-                image: consts.Image = cv2.imread(full_image_path)
+                image: consts.Image = cv2.imread(image_path)
 
                 # Get the camera parameters from the loaded parameter file
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
 
                 # Append all discovered standard objects to the list of saved odlcs
-                saved_odlcs += std_obj.find_standard_objects(
-                    image, camera_parameters, full_image_path
-                )
+                saved_odlcs += std_obj.find_standard_objects(image, camera_parameters, image_path)
 
                 # Append all discovered humanoids to the list of saved humanoids
                 saved_humanoids += emg_obj.find_humanoids(
-                    emg_model, image, camera_parameters, full_image_path
+                    emg_model, image, camera_parameters, image_path
                 )
                 logging.info("Finished processing image: %s", image_path)
 

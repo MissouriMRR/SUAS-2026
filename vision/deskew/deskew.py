@@ -9,44 +9,73 @@ from vision.deskew.vector_utils import pixel_intersect
 from vision.common.constants import Image, Corners
 
 
-def corner_points(image_shape):
+def get_corner_points(image_shape: tuple[int, int, int] | tuple[int, int]) -> Corners:
+    """
+    Generates corner points of an image in the format
+    1--2
+    |  |
+    4--3
+
+    Parameters
+    ----------
+    image_shape: tuple[int, int, int] | tuple[int, int]
+        Shape (num rows per axis) of the image
+
+    Returns
+    -------
+    corner_points: Corners
+        The corners of the image in clockwise order, starting at the top left
+    """
+
     orig_height: int = image_shape[0]
     orig_width: int = image_shape[1]
 
-    # Generate points in the format
-    # 1--2
-    # |  |
-    # 4--3
     corner_points: Corners = np.array(
         [[0, 0], [orig_width, 0], [orig_width, orig_height], [0, orig_height]], dtype=np.float32
     )
-    
+
     return corner_points
 
 
-
 def get_relative_intersects(
-        image_shape: tuple[int, int, int] | tuple[int, int],
-        focal_length: float,
-        rotation_deg: list[float],
-        height: float = 1
-):
+    image_shape: tuple[int, int, int] | tuple[int, int],
+    focal_length: float,
+    rotation_deg: list[float],
+    height: float = 1,
+) -> Corners:
     """
     Calculates the pixel locations on the ground relative to the drone
     Units are same as `height`
+
+    Parameters
+    ----------
+    image_shape: tuple[int, int, int] | tuple[int, int],
+        The shape of the image to deskew. Aspect ratio should match the camera sensor
+    focal_length : float
+        The camera's focal length in millimeters - used to generate the camera's
+        fields of view
+    rotation_deg: list[float]
+        The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
+        camera, stored in constants.py, will be applied first
+
+    Returns
+    -------
+    intersects: Corners
+        the location of the intersects relative to the drone
+        X axis is north/south, Y axis is east/west
+
     """
 
     # Numpy converts `None` to NaN
     intersects: Corners = np.array(
         [
             pixel_intersect(point, image_shape, focal_length, rotation_deg, height)
-            for point in corner_points(image_shape)
+            for point in get_corner_points(image_shape)
         ],
         dtype=np.float32,
     )
-    
+
     return intersects
-    
 
 
 def perspective_matrix(
@@ -97,7 +126,7 @@ def perspective_matrix(
 
             Returns None if no valid matrix could be generated.
     """
-    
+
     intersects = get_relative_intersects(image_shape, focal_length, rotation_deg)
 
     # Return (None, None) if any elements are NaN - camera vectors don't intersect the ground
@@ -110,10 +139,12 @@ def perspective_matrix(
     # Subtract the minimum on both axes so the minimum values on each axis are 0
     intersects -= np.min(intersects, axis=0)
 
-    # Scale the 
+    # Scale the
     dst_pts: Corners = intersects * scale
 
-    matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(corner_points(image_shape), dst_pts)
+    matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(
+        get_corner_points(image_shape), dst_pts
+    )
 
     return matrix, dst_pts
 

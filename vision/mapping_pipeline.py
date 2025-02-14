@@ -1,5 +1,6 @@
+"""Runs the necessary code for the Mapping component of the competition"""
+
 import logging
-from typing import Callable
 from ctypes import c_bool
 from multiprocessing.sharedctypes import SynchronizedBase  # pylint: disable=unused-import
 
@@ -11,13 +12,26 @@ from mapping.map import Map
 import vision.common.constants as consts
 import vision.pipeline.pipeline_utils as pipe_utils
 
+
 # Disable duplicate code checking because the flyover pipeline is similar
 # pylint: disable=duplicate-code
 async def airdrop_pipeline(camera_data_path: str, state_path: str, output_path: str) -> None:
+    """
+    Runs the code that generates the map from a folder of photos
+
+    Parameters
+    ----------
+    camera_data_path: str
+        The path to the json file containing the CameraParameters entries
+    state_path: str
+        A text file containing True if all images have been taken and False otherwise
+    output_path: str
+        The json file name and path to save the data in
+    """
 
     # List of filenames for images already completed to prevent repeating work
     completed_images: list[str] = []
-    
+
     map: Map = Map()
 
     # Wait for and process unfinished images until no more images are being taken
@@ -38,14 +52,17 @@ async def airdrop_pipeline(camera_data_path: str, state_path: str, output_path: 
         for image_path in image_parameters.keys():
             if image_path not in completed_images:
                 logging.info("Processing image: %s", image_path)
-                full_image_path: str = f"images/{image_path}"
+
                 # Save the image path as completed so it isn't processed again
                 completed_images.append(image_path)
 
                 # Load the image to process
-                image: consts.Image = cv2.imread(full_image_path)
+                image: consts.Image = cv2.imread(image_path)
 
                 # Get the camera parameters from the loaded parameter file
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
-                
+
                 map.add_img(image, camera_parameters)
+
+    # Output final map
+    cv2.imwrite("map.png", map.img)
