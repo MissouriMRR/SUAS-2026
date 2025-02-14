@@ -89,7 +89,7 @@ def in_bounds(
     return inside
 
 
-async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
+async def waypoint_check(drone: Drone, _sim: bool, mission_data_path: str) -> None:
     """
     Checks if the drone reaches each waypoint in a list and remains
     within the specified boundary during its flight.
@@ -100,10 +100,10 @@ async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
         The drone object from the flight manager.
     _sim : bool
         Specifies whether the function is being run in a simulation mode.
-    path_data_path : str
+    mission_data_path : str
         The path to the JSON file containing the boundary and waypoint data.
     """
-    gps_dict: GPSData = extract_gps(path_data_path)
+    gps_dict: GPSData = extract_gps(mission_data_path)
     waypoints: list[Waylist] = gps_dict["waypoints"]
     boundary: list[BoundaryPoint] = gps_dict["boundary_points"]
     # 3.28084 ft per m
@@ -172,7 +172,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/golf_data.json"
+    mission_data_path: str = "flight/data/golf_data.json"
 
     drone: Drone = Drone()
     if _sim:
@@ -181,13 +181,15 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
         drone.use_real_settings()
 
     drone.odlc_scan = False
-    flight_settings: FlightSettings = FlightSettings(sim_flag=_sim, path_data_path=path_data_path)
+    flight_settings: FlightSettings = FlightSettings(
+        sim_flag=_sim, mission_data_path=mission_data_path
+    )
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
-    await waypoint_check(drone, _sim, path_data_path)
+    await waypoint_check(drone, _sim, mission_data_path)
 
     while not state_task.done():
         await asyncio.sleep(1)

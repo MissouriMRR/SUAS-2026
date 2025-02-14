@@ -128,7 +128,7 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
     # so using the minimum length side of the photo the coverage would be 90 feet allowing
     # 10 feet overlap on both sides
 
-    gps_data: GPSData = extract_gps(self.flight_settings.path_data_path)
+    gps_data: GPSData = extract_gps(self.flight_settings.mission_data_path)
 
     loops: int = 0  # Max amount of loops before giving up
     while loops <= 0:

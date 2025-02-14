@@ -23,7 +23,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/golf_data.json"
+    mission_data_path: str = "flight/data/golf_data.json"
 
     drone: Drone = Drone()
     if _sim:
@@ -35,7 +35,7 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
         sim_flag=_sim,
         skip_waypoint=True,
         skip_odlc_and_airdrop=True,
-        path_data_path=path_data_path,
+        mission_data_path=mission_data_path,
     )
     await drone.connect_drone()
 

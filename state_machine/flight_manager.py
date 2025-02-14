@@ -40,7 +40,7 @@ class FlightManager:
     async def run_manager(
         self,
         sim_flag: bool,
-        path_data_path: str = "flight/data/waypoint_data.json",
+        mission_data_path: str = "flight/data/waypoint_data.json",
         skip_waypoint: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
     ) -> None:
@@ -52,7 +52,7 @@ class FlightManager:
         ----------
         sim_flag : bool
             A flag representing if the drone is a simulation.
-        path_data_path : str, default "flight/data/waypoint_data.json"
+        mission_data_path : str, default "flight/data/waypoint_data.json"
             The path to the JSON file containing the boundary and waypoint data.
         skip_waypoint : bool, default False
             Whether to skip the waypoint state.
@@ -67,7 +67,7 @@ class FlightManager:
 
         flight_settings_obj: FlightSettings = FlightSettings(
             sim_flag=sim_flag,
-            path_data_path=path_data_path,
+            mission_data_path=mission_data_path,
             skip_waypoint=skip_waypoint,
             standard_object_count=standard_object_count,
         )

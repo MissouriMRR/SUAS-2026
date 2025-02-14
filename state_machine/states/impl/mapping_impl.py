@@ -45,7 +45,7 @@ async def run(self: Mapping) -> State:
 
         logging.info("Mapping")
 
-        gps_dict: GPSData = extract_gps(self.flight_settings.path_data_path)
+        gps_dict: GPSData = extract_gps(self.flight_settings.mission_data_path)
         mapping_boundary_utm: list[BoundaryPointUtm] = gps_dict["mapping_boundary_utm"]
 
         # The mapping area should be roughly rectangular with 4 vertices

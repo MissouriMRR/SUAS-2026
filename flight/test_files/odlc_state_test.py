@@ -28,7 +28,7 @@ async def run_test(_sim: bool, odlc_count: int = 5) -> None:
     else:
         drone.use_real_settings()
     flight_settings: FlightSettings = FlightSettings(
-        sim_flag=_sim, skip_waypoint=True, path_data_path="flight/data/golf_data.json"
+        sim_flag=_sim, skip_waypoint=True, mission_data_path="flight/data/golf_data.json"
     )
     await drone.connect_drone()
     state_task: asyncio.Task[None] = asyncio.ensure_future(

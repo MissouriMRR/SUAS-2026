@@ -87,7 +87,7 @@ async def waypoint_logic(self: Waypoint) -> None:
     update_flight_settings(self.flight_settings)
     logging.info("Waypoint state running")
 
-    gps_dict: GPSData = extract_gps(self.flight_settings.path_data_path)
+    gps_dict: GPSData = extract_gps(self.flight_settings.mission_data_path)
     waypoints_utm: list[WaylistUtm] = gps_dict["waypoints_utm"]
 
     boundary_points: list[BoundarylistUtm] = gps_dict["boundary_points_utm"]

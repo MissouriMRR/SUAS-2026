@@ -28,7 +28,7 @@ async def run() -> None:
 
     await drone.takeoff(12)
 
-    flight_settings: FlightSettings = FlightSettings(path_data_path="flight/data/golf_data.json")
+    flight_settings: FlightSettings = FlightSettings(mission_data_path="flight/data/golf_data.json")
 
     logging.info("starting airdrop")
 

@@ -27,7 +27,7 @@ class FlightSettings:
         The number of standard objects to attempt to find.
     __sim_flag: bool
         A flag representing if the connected drone is a simulation
-    __path_data_path: str
+    __mission_data_path: str
         The path to the JSON file containing the boundary and waypoint data.
 
     Methods
@@ -58,9 +58,9 @@ class FlightSettings:
         Returns the flag for the simulation
     sim_flag(sim_flag: bool) -> None
         Sets the flag for the simulation
-    path_data_path() -> str
+    mission_data_path() -> str
         Return the path to the JSON file containing the boundary and waypoint data.
-    path_data_path(path_data_path: str) -> None
+    mission_data_path(mission_data_path: str) -> None
         Set the path to the JSON file containing the boundary and waypoint data.
     """
 
@@ -74,7 +74,7 @@ class FlightSettings:
         skip_odlc_and_airdrop: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
         sim_flag: bool = False,
-        path_data_path: str = "flight/data/waypoint_data.json",
+        mission_data_path: str = "flight/data/waypoint_data.json",
     ) -> None:
         """
         Default Constructor for flight settings
@@ -95,7 +95,7 @@ class FlightSettings:
             The number of standard objects to attempt to find.
         sim_flag : bool, default False
             A flag representing if the connected drone is a simulation
-        path_data_path : str, default "flight/data/waypoint_data.json"
+        mission_data_path : str, default "flight/data/waypoint_data.json"
             The path to the JSON file containing the boundary and waypoint data.
         """
         self.__simple_takeoff: bool = simple_takeoff
@@ -105,7 +105,7 @@ class FlightSettings:
         self.__skip_odlc_and_airdrop: bool = skip_odlc_and_airdrop
         self.__standard_object_count: int = standard_object_count
         self.__sim_flag: bool = sim_flag
-        self.__path_data_path: str = path_data_path
+        self.__mission_data_path: str = mission_data_path
 
     # ----- Takeoff Settings ----- #
     @property
@@ -280,24 +280,24 @@ class FlightSettings:
         self.__sim_flag = sim_flag
 
     @property
-    def path_data_path(self) -> str:
+    def mission_data_path(self) -> str:
         """
         Return the path to the JSON file containing the boundary and waypoint data.
 
         Returns
         -------
-        path_data_path : str
+        mission_data_path : str
             The path to the JSON file containing the boundary and waypoint data.
         """
-        return self.__path_data_path
+        return self.__mission_data_path
 
-    @path_data_path.setter
-    def path_data_path(self, path_data_path: str) -> None:
+    @mission_data_path.setter
+    def mission_data_path(self, mission_data_path: str) -> None:
         """
         Set the path to the JSON file containing the boundary and waypoint data.
 
         Parameters
         ----------
-        path_data_path : str
+        mission_data_path : str
             The path to the JSON file containing the boundary and waypoint data.
         """

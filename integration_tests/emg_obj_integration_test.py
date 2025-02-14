@@ -20,11 +20,11 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    path_data_path: str = "flight/data/golf_data.json"
+    mission_data_path: str = "flight/data/golf_data.json"
 
     flight_manager: FlightManager = FlightManager()
     await flight_manager.run_manager(
-        _sim, path_data_path, skip_waypoint=True, standard_object_count=0
+        _sim, mission_data_path, skip_waypoint=True, standard_object_count=0
     )
 
 
