@@ -12,8 +12,8 @@ async def test_capture_image(photo_count: int = 5) -> None:
 
     Parameters
     ----------
-    photo_count : int, optional
-        The number of photos to take, by default 1
+    photo_count : int, default 5
+        The number of photos to take.
     """
     camera: Camera = Camera()
     logging.info("Current camera attitude: %s", camera.camera.getAttitude())
