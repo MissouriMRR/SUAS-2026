@@ -8,21 +8,22 @@ import sys
 
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 
 WAYPOINT_TOLERANCE: int = 6  #
 
 
 # duplicate code disabled for testing function
 # pylint: disable=duplicate-code
-async def run(sim: bool) -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     This function is a driver to test the move_to function and runs through the
     given waypoints in the lats and longs lists at the altitude of 15 m.
 
     Parameters
     ----------
-    sim : bool
-        Specifies whether to run the state machine in simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
 
     Notes
     -----
@@ -36,7 +37,7 @@ async def run(sim: bool) -> None:
 
     # create a drone object
     drone: Drone = Drone()
-    if sim:
+    if flight_settings.sim_flag:
         drone.use_sim_settings()
     else:
         drone.use_real_settings()
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     try:
         logging.basicConfig(level=logging.INFO)
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run("--sim" in sys.argv))
+        loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
         print("Program ended")
         sys.exit(0)

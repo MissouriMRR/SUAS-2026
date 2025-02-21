@@ -7,16 +7,25 @@ import sys
 
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 
 
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     run simple waypoint flight path
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
 
     # create a drone object
     drone: Drone = Drone()
-    drone.use_sim_settings()
+    if flight_settings.sim_flag:
+        drone.use_sim_settings()
+    else:
+        drone.use_real_settings()
     await drone.connect_drone()
 
     # initilize drone configurations
@@ -57,7 +66,7 @@ async def run() -> None:
 if __name__ == "__main__":
     try:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run())
+        loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
         print("Program ended")
         sys.exit(0)

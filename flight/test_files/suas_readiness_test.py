@@ -10,6 +10,7 @@ import dronekit
 
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 
 WAYPOINT_TOLERANCE: int = 6
 
@@ -75,16 +76,24 @@ async def move_to(
 
 # duplicate code disabled for testing function
 # pylint: disable=duplicate-code
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     Runs
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
 
     lats: list[float] = [37.94893290, 37.947899284]
     longs: list[float] = [-91.784668343, -91.782420970]
 
     drone: Drone = Drone()
-    drone.use_real_settings()
+    if flight_settings.sim_flag:
+        drone.use_sim_settings()
+    else:
+        drone.use_real_settings()
     await drone.connect_drone()
 
     # initilize drone configurations
@@ -123,7 +132,7 @@ async def run() -> None:
 if __name__ == "__main__":
     try:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run())
+        loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
         print("Program ended")
         sys.exit(0)

@@ -10,7 +10,7 @@ from state_machine.states import Start
 from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(_sim: bool, odlc_count: int = 5) -> None:
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Tests the the ODLC state in the State Machine. Runs through an example run of the ODLC
     and its functions, testing if the drone can find 5 waypoints, as well as checking to make
@@ -18,25 +18,26 @@ async def run_test(_sim: bool, odlc_count: int = 5) -> None:
 
     Parameters
     ----------
-    _sim: bool
-        Whether or not the test is being run in a simulation
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
     logging.basicConfig(level=logging.INFO)
+
+    flight_settings.skip_waypoint = True
+    flight_settings.standard_object_count = 5
+
     drone: Drone = Drone()
-    if _sim:
+    if flight_settings.sim_flag:
         drone.use_sim_settings()
     else:
         drone.use_real_settings()
-    flight_settings: FlightSettings = FlightSettings(
-        sim_flag=_sim, skip_waypoint=True, mission_data_path="flight/data/golf_data.json"
-    )
     await drone.connect_drone()
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
 
     activated_odlcs: int = 0
-    while activated_odlcs != odlc_count:
+    while activated_odlcs != flight_settings.standard_object_count:
         try:
             with open("flight/data/output.json", "r", encoding="UTF-8") as file:
                 output_data: str = json.load(file)
@@ -59,4 +60,4 @@ async def run_test(_sim: bool, odlc_count: int = 5) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(run_test(True))
+    asyncio.run(run_test(FlightSettings.from_mission_config()))

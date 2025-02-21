@@ -6,17 +6,16 @@ Functions
 in_bounds(boundary, latitude, longitude, altitude)
     Checks if a given point is within a specified boundary.
 
-waypoint_check(drone, _sim)
+waypoint_check(drone, flight_settings)
     Verifies if a drone reaches each waypoint in a predefined path.
 
-run_test(_sim)
+run_test(flight_settings)
     Initializes the state machine and starts the waypoint check.
 """
 
 import asyncio
 import logging
 import time
-import sys
 from typing import Final
 
 import dronekit
@@ -89,7 +88,7 @@ def in_bounds(
     return inside
 
 
-async def waypoint_check(drone: Drone, _sim: bool, mission_data_path: str) -> None:
+async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
     """
     Checks if the drone reaches each waypoint in a list and remains
     within the specified boundary during its flight.
@@ -98,12 +97,10 @@ async def waypoint_check(drone: Drone, _sim: bool, mission_data_path: str) -> No
     ----------
     drone : Drone
         The drone object from the flight manager.
-    _sim : bool
-        Specifies whether the function is being run in a simulation mode.
-    mission_data_path : str
-        The path to the JSON file containing the boundary and waypoint data.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
-    gps_dict: GPSData = extract_gps(mission_data_path)
+    gps_dict: GPSData = extract_gps(flight_settings.mission_data_path)
     waypoints: list[Waylist] = gps_dict["waypoints"]
     boundary: list[BoundaryPoint] = gps_dict["boundary_points"]
     # 3.28084 ft per m
@@ -159,43 +156,36 @@ async def waypoint_check(drone: Drone, _sim: bool, mission_data_path: str) -> No
         logging.info("(Waypoint State Test) Waypoint %d reached.", waypoint_num)
 
 
-async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Initialize and run the flight manager and waypoint check for testing
     the state machine in either simulated or real-world mode.
 
     Parameters
     ----------
-    _sim : bool
-        Specifies whether to run the state machine in simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
-    mission_data_path: str = "flight/data/golf_data.json"
-
     drone: Drone = Drone()
-    if _sim:
+    if flight_settings.sim_flag:
         drone.use_sim_settings()
     else:
         drone.use_real_settings()
 
     drone.odlc_scan = False
-    flight_settings: FlightSettings = FlightSettings(
-        sim_flag=_sim, mission_data_path=mission_data_path
-    )
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
-    await waypoint_check(drone, _sim, mission_data_path)
+    await waypoint_check(drone, flight_settings)
 
     while not state_task.done():
         await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    print("Pass argument --sim to enable the simulation flag.")
-    print()
-    asyncio.run(run_test("--sim" in sys.argv))
+    asyncio.run(run_test(FlightSettings.from_mission_config()))
