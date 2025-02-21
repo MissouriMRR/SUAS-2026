@@ -122,6 +122,10 @@ class FlightSettings:
             A FlightSettings object with settings from mission_config.json.
         """
         config: mission_config.MissionConfig = mission_config.get_mission_config()
+        sim_flag: bool = config["sim_flag"]
+        mission_data_path: str = (
+            config["sim_mission_data_path"] if sim_flag else config["real_mission_data_path"]
+        )
         config_settings: FlightSettings = FlightSettings(
             config["simple_takeoff"],
             config["run_title"],
@@ -129,8 +133,8 @@ class FlightSettings:
             config["skip_waypoint"],
             config["skip_odlc_and_airdrop"],
             config["standard_object_count"],
-            config["sim_flag"],
-            config["mission_data_path"],
+            sim_flag,
+            mission_data_path,
         )
         return config_settings
 
