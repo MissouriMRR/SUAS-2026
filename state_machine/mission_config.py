@@ -14,8 +14,6 @@ class MissionConfig(TypedDict):
         The name for the current flight operation.
     run_description : str
         A small description for the current flight.
-    sim_flag : bool
-        A flag representing if the connected drone is a simulation.
     real_mission_data_path : str
         The path to the JSON file containing the boundary and waypoint data to be used
         for missions in real life.
@@ -34,7 +32,6 @@ class MissionConfig(TypedDict):
 
     run_title: str
     run_description: str
-    sim_flag: bool
     real_mission_data_path: str
     sim_mission_data_path: str
     standard_object_count: int

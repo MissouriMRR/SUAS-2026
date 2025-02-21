@@ -1,5 +1,7 @@
 """Class to contain setters, getters & parameters for current flight"""
 
+import logging
+import sys
 from typing import Final
 
 from state_machine import mission_config
@@ -15,6 +17,9 @@ class FlightSettings:
 
     Attributes
     ----------
+    _read_sim_flag: bool
+        Whether the sim flag has been read. Used to determine when to show the message
+        about the sim flag.
     __simple_takeoff: bool
         Sets if the drone will ascend vertically or at an angle
     __run_title: str
@@ -68,6 +73,8 @@ class FlightSettings:
         Set the path to the JSON file containing the boundary and waypoint data.
     """
 
+    _read_sim_flag: bool = False
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
@@ -114,15 +121,21 @@ class FlightSettings:
     @staticmethod
     def from_mission_config() -> "FlightSettings":
         """
-        Creates a new FlightSettings object from the mission config
+        Creates a new FlightSettings object from the mission config file and command line
+        arguments
 
         Returns
         -------
         FlightSettings
             A FlightSettings object with settings from mission_config.json.
         """
+        sim_flag: bool = "-s" in sys.argv or "--sim" in sys.argv
+        if not FlightSettings._read_sim_flag:
+            FlightSettings._read_sim_flag = True
+            mode_name = "sim" if sim_flag else "real"
+            logging.info("Running in %s mode. Pass -s or --sim to run in sim mode.", mode_name)
+
         config: mission_config.MissionConfig = mission_config.get_mission_config()
-        sim_flag: bool = config["sim_flag"]
         mission_data_path: str = (
             config["sim_mission_data_path"] if sim_flag else config["real_mission_data_path"]
         )
