@@ -19,8 +19,6 @@ async def run_test(flight_settings: FlightSettings) -> None:
     flight_settings : FlightSettings
         The flight settings to use.
     """
-    # Output logging info to stdout
-    logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
 
     flight_settings.skip_waypoint = True
     flight_settings.skip_odlc_and_airdrop = True
@@ -41,4 +39,5 @@ async def run_test(flight_settings: FlightSettings) -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(run_test(FlightSettings.from_mission_config()))
