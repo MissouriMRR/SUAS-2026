@@ -83,6 +83,7 @@ async def run(flight_settings: FlightSettings) -> None:
 #  the Lats and Longs array and the drone has arrived at each of them
 if __name__ == "__main__":
     try:
+        logging.basicConfig(level=logging.INFO)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
