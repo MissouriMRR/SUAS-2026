@@ -51,9 +51,9 @@ async def move_to(
     while not location_reached:
         position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
-        drone_lat: float = position.latitude_deg
-        drone_long: float = position.longitude_deg
-        drone_alt: float = position.relative_altitude_m
+        drone_lat: float = position.lat
+        drone_long: float = position.lon
+        drone_alt: float = position.alt
 
         total_distance: float = calculate_distance(
             drone_lat,
@@ -105,7 +105,7 @@ async def run(flight_settings: FlightSettings) -> None:
 
     # Fly to first waypoint
     print("Going to first waypoint")
-    await drone.vehicle.simple_goto(dronekit.LocationGlobalRelative(lats[0], longs[0], 25))
+    await move_to(drone.vehicle, lats[0], longs[0], 25)
     await asyncio.sleep(10)
 
     # Begin 12 mile flight
@@ -131,6 +131,7 @@ async def run(flight_settings: FlightSettings) -> None:
 # the Lats and Longs array and the drone has arrived at each of them
 if __name__ == "__main__":
     try:
+        logging.basicConfig(level=logging.INFO)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
