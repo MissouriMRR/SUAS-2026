@@ -35,6 +35,7 @@ async def run(self: Airdrop) -> State:
     This method is responsible for initiating the Airdrop process of the drone and transitioning
     it back to the Waypoint state.
     """
+
     if self.flight_settings.skip_odlc_and_airdrop:
         return Mapping(self.drone, self.flight_settings)
 
@@ -43,6 +44,8 @@ async def run(self: Airdrop) -> State:
         update_drone(self.drone)
         update_flight_settings(self.flight_settings)
         logging.info("Airdrop state running")
+        
+        #implement servo logic her !!!!!!!!!
         # uncomment if automatic
         # if self.drone.address == "serial:///dev/ttyFTDI:921600":
         #   setup airdrop
@@ -50,7 +53,6 @@ async def run(self: Airdrop) -> State:
 
         # if automatic un comment servo num
         # servo_num: int
-        cylinder_num: str
 
         with open("flight/data/output.json", encoding="utf8") as output:
             drop_locations = json.load(output)
@@ -69,14 +71,17 @@ async def run(self: Airdrop) -> State:
             with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
                 json.dump(list(attempted_locations), file)
 
-        # Find next available cylinder
-        if (cylinders["C1"])["Loaded"]:
-            cylinder_num = "C1"
-        elif (cylinders["C2"])["Loaded"]:
-            cylinder_num = "C2"
-        else:
+        # Find if there is a loaded cylinder
+        cylinder_num: str = ""
+        for cylinder in cylinders:
+            if cylinder["Loaded"]:
+                cylinder_num = cylinder
+                break
+            elif cylinder_num == "":
+                cylinder_num = cylinder
+        if (not cylinder_num["Loaded"]):
             logging.warning("No beacons are loaded?")
-            return Land(self.drone, self.flight_settings)
+            return Mapping(self.drone, self.flight_settings)
 
         dropped: bool = await attempt_drop(
             self.drone, drop_locations, cylinders, attempted_locations, cylinder_num
@@ -163,6 +168,7 @@ async def attempt_drop(
                 location_id,
             )
 
+        # implement servo logic here
         # If bottle drop is automatic these would be used
         # if self.drone.address == "serial:///dev/ttyFTDI:921600":
         #   await airdrop.drop_bottle(servo_num)
