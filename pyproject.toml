@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = []
 license = "MIT"
-#package.mode = false
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -35,6 +35,7 @@ geopy = "^2.3.0"
 pyserial = "^3.5"
 pathfinding = "^1.0.1"
 gphoto2 = "2.5.0"
+onnxruntime = "^1.20.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.12b0"

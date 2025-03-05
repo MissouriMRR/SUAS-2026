@@ -159,4 +159,9 @@ vision_videos/
 *.mkv
 *.flv
 
+# Vision Models
+vision/yolov9/training/*.yaml
+*.pt
+*.onnx
+
 /state_machine/state.json
