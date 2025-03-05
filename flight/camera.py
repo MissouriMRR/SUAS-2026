@@ -21,6 +21,7 @@ from vision.common.constants import CameraParameters
 from vision.common.constants import SENSOR_WIDTH, SENSOR_HEIGHT
 
 import airsim
+
 WAYPOINT_TOLERANCE: int = 1  # in meters
 
 
@@ -165,6 +166,7 @@ class Camera:
             Camera information to be associated with a photo.
         """
         return None
+
 
 class CameraIRL(Camera):
     """
@@ -534,10 +536,9 @@ class CameraAirSim(Camera):
 
     def __init__(self) -> None:
         super().__init__()
-        
+
         self.client: airsim.MultirotorClient = airsim.MultirotorClient()
 
-        
         self.session_id: int = 0
         if os.path.exists(f"{os.getcwd()}/images/"):
             for file in os.listdir(f"{os.getcwd()}/images/"):
@@ -573,10 +574,11 @@ class CameraAirSim(Camera):
         target_name: str = f"{path}{photo_name}"
         async with aiofiles.open(target_name, mode="wb") as file:
             await file.write(cam_file)
-            
+
         self.image_id += 1
         logging.info("Image #%d is being saved to %s", self.image_id, target_name)
         return target_name, photo_name
+
     async def mapping_move_to(
         self,
         drone: dronekit.Vehicle,
@@ -605,7 +607,6 @@ class CameraAirSim(Camera):
         """
         info: dict[str, CameraParameters] = {}
 
-    
         camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
         file_path: str
         _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
@@ -667,8 +668,8 @@ class CameraAirSim(Camera):
 
         with open("flight/data/mapping_photos.json", "w", encoding="ascii") as camera:
             json.dump(current_photos | info, camera)
-    async def odlc_move_to(
 
+    async def odlc_move_to(
         self,
         drone: dronekit.Vehicle,
         latitude: float,
@@ -707,8 +708,6 @@ class CameraAirSim(Camera):
             tolerance=WAYPOINT_TOLERANCE,
         )
 
-
-
         await asyncio.sleep(2)
 
         if not take_photos:
@@ -737,7 +736,6 @@ class CameraAirSim(Camera):
             await asyncio.sleep(1)
         return
 
-
     async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
         """
         Gets the current camera information based on a drone's position_pitch.
@@ -753,23 +751,20 @@ class CameraAirSim(Camera):
             Camera information to be associated with a photo.
         """
         location: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
-        
 
         attitude: dronekit.Attitude = drone.attitude
-        roll_deg: float = math.degrees(attitude.roll) 
-        pitch_deg: float = math.degrees(attitude.pitch) 
+        roll_deg: float = math.degrees(attitude.roll)
+        pitch_deg: float = math.degrees(attitude.pitch)
         yaw_deg: float = math.degrees(attitude.yaw)
-        horizontal_fov=self.client.simGetCameraInfo("bottom_center").fov
-        
+        horizontal_fov = self.client.simGetCameraInfo("bottom_center").fov
+
         print(self.client.simGetCameraInfo("bottom_center"))
         logging.info(self.client.simGetCameraInfo("bottom_center"))
-        #vertical_fov= image_height / image_width * horizontal FoV
+        # vertical_fov= image_height / image_width * horizontal FoV
         print(SENSOR_HEIGHT)
         return CameraParameters(
-
-            focal_length= 24, #(sensor_size/(np.tan(/2))),
+            focal_length=24,  # (sensor_size/(np.tan(/2))),
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
             drone_coordinates=[location.lat, location.lon],
             altitude_f=location.alt,
         )
-

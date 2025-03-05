@@ -65,12 +65,12 @@ class FlightManager:
 
         if sim_flag:
             self.drone.use_sim_settings()
-            
+
         elif airsim_flag:
             self.drone.use_airsim_settings()
         else:
             self.drone.use_real_settings()
-        
+
         flight_settings_obj: FlightSettings = FlightSettings(
             sim_flags=(sim_flag, airsim_flag),
             path_data_path=path_data_path,
@@ -81,7 +81,7 @@ class FlightManager:
         await self.drone.connect_drone()
 
         if airsim_flag:
-            
+
             self.drone.arming_check_set(0)
 
         logging.info("Starting processes")
