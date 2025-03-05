@@ -7,9 +7,7 @@ Functions for generating search paths to cover an area for finding the standard 
 
 import logging
 import asyncio
-import json
 import utm
-
 
 from shapely.geometry import Polygon
 
@@ -100,31 +98,6 @@ def generate_search_paths(
     return generated_search_paths
 
 
-def load_search_boundaries(zone: str) -> list[dict[str, float]]:
-    """
-    Loads search area boundaries from waypoint_data.json for the specified zone
-
-    Parameters
-    ----------
-    zone : str
-        The zone identifier ("Z1" or "Z2")
-
-    Returns
-    -------
-    list[dict[str, float]]
-        The boundary coordinates for the specified zone
-    """
-    with open("flight/data/waypoint_data.json", "r", encoding="utf8") as file:
-        data = json.load(file)
-
-    # Get the coordinates for the specified zone
-    zone_key = f"odlcWaypoints{zone}"
-    if zone_key not in data:
-        raise ValueError(f"Invalid zone: {zone}. Must be 'Z1' or 'Z2'")
-
-    return data[zone_key]
-
-
 # duplicate code disabled for testing function
 # pylint: disable=duplicate-code
 async def run() -> None:
@@ -166,11 +139,33 @@ async def run() -> None:
 
 
 if __name__ == "__main__":
-    # Loads the boundaries of a given zone (Z1 or Z2)
-    # Zone points are in the order: Top Right Corner, Right Midpoint,
-    # Bottom Right Corner, Top Left Corner, Left Midpoint, Bottom Left Corner
-    area: str = "Z1"
-    data_search_area_boundary: list[dict[str, float]] = load_search_boundaries(area)
+    # Official Coordinates for Maryland
+    data_search_area_boundary: list[dict[str, float]] = [
+        {
+            "latitude": 38.3144070396263,
+            "longitude": -76.54394394383165,
+        },  # Top Right Corner
+        {
+            "latitude": 38.31430872867596,
+            "longitude": -76.54397320409971,
+        },  # Right Midpoint
+        {
+            "latitude": 38.31421041772561,
+            "longitude": -76.54400246436776,
+        },  # Bottom Right Corner
+        {
+            "latitude": 38.31461622313521,
+            "longitude": -76.54516993186949,
+        },  # Top Left Corner
+        {
+            "latitude": 38.31451966813249,
+            "longitude": -76.54519982319357,
+        },  # Left Midpoint
+        {
+            "latitude": 38.31442311312976,
+            "longitude": -76.54522971451763,
+        },  # Bottom Left Corner
+    ]
 
     # data_search_area_boundary: List[Dict[str, float]] = [
     # Test Coordinates at the Golf Course
