@@ -11,6 +11,7 @@ import asyncio
 import logging
 import sys
 from state_machine.flight_manager import FlightManager
+from vision.common.constants import SENSOR_WIDTH, SENSOR_HEIGHT
 
 if __name__ == "__main__":
     # Run multiprocessing function
@@ -24,6 +25,9 @@ if __name__ == "__main__":
             SIM_FLAG = True
         elif "-a" in sys.argv:
             AIRSIM_FLAG = True
+            SENSOR_HEIGHT=10
+            SENSOR_WIDTH=10
+            
         asyncio.run(flight_manager.run_manager(SIM_FLAG, AIRSIM_FLAG))
     finally:
         logging.info("Done!")

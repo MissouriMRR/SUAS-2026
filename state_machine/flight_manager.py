@@ -41,7 +41,7 @@ class FlightManager:
         self,
         sim_flag: bool,
         airsim_flag: bool,
-        path_data_path: str = "flight/data/waypoint_data.json",
+        path_data_path: str = "flight/data/golf_data.json",
         skip_waypoint: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
     ) -> None:
@@ -64,12 +64,13 @@ class FlightManager:
         """
 
         if sim_flag:
-            self.drone.address = "udp://:14540"
+            self.drone.use_sim_settings()
+            
         elif airsim_flag:
-            self.drone.address = "udp:127.0.0.1:14550"
+            self.drone.use_airsim_settings()
         else:
             self.drone.use_real_settings()
-
+        
         flight_settings_obj: FlightSettings = FlightSettings(
             sim_flags=(sim_flag, airsim_flag),
             path_data_path=path_data_path,
@@ -78,6 +79,10 @@ class FlightManager:
         )
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()
+
+        if airsim_flag:
+            
+            self.drone.arming_check_set(0)
 
         logging.info("Starting processes")
 

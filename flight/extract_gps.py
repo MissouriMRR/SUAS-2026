@@ -305,7 +305,7 @@ def extract_gps(path: str) -> GPSData:
             *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
         )
         boundary_points_utm.append(full_boundary_point_utm)
-
+   
     for boundary_point in json_data["flyzones"]["mappingBoundary"]:
         latitude = boundary_point["latitude"]
         longitude = boundary_point["longitude"]

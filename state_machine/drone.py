@@ -121,10 +121,19 @@ class Drone:
         )
         logging.info("Drone discovered!")
 
+    def arming_check_set(self, check: int ) -> None:
+        """
+        
+        For use with airsim
+
+        """
+        self.vehicle.parameters["ARMING_CHECK"] = 0
     async def arm(self) -> None:
         """
         Arm the drone
         """
+
+
         logging.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
@@ -187,10 +196,14 @@ class Drone:
     async def close(self) -> None:
         """Close the owned DroneKit Vehicle object."""
         self.vehicle.close()
+    def use_airsim_settings(self) -> None:
+        """Modify the connection settings to connect to an airsim vehicle."""
+        self.address = "tcp:127.0.0.1:5762"
+        self.baud = None
 
     def use_sim_settings(self) -> None:
         """Modify the connection settings to connect to a simulated vehicle."""
-        self.address = "tcp:127.0.0.1:5762"
+        self.address = "udp:127.0.0.1:14550"
         self.baud = None
 
     def use_real_settings(self) -> None:
