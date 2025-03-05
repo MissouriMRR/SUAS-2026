@@ -10,6 +10,8 @@ from state_machine.state_tracker import (
     update_flight_settings,
 )
 
+from drone import Drone
+
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
@@ -44,8 +46,8 @@ async def run(self: Airdrop) -> State:
         update_drone(self.drone)
         update_flight_settings(self.flight_settings)
         logging.info("Airdrop state running")
-        
-        #implement servo logic her !!!!!!!!!
+
+        # implement servo logic her !!!!!!!!!
         # uncomment if automatic
         # if self.drone.address == "serial:///dev/ttyFTDI:921600":
         #   setup airdrop
@@ -74,19 +76,19 @@ async def run(self: Airdrop) -> State:
         # Find if there is a loaded cylinder
         cylinder_num: str = ""
         for cylinder in cylinders:
-            if cylinder["Loaded"]:
+            if cylinders[cylinder]["Loaded"]:
                 cylinder_num = cylinder
                 break
             elif cylinder_num == "":
                 cylinder_num = cylinder
-        if (not cylinder_num["Loaded"]):
+        if not cylinders[cylinder]["Loaded"]:
             logging.warning("No beacons are loaded?")
             return Mapping(self.drone, self.flight_settings)
 
         dropped: bool = await attempt_drop(
             self.drone, drop_locations, cylinders, attempted_locations, cylinder_num
         )
-        
+
         with open("flight/data/bottles.json", "w", encoding="utf8") as output:
             json.dump(cylinders, output)
 
@@ -110,10 +112,10 @@ async def run(self: Airdrop) -> State:
 
 
 async def attempt_drop(
-    drone,
-    drop_locations: dict,
-    cylinders: dict,
-    attempted_locations: set,
+    drone: Drone,
+    drop_locations: dict[str, dict[str, int]],
+    cylinders: dict[str, dict[str, int | bool]],
+    attempted_locations: set[str],
     cylinder_num: str,
     retry_mode: bool = False,
 ) -> bool:
@@ -187,6 +189,7 @@ async def attempt_drop(
     except KeyError:
         logging.warning("Drop location %s was not found. Skipping.", location_id)
         return False
+
 
 # Setting the run_callable attribute of the Airdrop class to the run function
 Airdrop.run_callable = run
