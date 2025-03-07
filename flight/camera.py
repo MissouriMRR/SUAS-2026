@@ -516,7 +516,7 @@ class CameraAirSim(Camera):
         Starts at 0 and increments by 1 for each image taken.
     base_api_url : str
         The base API URL for the camera
-        
+
 
     Methods
     -------
