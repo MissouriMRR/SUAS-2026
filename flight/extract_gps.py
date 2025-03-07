@@ -336,7 +336,7 @@ def extract_gps(path: str) -> GPSData:
         ],
         "odlc_altitude": json_data["odlcAltitude"],
         "odlc_heading": json_data["odlcHeading"],
-        "airdrop_altitude": json_data["airdropAltitude"]
+        "airdrop_altitude": json_data["airdropAltitude"],
     }
     return waypoint_data
 
