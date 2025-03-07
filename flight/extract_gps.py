@@ -256,6 +256,8 @@ def extract_gps(path: str) -> GPSData:
                 The maximum altitude that the drone must fly at all times, in feet.
         odlc_altitude : int
             The altitude to fly at during the ODLC state, in feet.
+        airdrop_altitude : int
+            The altitude to fly at during the Airdrop state, in meters
 
     Raises
     ------
@@ -334,6 +336,7 @@ def extract_gps(path: str) -> GPSData:
         ],
         "odlc_altitude": json_data["odlcAltitude"],
         "odlc_heading": json_data["odlcHeading"],
+        "airdrop_altitude": json_data["airdropAltitude"]
     }
     return waypoint_data
 

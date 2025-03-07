@@ -4,13 +4,15 @@ import asyncio
 import logging
 import json
 
+from flight.extract_gps import extract_gps
+
 from state_machine.state_tracker import (
     update_state,
     update_drone,
     update_flight_settings,
 )
 
-from drone import Drone
+from state_machine.drone import Drone
 
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
@@ -139,6 +141,8 @@ async def attempt_drop(
         Set of previously attempted drop locations
     cylinder_num : str
         The cylinder number to use for the drop
+    path : str
+        the path to where our waypoint/flight locations are stored
     retry_mode : bool
         Whether we're in retry mode (attempting previously visited locations)
 
@@ -164,8 +168,7 @@ async def attempt_drop(
             location_id = min(drop_locations.keys())
             drop_loc = drop_locations[location_id]
 
-        with open(path, "w", encoding="utf8") as gps_file:
-            airdrop_altitude: int = json.load(gps_file)["airdropAltitude"]
+        airdrop_altitude = extract_gps(path)["airdrop_altitude"]
 
         await move_to(drone.vehicle, drop_loc["latitude"], drop_loc["longitude"], airdrop_altitude)
 
