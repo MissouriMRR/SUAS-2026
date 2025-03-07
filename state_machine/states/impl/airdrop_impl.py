@@ -168,7 +168,7 @@ async def attempt_drop(
             location_id = min(drop_locations.keys())
             drop_loc = drop_locations[location_id]
 
-        airdrop_altitude = extract_gps(path)["airdrop_altitude"]
+        airdrop_altitude: float = extract_gps(path)["airdrop_altitude"]
 
         await move_to(drone.vehicle, drop_loc["latitude"], drop_loc["longitude"], airdrop_altitude)
 
