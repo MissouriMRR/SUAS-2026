@@ -67,8 +67,8 @@ class CameraParameters(TypedDict):
 
 
 # Sony RX100 VII sensor size in millimeters
-SENSOR_WIDTH: float = 13.2
-SENSOR_HEIGHT: float = 8.8
+SENSOR_WIDTH: float = 16
+SENSOR_HEIGHT: float = 9
 
 # The rotation offset of the camera to the drone. The offset is applied
 #   in vision.vector_utils.pixel_intersect()

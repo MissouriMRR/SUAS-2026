@@ -10,6 +10,7 @@ import math
 import os
 from typing import Any, TextIO
 
+
 import aiofiles  # type: ignore
 import aiohttp
 import dronekit
@@ -725,7 +726,7 @@ class CameraAirSim(Camera):
             return
 
         camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
-        print("DOING STUFF")
+    
         _, file_path = await self.capture_photo()
         point: dict[str, CameraParameters] = {file_path: camera_parameters}
         info.update(point)
@@ -767,14 +768,15 @@ class CameraAirSim(Camera):
         roll_deg: float = math.degrees(attitude.roll)
         pitch_deg: float = math.degrees(attitude.pitch)
         yaw_deg: float = math.degrees(attitude.yaw)
-        horizontal_fov = self.client.simGetCameraInfo("bottom_center").fov
+        horizontal_fov=self.client.simGetCameraInfo("bottom_center").fov
+        
+        
+        
 
-        print(self.client.simGetCameraInfo("bottom_center"))
-        logging.info(self.client.simGetCameraInfo("bottom_center"))
-        # vertical_fov= image_height / image_width * horizontal FoV
-        print(SENSOR_HEIGHT)
+
         return CameraParameters(
-            focal_length=24,  # (sensor_size/(np.tan(/2))),
+
+            focal_length= SENSOR_WIDTH/(2*math.tan((horizontal_fov/2)*math.pi/180)),
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
             drone_coordinates=[location.lat, location.lon],
             altitude_f=location.alt,
