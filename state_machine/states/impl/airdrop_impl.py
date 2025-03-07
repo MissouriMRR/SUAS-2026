@@ -92,7 +92,7 @@ async def run(self: Airdrop) -> State:
             cylinders,
             attempted_locations,
             cylinder_num,
-            self.flight_settings.path_data_path,
+            self.flight_settings.mission_data_path,
         )
 
         with open("flight/data/bottles.json", "w", encoding="utf8") as output:
