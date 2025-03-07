@@ -13,7 +13,6 @@ from state_machine.state_tracker import (
 from drone import Drone
 
 from state_machine.states.airdrop import Airdrop
-from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
@@ -57,10 +56,10 @@ async def run(self: Airdrop) -> State:
         # servo_num: int
 
         with open("flight/data/output.json", encoding="utf8") as output:
-            drop_locations = json.load(output)
+            drop_locations: dict[str, dict[str, int]] = json.load(output)
 
         with open("flight/data/bottles.json", encoding="utf8") as output:
-            cylinders = json.load(output)
+            cylinders: dict[str, dict[str, int | bool]] = json.load(output)
 
         logging.info("Moving to drop location")
 
@@ -86,7 +85,12 @@ async def run(self: Airdrop) -> State:
             return Mapping(self.drone, self.flight_settings)
 
         dropped: bool = await attempt_drop(
-            self.drone, drop_locations, cylinders, attempted_locations, cylinder_num
+            self.drone,
+            drop_locations,
+            cylinders,
+            attempted_locations,
+            cylinder_num,
+            self.flight_settings.path_data_path,
         )
 
         with open("flight/data/bottles.json", "w", encoding="utf8") as output:
@@ -117,6 +121,7 @@ async def attempt_drop(
     cylinders: dict[str, dict[str, int | bool]],
     attempted_locations: set[str],
     cylinder_num: str,
+    path: str,
     retry_mode: bool = False,
 ) -> bool:
     """
@@ -145,6 +150,8 @@ async def attempt_drop(
     try:
         # Find next available drop location
         available_locations = set(drop_locations.keys()) - attempted_locations
+        location_id: str
+        drop_loc: dict[str, int]
 
         if available_locations:
             # Get the next location ID (using min for consistent ordering)
@@ -157,7 +164,10 @@ async def attempt_drop(
             location_id = min(drop_locations.keys())
             drop_loc = drop_locations[location_id]
 
-        await move_to(drone.vehicle, drop_loc["latitude"], drop_loc["longitude"], 24)
+        with open(path, "w", encoding="utf8") as gps_file:
+            airdrop_altitude: int = json.load(gps_file)["airdropAltitude"]
+
+        await move_to(drone.vehicle, drop_loc["latitude"], drop_loc["longitude"], airdrop_altitude)
 
         if retry_mode:
             logging.info(
