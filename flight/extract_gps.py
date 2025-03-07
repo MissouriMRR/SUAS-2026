@@ -194,41 +194,41 @@ def extract_gps(path: str) -> GPSData:
         waypoints : list[Waypoint[float, float, float]]
             Waypoint : Waypoint[float, float, float]
                 latitude : float
-                    The latitude of the waypoint.
+                    The latitude of the waypoint, in degrees.
                 longitude : float
-                    The longitude of the waypoint.
+                    The longitude of the waypoint, in degrees.
                 altitude : float
-                    The altitude of the waypoint.
+                    The altitude of the waypoint, in meters.
         waypoints_utm : list[WaypointUtm[float, float, int, str, float]]
             WaypointUtm : WaypointUtm[float, float, int, str, float]
                 easting : float
-                    The easting of the waypoint.
+                    The easting of the waypoint, in meters.
                 northing : float
-                    The northing of the waypoint.
+                    The northing of the waypoint., in meters
                 zone_number : int
                     The zone number of the waypoint.
                 zone_letter : str
                     The zone letter of the waypoint.
                 altitude : float
-                    The altitude of the waypoint.
+                    The altitude of the waypoint, in meters.
         odlc_waypoints : list[OdlcWaypoint[float, float]]
             OdlcWaypoint : OdlcWaypoint[float, float]
                 latitude : float
-                    The latitude of the waypoint.
+                    The latitude of the waypoint, in degrees.
                 longitude : float
-                    The longitude of the waypoint.
+                    The longitude of the waypoint, in degrees.
         boundary_points : list[BoundaryPoint[float, float]]
             BoundaryPoint : BoundaryPoint[float, float]
                 latitude : float
-                    The latitude of the boundary point.
+                    The latitude of the boundary point, in degrees.
                 longitude : float
-                    The longitude of the boundary point.
+                    The longitude of the boundary point, in degrees.
         boundary_points_utm : list[BoundaryPointUtm[float, float, int, str]]
             BoundaryPointUtm : BoundaryPointUtm[float, float, int, str]
                 easting : float
-                    The easting of the boundary point.
+                    The easting of the boundary point, in meters.
                 northing : float
-                    The northing of the boundary point.
+                    The northing of the boundary point, in meters.
                 zone_number : int
                     The zone number of the boundary point.
                 zone_letter : str
@@ -236,26 +236,26 @@ def extract_gps(path: str) -> GPSData:
         mapping_boundary : list[BoundaryPoint[float, float]]
             BoundaryPoint : BoundaryPoint[float, float]
                 latitude : float
-                    The latitude of the mapping area boundary point.
+                    The latitude of the mapping area boundary point, in degrees.
                 longitude : float
-                    The longitude of the mapping area boundary point.
+                    The longitude of the mapping area boundary point, in degrees.
         mapping_boundary_utm : list[BoundaryPointUtm[float, float, int, str]]
             BoundaryPointUtm : BoundaryPointUtm[float, float, int, str]
                 easting : float
-                    The easting of the mapping area boundary point.
+                    The easting of the mapping area boundary point, in meters.
                 northing : float
-                    The northing of the mapping area boundary point.
+                    The northing of the mapping area boundary point, in meters.
                 zone_number : int
                     The zone number of the mapping area boundary point.
                 zone_letter : str
                     The zone letter of the mapping area boundary point.
         altitude_limits : list[int, int]
             altitude_min : int
-                The minimum altitude that the drone must fly at all times, in feet.
+                The minimum altitude that the drone must fly at all times, in meters.
             altitude_max : int
-                The maximum altitude that the drone must fly at all times, in feet.
+                The maximum altitude that the drone must fly at all times, in meters.
         odlc_altitude : int
-            The altitude to fly at during the ODLC state, in feet.
+            The altitude to fly at during the ODLC state, in meters.
 
     Raises
     ------

@@ -349,5 +349,5 @@ class Camera:
             focal_length=24,
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
             drone_coordinates=[location.lat, location.lon],
-            altitude_f=location.alt,
+            altitude=location.alt,
         )

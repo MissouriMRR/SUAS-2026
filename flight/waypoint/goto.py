@@ -27,8 +27,7 @@ async def move_to(
 ) -> None:
     """
     This function takes in a latitude, longitude and altitude and autonomously
-    moves the drone to that waypoint. This function will also auto convert the altitude
-    from feet to meters.
+    moves the drone to that waypoint.
 
     Parameters
     ----------
