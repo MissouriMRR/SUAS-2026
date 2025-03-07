@@ -768,7 +768,7 @@ class CameraAirSim(Camera):
         roll_deg: float = math.degrees(attitude.roll)
         pitch_deg: float = math.degrees(attitude.pitch)
         yaw_deg: float = math.degrees(attitude.yaw)
-        horizontal_fov = self.client.simGetCameraInfo("bottom_center").fov
+        horizontal_fov: float = self.client.simGetCameraInfo("bottom_center").fov
 
         return CameraParameters(
             focal_length=SENSOR_WIDTH / (2 * math.tan((horizontal_fov / 2) * math.pi / 180)),

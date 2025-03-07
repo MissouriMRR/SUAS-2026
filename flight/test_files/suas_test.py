@@ -6,7 +6,7 @@ import asyncio
 import sys
 
 from typing import List
-
+import logging
 from mavsdk import System
 
 
