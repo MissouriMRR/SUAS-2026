@@ -121,8 +121,8 @@ GPSData = TypedDict(
         "boundary_points_utm": list[BoundaryPointUtm],
         "mapping_boundary": list[BoundaryPoint],
         "mapping_boundary_utm": list[BoundaryPointUtm],
-        "altitude_limits": list[int],
-        "odlc_altitude": int,
+        "altitude_limits": list[float],
+        "odlc_altitude": float,
         "odlc_heading": float,
     },
 )
@@ -249,13 +249,15 @@ def extract_gps(path: str) -> GPSData:
                     The zone number of the mapping area boundary point.
                 zone_letter : str
                     The zone letter of the mapping area boundary point.
-        altitude_limits : list[int, int]
-            altitude_min : int
+        altitude_limits : list[float, float]
+            altitude_min : float
                 The minimum altitude that the drone must fly at all times, in meters.
-            altitude_max : int
+            altitude_max : float
                 The maximum altitude that the drone must fly at all times, in meters.
-        odlc_altitude : int
+        odlc_altitude : float
             The altitude to fly at during the ODLC state, in meters.
+        odlc_heading : float
+            Currently unused.
 
     Raises
     ------
