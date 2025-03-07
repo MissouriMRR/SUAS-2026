@@ -33,8 +33,6 @@ class Camera:
     ----------
     camera : SIYISDK
         The object that controls the camera.
-    stream : SIYIRSTP
-        The video stream from the camera.
     session_id : int
         The session id for the current session.
         This will start at 0 the first time pictures are taken on a given day.
@@ -42,6 +40,8 @@ class Camera:
     image_id : int
         The image id for the current image.
         Starts at 0 and increments by 1 for each image taken.
+    base_api_url : str
+        The base API URL for the camera
 
     Methods
     -------
@@ -55,8 +55,7 @@ class Camera:
         latitude: float,
         longitude: float,
         altitude: float,
-        interval: float,
-        heading: float,
+        interval: float
     )
         Move the drone to the specified latitude, longitude, and altitude.
         Takes photos along the way.
@@ -65,8 +64,7 @@ class Camera:
         latitude: float,
         longitude: float,
         altitude: float,
-        take_photos: bool,
-        heading: float,
+        take_photos: bool
     )
         Move the drone to the specified latitude, longitude, and altitude.
         Takes a photo at the end if take_photos is True.
@@ -176,8 +174,6 @@ class CameraIRL(Camera):
     ----------
     camera : SIYISDK
         The object that controls the camera.
-    stream : SIYIRSTP
-        The video stream from the camera.
     session_id : int
         The session id for the current session.
         This will start at 0 the first time pictures are taken on a given day.
@@ -185,6 +181,8 @@ class CameraIRL(Camera):
     image_id : int
         The image id for the current image.
         Starts at 0 and increments by 1 for each image taken.
+    base_api_url : str
+        The base API URL for the camera
 
     Methods
     -------
@@ -198,8 +196,7 @@ class CameraIRL(Camera):
         latitude: float,
         longitude: float,
         altitude: float,
-        interval: float,
-        heading: float,
+        interval: float
     )
         Move the drone to the specified latitude, longitude, and altitude.
         Takes photos along the way.
@@ -208,8 +205,7 @@ class CameraIRL(Camera):
         latitude: float,
         longitude: float,
         altitude: float,
-        take_photos: bool,
-        heading: float,
+        take_photos: bool
     )
         Move the drone to the specified latitude, longitude, and altitude.
         Takes a photo at the end if take_photos is True.
@@ -469,6 +465,10 @@ class CameraIRL(Camera):
         with open("flight/data/camera.json", "w", encoding="ascii") as camera:
             json.dump(current_photos | info, camera)
 
+            # tell machine to sleep to prevent constant polling, preventing battery drain
+            await asyncio.sleep(1)
+        return
+
     async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
         """
         Gets the current camera information based on a drone's position_pitch.
@@ -514,6 +514,9 @@ class CameraAirSim(Camera):
     image_id : int
         The image id for the current image.
         Starts at 0 and increments by 1 for each image taken.
+    base_api_url : str
+        The base API URL for the camera
+        
 
     Methods
     -------
@@ -527,11 +530,19 @@ class CameraAirSim(Camera):
         latitude: float,
         longitude: float,
         altitude: float,
-        fast_param: float,
         take_photos: float
+    )
+    mapping_move_to(
+        drone: dronekit.Vehicle,
+        latitude: float,
+        longitude: float,
+        altitude: float,
+        interval: float
     )
         Move the drone to the specified latitude, longitude, and altitude.
         Takes photos along the way if take_photos is True.
+    _get_camera_parameters(drone: dronekit.Vehicle)
+        Get the current camera information to associate with a photo.
     """
 
     def __init__(self) -> None:
