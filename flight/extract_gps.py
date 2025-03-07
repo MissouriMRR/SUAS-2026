@@ -124,6 +124,7 @@ GPSData = TypedDict(
         "altitude_limits": list[float],
         "odlc_altitude": float,
         "odlc_heading": float,
+        "airdrop_altitude": float,
     },
 )
 
@@ -258,6 +259,8 @@ def extract_gps(path: str) -> GPSData:
             The altitude to fly at during the ODLC state, in meters.
         odlc_heading : float
             Currently unused.
+        airdrop_altitude : float
+            The altitude to fly at during the Airdrop state, in meters
 
     Raises
     ------
@@ -336,6 +339,7 @@ def extract_gps(path: str) -> GPSData:
         ],
         "odlc_altitude": json_data["odlcAltitude"],
         "odlc_heading": json_data["odlcHeading"],
+        "airdrop_altitude": json_data["airdropAltitude"],
     }
     return waypoint_data
 
