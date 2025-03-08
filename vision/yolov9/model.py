@@ -13,8 +13,6 @@ import onnxruntime
 
 
 # We only care about the object classes that will actually appear in the competition
-# In order: person, car, motorcycle, airplane, bus, boat, stop sign, umbrella, suitcase,
-#           skis, snowboard, sports ball, baseball bat, tennis racket, bed
 # You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
 CLASS_NAMES = {
     0: "person",
@@ -67,10 +65,20 @@ class ImageTrigger:
 class ObjectDetection:
     """A class that stores the info of an object detection."""
 
-    def __init__(self, category: str, bbox: npt.NDArray[np.float32], confidence: float):
+    def __init__(
+        self,
+        image_path: str,
+        category: str,
+        bbox: npt.NDArray[np.float32],
+        confidence: float,
+    ):
+        self._image_path = image_path
         self._category = category
         self._bbox = bbox
         self._confidence = confidence
+
+    def __repr__(self) -> str:
+        return f"{self.image} @ {self.bbox}: {self.confidence}"
 
     def __lt__(self, other: Self) -> bool:
         if self.category != other.category:
@@ -92,6 +100,11 @@ class ObjectDetection:
         """Returns the confidence of the object detection."""
         return self._confidence
 
+    @property
+    def image(self) -> str:
+        """Returns the path to the image of the object detection."""
+        return self._image_path
+
 
 class YOLOv9:
     """This class implements and runs the YOLOv9 model on images we capture."""
@@ -110,7 +123,7 @@ class YOLOv9:
 
         opt_session = onnxruntime.SessionOptions()
         opt_session.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
-        providers = ["CPUExecutionProvider"]
+        providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
         self.onnx_session = onnxruntime.InferenceSession(
             full_model_path, sess_options=opt_session, providers=providers
@@ -156,26 +169,18 @@ class YOLOv9:
         boxes = inferences[:4, :].T
 
         # We only care about the classes that will appear in competition, choose the best one
-        classes = [category for category in classes if category in CLASS_NAMES]
-
         best_guesses: dict[int, tuple[npt.NDArray[np.float32], float]] = {}
-        for category in set(classes):
-            best_inference = max(
-                (
-                    (index, score)
-                    for index, score in enumerate(scores)
-                    if classes[index] == category
-                ),
-                key=lambda x: x[1],
-            )
-            best_guesses[category] = (boxes[best_inference[0]], best_inference[1])
-
-        if not best_guesses:
-            logging.warning("No objects detected")
-            return {}
+        for i in range(len(classes)):
+            if classes[i] not in CLASS_NAMES:
+                continue
+            if classes[i] in best_guesses:
+                if scores[i] > best_guesses[classes[i]][1]:
+                    best_guesses[classes[i]] = (boxes[i], scores[i])
+            else:
+                best_guesses[classes[i]] = (boxes[i], scores[i])
 
         # These bboxes are based on the model input image size, convert back to og image size
-        for category, (box, _) in best_guesses.items():
+        for _, (box, _) in best_guesses.items():
             # Fix scaling
             box[0] = box[0] / self.input_width * image_size[0]  # X
             box[1] = box[1] / self.input_height * image_size[1]  # Y
@@ -206,6 +211,7 @@ class YOLOv9:
         height, width = image.shape[:2]
         processed_image = self._convert_image(image)
         trigger = ImageTrigger(image_path)
+        logging.info("Processing image: %s", image_path)
         self.onnx_session.run_async(
             self.output_names,
             {"images": processed_image},
@@ -221,7 +227,7 @@ class YOLOv9:
         # Results are ready to process
         results = self._filter_output(trigger.results, (width, height))
         detections: list[ObjectDetection] = [
-            ObjectDetection(CLASS_NAMES[category], box, confidence)
+            ObjectDetection(image_path, CLASS_NAMES[category], box, confidence)
             for (category, (box, confidence)) in results.items()
         ]
 
