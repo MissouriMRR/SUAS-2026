@@ -3,7 +3,6 @@
 import asyncio
 from ctypes import c_bool
 import logging
-import json
 from multiprocessing import Value
 from multiprocessing.sharedctypes import SynchronizedBase
 from pathlib import Path
@@ -24,7 +23,7 @@ from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
-from vision.flyover_vision_pipeline import flyover_pipeline
+from vision.vision_pipeline import flyover_pipeline
 
 
 async def run(self: ODLC) -> State:
@@ -130,44 +129,31 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
 
     gps_data: GPSData = extract_gps(self.flight_settings.path_data_path)
 
-    loops: int = 0  # Max amount of loops before giving up
-    while loops <= 0:
-        logging.info("Starting odlc zone flyover")
-        loops += 1
+    logging.info("Starting odlc zone flyover")
 
-        # traverses the 3 waypoints starting at the midpoint on left to midpoint on the right
-        # then to the top left corner at the rectangle
-        point: int
-        for point in range(len(gps_data["odlc_waypoints"])):
-            take_photos: bool = True
+    # traverses the 3 waypoints starting at the midpoint on left to midpoint on the right
+    # then to the top left corner at the rectangle
+    point: int
+    for point in range(len(gps_data["odlc_waypoints"])):
+        take_photos: bool = True
 
-            logging.info("Moving to ODLC scan point %d", point)
+        logging.info("Moving to ODLC scan point %d", point)
 
-            if camera:
-                await camera.odlc_move_to(
-                    self.drone.vehicle,
-                    gps_data["odlc_waypoints"][point].latitude,
-                    gps_data["odlc_waypoints"][point].longitude,
-                    gps_data["odlc_altitude"],
-                    take_photos,
-                )
-            else:
-                await move_to(
-                    self.drone.vehicle,
-                    gps_data["odlc_waypoints"][point].latitude,
-                    gps_data["odlc_waypoints"][point].longitude,
-                    gps_data["odlc_altitude"],
-                )
-
-        if self.flight_settings.standard_object_count <= 0:
-            break
-
-        with open("flight/data/output.json", encoding="ascii") as output:
-            airdrop_dict = json.load(output)
-            airdrops: int = len(airdrop_dict)
-
-        if airdrops >= self.flight_settings.standard_object_count:
-            break
+        if camera:
+            await camera.odlc_move_to(
+                self.drone.vehicle,
+                gps_data["odlc_waypoints"][point].latitude,
+                gps_data["odlc_waypoints"][point].longitude,
+                gps_data["odlc_altitude"],
+                take_photos,
+            )
+        else:
+            await move_to(
+                self.drone.vehicle,
+                gps_data["odlc_waypoints"][point].latitude,
+                gps_data["odlc_waypoints"][point].longitude,
+                gps_data["odlc_altitude"],
+            )
 
     if camera:
         camera.camera.disconnect()
