@@ -13,6 +13,7 @@ from vision.common.bounding_box import BoundingBox
 import vision.pipeline.standard_pipeline as std_obj
 import vision.pipeline.pipeline_utils as pipe_utils
 
+from vision.yolov9.model import ObjectDetection
 from vision.yolov9.queue import PhotoQueue
 
 
@@ -70,7 +71,7 @@ async def flyover_pipeline(
                 await queue.add_photo(full_image_path)
 
     # End the queue, get results
-    detected_objects: consts.DetectionList = await queue.end_queue()
+    detected_objects: dict[str, ObjectDetection] = await queue.end_queue()
 
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)

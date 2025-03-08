@@ -3,8 +3,6 @@
 from typing import TypeAlias, TypedDict
 from nptyping import NDArray, Shape, UInt8, Float64, IntC, Bool8
 
-from vision.yolov9.model import ObjectDetection
-
 Image: TypeAlias = NDArray[Shape["*, *, 3"], UInt8]
 # single channel image type
 ScImage: TypeAlias = NDArray[Shape["*, *"], UInt8]
@@ -24,8 +22,6 @@ Hierarchy: TypeAlias = NDArray[Shape["1, *, 4"], IntC]
 #     4--3
 Corners: TypeAlias = NDArray[Shape["4, 2"], Float64]
 ImageShape: TypeAlias = tuple[int, int] | tuple[int, int, int]
-
-DetectionList: TypeAlias = dict[str, ObjectDetection]
 
 
 class Location(TypedDict):

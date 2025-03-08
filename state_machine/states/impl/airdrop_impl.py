@@ -4,12 +4,17 @@ import asyncio
 import logging
 import json
 
-from state_machine.state_tracker import update_state
+from state_machine.state_tracker import (
+    update_state,
+    update_drone,
+    update_flight_settings,
+)
 
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.land import Land
-from state_machine.states.waypoint import Waypoint
+from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
+from state_machine.states.waypoint import Waypoint
 
 # uncomment if automatic
 # from flight.maestro.air_drop import AirdropControl
@@ -30,9 +35,14 @@ async def run(self: Airdrop) -> State:
     This method is responsible for initiating the Airdrop process of the drone and transitioning
     it back to the Waypoint state.
     """
+    if self.flight_settings.skip_odlc_and_airdrop:
+        return Mapping(self.drone, self.flight_settings)
+
     try:
         update_state("Airdrop")
-        logging.info("Airdrop")
+        update_drone(self.drone)
+        update_flight_settings(self.flight_settings)
+        logging.info("Airdrop state running")
         # uncomment if automatic
         # if self.drone.address == "serial:///dev/ttyFTDI:921600":
         #   setup airdrop
@@ -70,9 +80,10 @@ async def run(self: Airdrop) -> State:
             bottle_loc: dict[str, float] = bottle_locations[str(bottle)]
 
             # Move to the bottle with priority
-            await move_to(self.drone.system, bottle_loc["latitude"], bottle_loc["longitude"], 24)
+            await move_to(self.drone.vehicle, bottle_loc["latitude"], bottle_loc["longitude"], 24)
             logging.info(
-                "Starting bottle drop %s. Wait for drone to be stationary then drop.", bottle
+                "Starting bottle drop %s. Wait for drone to be stationary then drop.",
+                bottle,
             )
             # If bottle drop is automatic these would be used
             # if self.drone.address == "serial:///dev/ttyFTDI:921600":
@@ -105,7 +116,7 @@ async def run(self: Airdrop) -> State:
 
         if continue_run:
             return Waypoint(self.drone, self.flight_settings)
-        return Land(self.drone, self.flight_settings)
+        return Mapping(self.drone, self.flight_settings)
 
     except asyncio.CancelledError as ex:
         logging.error("Airdrop state canceled")
