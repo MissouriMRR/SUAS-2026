@@ -43,6 +43,15 @@ class Location(TypedDict):
 # Location is the coordinates of the standard object once found
 ODLCDict: TypeAlias = dict[str, Location]
 
+CameraConfig = TypedDict(
+    "CameraConfig",
+    {
+        "Default": dict[str, float],
+        "Airsim": dict[str, float],
+        "airsim_flag": bool,
+    },
+)
+
 
 class CameraParameters(TypedDict):
     """
@@ -50,8 +59,6 @@ class CameraParameters(TypedDict):
 
     Attributes
     ----------
-    focal_length : float
-        The camera's focal length in millimeters
     rotation_deg: list[float]
         The rotation of the drone/camera
     drone_coordinates: list[float]
@@ -60,15 +67,10 @@ class CameraParameters(TypedDict):
         The altitude of the drone in feet
     """
 
-    focal_length: float
     rotation_deg: list[float]
     drone_coordinates: list[float]
     altitude_f: float
 
-
-# Sony RX100 VII sensor size in millimeters
-SENSOR_WIDTH: float = 13.2
-SENSOR_HEIGHT: float = 8.8
 
 # The rotation offset of the camera to the drone. The offset is applied
 #   in vision.vector_utils.pixel_intersect()

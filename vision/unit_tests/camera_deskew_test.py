@@ -23,7 +23,6 @@ class TestVisionFunctions(unittest.TestCase):
 
         """
         self.camera_params = CameraParameters(
-            focal_length=35.0,
             rotation_deg=[0, 0, 0],
             drone_coordinates=[37.7749, -122.4194],
             altitude_f=1000.0,

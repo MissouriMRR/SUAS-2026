@@ -26,8 +26,6 @@ def get_coordinates(
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
-        focal_length : float
-            The camera's focal length in millimeters
         rotation_deg: list[float]
             The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
             camera, stored in constants.py, will be applied first
@@ -58,7 +56,6 @@ def get_coordinates(
     intersect: Point | None = vector_utils.pixel_intersect(
         pixel,
         image_shape,
-        camera_parameters["focal_length"],
         camera_parameters["rotation_deg"],
         altitude_m,
     )
@@ -92,8 +89,6 @@ def bounding_area(
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
-        focal_length : float
-            The camera's focal length in millimeters
         rotation_deg: list[float]
             The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
             camera, stored in constants.py, will be applied first
@@ -144,8 +139,6 @@ def calculate_distance(
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
-        focal_length : float
-            The camera's focal length in millimeters
         rotation_deg: list[float]
             The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
             camera, stored in constants.py, will be applied first
@@ -164,7 +157,6 @@ def calculate_distance(
     intersect1: Point | None = vector_utils.pixel_intersect(
         pixel1,
         image_shape,
-        camera_parameters["focal_length"],
         camera_parameters["rotation_deg"],
         camera_parameters["altitude_f"],
     )
@@ -172,7 +164,6 @@ def calculate_distance(
     intersect2: Point | None = vector_utils.pixel_intersect(
         pixel2,
         image_shape,
-        camera_parameters["focal_length"],
         camera_parameters["rotation_deg"],
         camera_parameters["altitude_f"],
     )
