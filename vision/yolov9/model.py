@@ -11,6 +11,8 @@ import numpy as np
 import numpy.typing as npt
 import onnxruntime
 
+from vision.common.constants import Image, ImageShape
+
 
 # We only care about the object classes that will actually appear in the competition
 # You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
@@ -101,6 +103,8 @@ class ObjectDetection:
         The bounding box of the object detection.
     confidence : float
         The confidence score of the object detection.
+    shape : tuple[int, ...]
+        The shape of the image of the object detection from numpy.
 
     Methods
     -------
@@ -116,6 +120,8 @@ class ObjectDetection:
         Returns the confidence score of the object detection.
     image()
         Returns the image path of the object detection.
+    shape()
+        Returns the shape of the image of the object detection.
     """
 
     def __init__(
@@ -124,11 +130,13 @@ class ObjectDetection:
         category: str,
         bbox: npt.NDArray[np.float32],
         confidence: float,
+        shape: ImageShape,
     ):
         self._image_path: str = image_path
         self._category: str = category
         self._bbox: npt.NDArray[np.float32] = bbox
         self._confidence: float = confidence
+        self._shape: ImageShape = shape
 
     def __repr__(self) -> str:
         return f"{self.image} @ {self.bbox}: {self.confidence}"
@@ -198,6 +206,18 @@ class ObjectDetection:
         """
         return self._image_path
 
+    @property
+    def shape(self) -> ImageShape:
+        """
+        Returns the shape of the image of the object detection.
+
+        Returns
+        -------
+        ImageShape
+            The shape of the image of the object detection.
+        """
+        return self._shape
+
 
 class YOLOv9:
     """
@@ -254,13 +274,13 @@ class YOLOv9:
         self.input_width: int = self.input_shape[3]
         self.log_results: bool = log_results
 
-    def _convert_image(self, image: cv2.typing.MatLike) -> npt.NDArray[np.float32]:
+    def _convert_image(self, image: Image) -> npt.NDArray[np.float32]:
         """
         Convert an image read through cv2 to a shaped array for model input.
 
         Parameters
         ----------
-        image : cv2.typing.MatLike
+        image : Image
             The image to convert.
 
         Returns
@@ -381,7 +401,7 @@ class YOLOv9:
             trigger.results = results
             trigger.completed()
 
-        image: cv2.typing.MatLike = cv2.imread(image_path)
+        image: Image = cv2.imread(image_path).astype(np.uint8)
         height: int
         width: int
         height, width = image.shape[:2]
@@ -405,7 +425,13 @@ class YOLOv9:
             trigger.results, (width, height)
         )
         detections: list[ObjectDetection] = [
-            ObjectDetection(image_path, CLASS_NAMES[category], box, confidence)
+            ObjectDetection(
+                image_path,
+                CLASS_NAMES[category],
+                box,
+                confidence,
+                (height, width),
+            )
             for (category, (box, confidence)) in results.items()
         ]
 

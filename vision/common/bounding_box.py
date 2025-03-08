@@ -3,7 +3,6 @@ Bounding box objects represent an area in an image and
 are used to convey information between flight and vision processes.
 """
 
-from enum import Enum
 from typing import Any, TypeAlias
 
 import numpy as np
@@ -44,16 +43,6 @@ def tlwh_to_vertices(tl_x: int, tl_y: int, width: int, height: int) -> Vertices:
     return (tl_coord, tr_coord, br_coord, bl_coord)
 
 
-class ObjectType(Enum):
-    """
-    Type of object that a BoundingBox represents.
-    """
-
-    STD_OBJECT: str = "std_object"
-    EMG_OBJECT: str = "emg_object"
-    TEXT: str = "text"
-
-
 class BoundingBox:
     """
     A set of 4 coordinates that distinguish a region of an image.
@@ -65,8 +54,8 @@ class BoundingBox:
         The main structure of the BoundingBox. Denotes the 4 coordinates
         representing a box in an image. Vertices is a tuple of 4 coordinates. Each
         coordinate consists of a tuple 2 integers.
-    obj_type : ObjectType
-        Enumeration that denotes what type of object the BoundingBox represents.
+    obj_type : str
+         What object the BoundingBox represents.
     attributes : dict[str, Any] | None
         Any additional attributes to convey about the object in the BoundingBox.
     """
@@ -74,13 +63,13 @@ class BoundingBox:
     def __init__(
         self,
         vertices: Vertices,
-        obj_type: ObjectType,
+        obj_type: str,
         attributes: dict[str, Any] | None = None,
     ) -> None:
         self._vertices: tuple[
             tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]
         ] = vertices
-        self._obj_type: ObjectType = obj_type
+        self._obj_type: str = obj_type
         self._attributes: dict[str, Any] = attributes if attributes is not None else {}
 
     def __repr__(self) -> str:
@@ -120,25 +109,25 @@ class BoundingBox:
         self._vertices = verts
 
     @property
-    def obj_type(self) -> ObjectType:
+    def obj_type(self) -> str:
         """
         Getter for _obj_type. Gets the ObjectType of the BoundingBox.
 
         Returns
         -------
-        _obj_type : ObjectType
+        _obj_type : str
             The ObjectType of the BoundingBox.
         """
         return self._obj_type
 
     @obj_type.setter
-    def obj_type(self, o_type: ObjectType) -> None:
+    def obj_type(self, o_type: str) -> None:
         """
         Setter for _obj_type. Sets the value of the BoundingBox's ObjectType.
 
         Parameters
         ----------
-        o_type : ObjectType
+        o_type : str
             The ObjectType to assign to the BoundingBox.
         """
         self._obj_type = o_type
@@ -383,7 +372,7 @@ if __name__ == "__main__":
         (10, 10),
         (0, 10),
     )
-    object_type: ObjectType = ObjectType.STD_OBJECT
+    object_type: str = "object"
     object_attributes: dict[str, Any] = {"shape": "triangle", "latitude": 89.9}
 
     # constructor

@@ -7,6 +7,7 @@ import vision.common.constants as consts
 from vision.common.bounding_box import BoundingBox
 
 from vision.deskew.camera_distances import get_coordinates
+from vision.yolov9.model import ObjectDetection
 
 
 def read_parameter_json(json_path: str) -> dict[str, consts.CameraParameters]:
@@ -53,7 +54,7 @@ def flyover_finished(state_path: str) -> bool:
 def set_generic_attributes(
     box: BoundingBox,
     image_path: str,
-    image_shape: tuple[int, int] | tuple[int, int, int],
+    image_shape: consts.ImageShape,
     camera_parameters: consts.CameraParameters,
 ) -> bool:
     """
@@ -68,7 +69,7 @@ def set_generic_attributes(
         The bounding box of the object to which the attributes will be set
     image_path: str
         The path for the image the bounding box is from
-    image_shape : tuple[int, int, int] | tuple[int, int]
+    image_shape : tuple[int, ...]
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details of how and where the photo was taken
@@ -108,3 +109,33 @@ def output_odlc_json(output_path: str, odlc_dict: consts.ODLCDict) -> None:
 
     with open(output_path, "w", encoding="UTF-8") as file:
         json.dump(odlc_dict, file, indent=4)
+
+
+def detection_to_bbox(
+    detection: ObjectDetection, parameters: consts.CameraParameters
+) -> BoundingBox:
+    """
+    Converts an ObjectDetection to a BoundingBox
+
+    Parameters
+    ----------
+    detection: ObjectDetection
+        The object detection to convert
+
+    Returns
+    -------
+    bbox: BoundingBox
+        The bounding box of the object detection
+    """
+    vertices = (
+        (detection.bbox[0], detection.bbox[1]),
+        (detection.bbox[2], detection.bbox[1]),
+        (detection.bbox[2], detection.bbox[3]),
+        (detection.bbox[0], detection.bbox[3]),
+    )
+
+    bbox = BoundingBox(vertices, detection.category)
+
+    set_generic_attributes(bbox, detection.image, detection.shape, parameters)
+
+    return bbox
