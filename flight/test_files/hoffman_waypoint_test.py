@@ -1,21 +1,17 @@
 """
-Main driver code for moving drone to each waypoint
+Tests the waypoint move_to() function.
 """
 
 import asyncio
 import logging
 import sys
 
-from mavsdk import System
-
 from flight import extract_gps
 from flight.waypoint.goto import move_to
+from state_machine.drone import Drone
 
 # Defining file path constant for extract_gps
-MOVE_TO_TEST_PATH: str = "./data/waypoint_data.json"
-
-# Defining system address
-MOVE_TO_TEST_SYSTEM_ADDRESS: str = "udp://:14540"
+MOVE_TO_TEST_PATH: str = "flight/data/golf_data.json"
 
 # Defining altitude and speed
 MOVE_TO_TEST_ALTITUDE: int = 12
@@ -51,44 +47,25 @@ async def run() -> None:
         altitudes.append(waypoint.altitude)
 
     # create a drone object
-    drone: System = System()
-    await drone.connect(MOVE_TO_TEST_SYSTEM_ADDRESS)
+    drone: Drone = Drone()
+    drone.use_sim_settings()
+    await drone.connect_drone()
 
     # initilize drone configurations
-    await drone.action.set_takeoff_altitude(MOVE_TO_TEST_ALTITUDE)
-    await drone.action.set_maximum_speed(MOVE_TO_TEST_SPEED)
+    drone.vehicle.airspeed = MOVE_TO_TEST_SPEED
 
-    # connect to the drone
-    logging.info("Waiting for drone to connect...")
-    async for state in drone.core.connection_state():
-        if state.is_connected:
-            logging.info("Drone discovered!")
-            break
+    await drone.arm()
 
-    logging.info("Waiting for drone to have a global position estimate...")
-    async for health in drone.telemetry.health():
-        if health.is_global_position_ok:
-            logging.info("Global position estimate ok")
-            break
-
-    logging.info("-- Arming")
-    await drone.action.arm()
-
-    logging.info("-- Taking off")
-    await drone.action.takeoff()
-
-    # wait for drone to take off
-    await asyncio.sleep(10)
+    await drone.takeoff(MOVE_TO_TEST_ALTITUDE)
 
     # move to each waypoint in mission
     point: int
     for point in range(len(lats)):
-        await move_to(drone, lats[point], longs[point], 100)
+        await move_to(drone.vehicle, lats[point], longs[point], 100)
 
     # return home
     logging.info("Last waypoint reached")
-    logging.info("Returning to home")
-    await drone.action.return_to_launch()
+    await drone.return_to_launch()
     print("Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect
