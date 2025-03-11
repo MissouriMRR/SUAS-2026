@@ -56,14 +56,14 @@ class CameraParameters(TypedDict):
         The rotation of the drone/camera
     drone_coordinates: list[float]
         The coordinates of the drone in degrees of (latitude, longitude)
-    altitude_f: float
-        The altitude of the drone in feet
+    altitude: float
+        The altitude of the drone in meters
     """
 
     focal_length: float
     rotation_deg: list[float]
     drone_coordinates: list[float]
-    altitude_f: float
+    altitude: float
 
 
 # Sony RX100 VII sensor size in millimeters

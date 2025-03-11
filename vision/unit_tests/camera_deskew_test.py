@@ -26,7 +26,7 @@ class TestVisionFunctions(unittest.TestCase):
             focal_length=35.0,
             rotation_deg=[0, 0, 0],
             drone_coordinates=[37.7749, -122.4194],
-            altitude_f=1000.0,
+            altitude=1000.0,
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
 
