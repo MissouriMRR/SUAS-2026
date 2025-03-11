@@ -25,15 +25,14 @@ async def run_test(sim: bool, airsim: bool) -> None:
     drone: Drone = Drone()
     if sim:
         drone.use_sim_settings()
-    else:
-        drone.use_real_settings()
-    if sim:
         address: str = SIM_ADDR
     elif airsim:
+        drone.use_airsim_settings()
         address = AIRSIM_ADDR
     else:
+        drone.use_real_settings()
         address = CONTROLLER_ADDR
-    drone: Drone = Drone(address)
+
     await drone.connect_drone()
 
     # connect to the drone

@@ -74,6 +74,11 @@ class Camera:
     """
 
     def __init__(self) -> None:
+
+        self.image_id: int = 0
+        self.base_api_url: str | None = None
+        self.camera: SIYISDK | None = None
+        self.session_id: int = 0
         return None
 
     async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str] | None:
@@ -163,6 +168,12 @@ class Camera:
         -------
         CameraParameters
             Camera information to be associated with a photo.
+        """
+        return None
+
+    def disconnect(self) -> None:
+        """
+        Disconnects the IRL Camera.
         """
         return None
 
@@ -498,6 +509,12 @@ class CameraIRL(Camera):
             drone_coordinates=[location.lat, location.lon],
             altitude_f=location.alt,
         )
+
+    def disconnect(self) -> None:
+        """
+        Disconnects the IRL Camera.
+        """
+        self.camera.disconnect()
 
 
 class CameraAirSim(Camera):
