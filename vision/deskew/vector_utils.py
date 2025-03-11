@@ -206,12 +206,12 @@ def calculate_fov(camera: str, FOV: str) -> float:
             if FOV == "horizontalFOV":
                 camera_config["Airsim"]["horizontalFOV"] = 2 * np.arctan(
                     camera_config["Airsim"]["sensorWidth"]
-                    / (camera_config["Airsim"]["focal_length"])
+                    / (2 * camera_config["Airsim"]["focal_length"])
                 )
             if FOV == "verticalFOV":
                 camera_config["Airsim"]["verticalFOV"] = 2 * np.arctan(
                     camera_config["Airsim"]["sensorHeight"]
-                    / (camera_config["Airsim"]["focal_length"])
+                    / (2 * camera_config["Airsim"]["focal_length"])
                 )
             json.dump(camera_config, file)
             return camera_config["Airsim"][FOV]
@@ -219,12 +219,12 @@ def calculate_fov(camera: str, FOV: str) -> float:
             if FOV == "horizontalFOV":
                 camera_config["Default"]["horizontalFOV"] = 2 * np.arctan(
                     camera_config["Default"]["sensorWidth"]
-                    / (camera_config["Default"]["focal_length"])
+                    / (2 * camera_config["Default"]["focal_length"])
                 )
             if FOV == "verticalFOV":
                 camera_config["Default"]["verticalFOV"] = 2 * np.arctan(
                     camera_config["Default"]["sensorHeight"]
-                    / (camera_config["Default"]["focal_length"])
+                    / (2 * camera_config["Default"]["focal_length"])
                 )
             json.dump(camera_config, file)
             return camera_config["Default"][FOV]
