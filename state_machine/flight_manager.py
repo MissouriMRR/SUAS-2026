@@ -50,10 +50,7 @@ class FlightManager:
         flight_settings : FlightSettings
             The flight settings to use.
         """
-        if flight_settings.sim_flag:
-            self.drone.use_sim_settings()
-        else:
-            self.drone.use_real_settings()
+        self.drone.use_settings(flight_settings.sim_mode)
 
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()

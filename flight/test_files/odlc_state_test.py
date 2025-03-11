@@ -27,10 +27,7 @@ async def run_test(flight_settings: FlightSettings) -> None:
     flight_settings.standard_object_count = 5
 
     drone: Drone = Drone()
-    if flight_settings.sim_flag:
-        drone.use_sim_settings()
-    else:
-        drone.use_real_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()

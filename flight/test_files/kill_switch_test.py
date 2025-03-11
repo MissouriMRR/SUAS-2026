@@ -18,10 +18,7 @@ async def run_flight_code(flight_settings: FlightSettings) -> None:
     """
     logging.info("Starting state machine")
     drone: Drone = Drone()
-    if flight_settings.sim_flag:
-        drone.use_sim_settings()
-    else:
-        drone.use_real_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     await drone.arm()
@@ -53,10 +50,8 @@ async def start_kill_switch(flight_task: asyncio.Task[None]) -> None:
         await asyncio.sleep(1)
 
     flight_manager: FlightManager = FlightManager()
-    if FlightSettings.from_mission_config().sim_flag:
-        flight_manager.drone.use_sim_settings()
-    else:
-        flight_manager.drone.use_real_settings()
+    flight_settings: FlightSettings = FlightSettings.from_mission_config()
+    flight_manager.drone.use_settings(flight_settings.sim_mode)
 
     await flight_manager.kill_switch(flight_task)
 

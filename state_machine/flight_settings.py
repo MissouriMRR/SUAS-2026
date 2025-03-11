@@ -1,5 +1,6 @@
 """Class to contain setters, getters & parameters for current flight"""
 
+from enum import Enum
 import logging
 import sys
 from typing import Final
@@ -11,15 +12,25 @@ DEFAULT_RUN_DESCRIPTION: Final[str] = "Test flight for SUAS 2025"
 DEFAULT_STANDARD_OBJECT_COUNT: Final[int] = 5
 
 
+class SimMode(Enum):
+    """
+    Distinguishes whether a drone is real, running in the sim, or running in airsim.
+    """
+
+    REAL: str = "real"
+    SIM: str = "sim"
+    AIRSIM: str = "airsim"
+
+
 class FlightSettings:
     """
     Class to contain basic information for a flight, as well as some flight parameters
 
     Attributes
     ----------
-    _read_sim_flag: bool
-        Whether the sim flag has been read. Used to determine when to show the message
-        about the sim flag.
+    _read_sim_mode: bool
+        Whether the sim mode has been read. Used to determine when to show the message
+        about the sim mode.
     __simple_takeoff: bool
         Sets if the drone will ascend vertically or at an angle
     __run_title: str
@@ -32,8 +43,8 @@ class FlightSettings:
         Whether to skip the ODLC and airdrop states.
     __standard_object_count: int
         The number of standard objects to attempt to find.
-    __sim_flag: bool
-        A flag representing if the connected drone is a simulation
+    __sim_mode: SimMode
+        Whether the drone is real, running in the ardupilot sim, or running in airsim
     __mission_data_path: str
         The path to the JSON file containing the boundary and waypoint data.
 
@@ -63,17 +74,17 @@ class FlightSettings:
         Returns the small description for the current flight
     run_description(new_description: str) -> None
         Sets a new description for the new flight
-    sim_flag() -> bool
-        Returns the flag for the simulation
-    sim_flag(sim_flag: bool) -> None
-        Sets the flag for the simulation
+    sim_mode() -> SimMode
+        Returns the simulation mode
+    sim_mode(sim_mode: SimMode) -> None
+        Sets the simulation mode
     mission_data_path() -> str
         Return the path to the JSON file containing the boundary and waypoint data.
     mission_data_path(mission_data_path: str) -> None
         Set the path to the JSON file containing the boundary and waypoint data.
     """
 
-    _read_sim_flag: bool = False
+    _read_sim_mode: bool = False
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -84,7 +95,7 @@ class FlightSettings:
         skip_waypoint: bool = False,
         skip_odlc_and_airdrop: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
-        sim_flag: bool = False,
+        sim_mode: SimMode = SimMode.REAL,
         mission_data_path: str = "flight/data/waypoint_data.json",
     ) -> None:
         """
@@ -104,8 +115,8 @@ class FlightSettings:
             Whether to skip the ODLC and airdrop states.
         standard_object_count : int
             The number of standard objects to attempt to find.
-        sim_flag : bool, default False
-            A flag representing if the connected drone is a simulation
+        sim_mode : SimMode, default SimMode.REAL
+            Whether the drone is real, running in the ardupilot sim, or running in airsim.
         mission_data_path : str, default "flight/data/waypoint_data.json"
             The path to the JSON file containing the boundary and waypoint data.
         """
@@ -115,7 +126,7 @@ class FlightSettings:
         self.__skip_waypoint: bool = skip_waypoint
         self.__skip_odlc_and_airdrop: bool = skip_odlc_and_airdrop
         self.__standard_object_count: int = standard_object_count
-        self.__sim_flag: bool = sim_flag
+        self.__sim_mode: SimMode = sim_mode
         self.__mission_data_path: str = mission_data_path
 
     @staticmethod
@@ -130,14 +141,24 @@ class FlightSettings:
             A FlightSettings object with settings from mission_config.json.
         """
         sim_flag: bool = "-s" in sys.argv or "--sim" in sys.argv
-        if not FlightSettings._read_sim_flag:
-            FlightSettings._read_sim_flag = True
-            mode_name = "sim" if sim_flag else "real"
-            logging.info("Running in %s mode. Pass -s or --sim to run in sim mode.", mode_name)
+        airsim_flag: bool = "-a" in sys.argv or "--airsim" in sys.argv
+        if not FlightSettings._read_sim_mode:
+            FlightSettings._read_sim_mode = True
+            sim_mode: SimMode = (
+                SimMode.AIRSIM if airsim_flag else SimMode.SIM if sim_flag else SimMode.REAL
+            )
+            logging.info(
+                "Running in %s mode."
+                " Pass -s or --sim to run in sim mode."
+                " Pass -a or --airsim to run in airsim mode.",
+                sim_mode.name,
+            )
 
         config: mission_config.MissionConfig = mission_config.get_mission_config()
         mission_data_path: str = (
-            config["sim_mission_data_path"] if sim_flag else config["real_mission_data_path"]
+            config["airsim_mission_data_path"]
+            if airsim_flag
+            else (config["sim_mission_data_path"] if sim_flag else config["real_mission_data_path"])
         )
         config_settings: FlightSettings = FlightSettings(
             config["simple_takeoff"],
@@ -146,7 +167,7 @@ class FlightSettings:
             config["skip_waypoint"],
             config["skip_odlc_and_airdrop"],
             config["standard_object_count"],
-            sim_flag,
+            sim_mode,
             mission_data_path,
         )
         return config_settings
@@ -300,28 +321,28 @@ class FlightSettings:
         self.__run_description = new_description
 
     @property
-    def sim_flag(self) -> bool:
+    def sim_mode(self) -> SimMode:
         """
-        Returns the flag for the simulation
+        Returns the simulation mode
 
         Returns
         -------
-        sim_flag : bool
-            Flag for the simulation
+        sim_mode : SimMode
+            The simulation mode
         """
-        return self.__sim_flag
+        return self.__sim_mode
 
-    @sim_flag.setter
-    def sim_flag(self, sim_flag: bool) -> None:
+    @sim_mode.setter
+    def sim_mode(self, sim_mode: SimMode) -> None:
         """
-        Sets the flag for the simulation
+        Sets the simulation mode
 
         Parameters
         ----------
-        sim_flag : bool
-            Flag for the simulation
+        sim_mode : SimMode
+            The simulation mode
         """
-        self.__sim_flag = sim_flag
+        self.__sim_mode = sim_mode
 
     @property
     def mission_data_path(self) -> str:

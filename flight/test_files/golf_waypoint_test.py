@@ -37,10 +37,7 @@ async def run(flight_settings: FlightSettings) -> None:
 
     # create a drone object
     drone: Drone = Drone()
-    if flight_settings.sim_flag:
-        drone.use_sim_settings()
-    else:
-        drone.use_real_settings()
+    drone.use_settings(flight_settings.sim_mode)
 
     await drone.connect_drone()
 

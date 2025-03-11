@@ -90,10 +90,7 @@ async def run(flight_settings: FlightSettings) -> None:
     longs: list[float] = [-91.784668343, -91.782420970]
 
     drone: Drone = Drone()
-    if flight_settings.sim_flag:
-        drone.use_sim_settings()
-    else:
-        drone.use_real_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # initilize drone configurations

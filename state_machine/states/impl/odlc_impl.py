@@ -14,7 +14,7 @@ from flight.camera import Camera
 from flight.extract_gps import extract_gps, GPSData
 from flight.waypoint.goto import move_to
 from integration_tests.emg_obj_vision import emg_integration_pipeline
-from state_machine.flight_settings import FlightSettings
+from state_machine.flight_settings import FlightSettings, SimMode
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -107,7 +107,7 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
     """
 
     # Initialize the camera
-    if not self.flight_settings.sim_flag:
+    if not self.flight_settings.sim_mode is SimMode.SIM:
         camera: Camera | None = Camera()
     else:
         camera = None

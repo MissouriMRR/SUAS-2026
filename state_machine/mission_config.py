@@ -20,6 +20,9 @@ class MissionConfig(TypedDict):
     sim_mission_data_path : str
         The path to the JSON file containing the boundary and waypoint data to be used
         for missions in the simulator.
+    airsim_mission_data_path : str
+        The path to the JSON file containing the boundary and waypoint data to be used
+        for missions in airsim.
     standard_object_count : int
         The number of standard objects to attempt to find.
     skip_waypoint : bool
@@ -34,6 +37,7 @@ class MissionConfig(TypedDict):
     run_description: str
     real_mission_data_path: str
     sim_mission_data_path: str
+    airsim_mission_data_path: str
     standard_object_count: int
     skip_waypoint: bool
     skip_odlc_and_airdrop: bool
