@@ -31,8 +31,8 @@ def get_coordinates(
             camera, stored in constants.py, will be applied first
         drone_coordinates: list[float]
             The coordinates of the drone in degrees of (latitude, longitude)
-        altitude_f: float
-            The altitude of the drone in feet
+        altitude: float
+            The altitude of the drone in meters
 
     Returns
     -------
@@ -49,8 +49,7 @@ def get_coordinates(
         camera_parameters["drone_coordinates"][0]
     )
 
-    # Convert feet to meters
-    altitude_m: float = camera_parameters["altitude_f"]  # This is already in meters
+    altitude_m: float = camera_parameters["altitude"]
 
     # Find the pixel's intersect with the ground to get the location relative to the drone
     intersect: Point | None = vector_utils.pixel_intersect(
@@ -94,8 +93,8 @@ def bounding_area(
             camera, stored in constants.py, will be applied first
         drone_coordinates: list[float]
             The coordinates of the drone. Not used in this function.
-        altitude_f: float
-            The altitude of the drone in feet
+        altitude: float
+            The altitude of the drone in meters
 
     Returns
     -------
@@ -144,8 +143,8 @@ def calculate_distance(
             camera, stored in constants.py, will be applied first
         drone_coordinates: list[float]
             The coordinates of the drone. Not used in this function.
-        altitude_f: float
-            The altitude of the drone in feet
+        altitude: float
+            The altitude of the drone in meters
 
     Returns
     -------
@@ -154,18 +153,21 @@ def calculate_distance(
         Returns None if one or both of the points did not have an intersection
     """
 
+    # Convert meters to feet
+    altitude = camera_parameters["altitude"] * 3.28084
+
     intersect1: Point | None = vector_utils.pixel_intersect(
         pixel1,
         image_shape,
         camera_parameters["rotation_deg"],
-        camera_parameters["altitude_f"],
+        altitude,
     )
 
     intersect2: Point | None = vector_utils.pixel_intersect(
         pixel2,
         image_shape,
         camera_parameters["rotation_deg"],
-        camera_parameters["altitude_f"],
+        altitude,
     )
 
     # Checks if the intersects were valid

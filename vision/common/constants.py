@@ -63,13 +63,13 @@ class CameraParameters(TypedDict):
         The rotation of the drone/camera
     drone_coordinates: list[float]
         The coordinates of the drone in degrees of (latitude, longitude)
-    altitude_f: float
-        The altitude of the drone in feet
+    altitude: float
+        The altitude of the drone in meters
     """
 
     rotation_deg: list[float]
     drone_coordinates: list[float]
-    altitude_f: float
+    altitude: float
 
 
 # The rotation offset of the camera to the drone. The offset is applied
