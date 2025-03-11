@@ -7,7 +7,7 @@ from typing import Final
 
 import utm
 
-from flight.camera import Camera
+from flight.camera import CameraIRL, CameraAirSim
 from flight.extract_gps import extract_gps, GPSData
 from flight.extract_gps import BoundaryPointUtm
 from flight.waypoint.goto import move_to
@@ -83,7 +83,7 @@ async def run(self: Mapping) -> State:
 
         utm_zone_number = mapping_boundary_utm[0].zone_number
         utm_zone_letter = mapping_boundary_utm[0].zone_letter
-        camera: Camera = Camera()
+        camera: CameraIRL = CameraIRL()
         reverse_direction: bool = False
         for i in range(step_count + 1):
             lerp_t = i / step_count

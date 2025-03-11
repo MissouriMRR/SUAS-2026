@@ -10,7 +10,7 @@ from state_machine.state_machine import StateMachine
 from state_machine.states.start import Start
 
 
-async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
+async def run_test(_sim: bool, _airsim: bool) -> None:  # Temporary fix for unused variable
     """
     Initialize and run the flight manager and waypoint check for testing
     the state machine in either simulated or real-world mode.
@@ -18,7 +18,9 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     Parameters
     ----------
     _sim : bool
-        Specifies whether to run the state machine in simulation mode.
+        Specifies whether to run the state machine in Ardupilot simulation mode.
+    _airsim : bool
+        Specifies whether to run the state machine in AirSim simulation mode.
     """
     # Output logging info to stdout
     logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
@@ -28,11 +30,13 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
     drone: Drone = Drone()
     if _sim:
         drone.use_sim_settings()
+    elif _airsim:
+        drone.use_airsim_settings()
     else:
         drone.use_real_settings()
 
     flight_settings: FlightSettings = FlightSettings(
-        sim_flag=_sim,
+        sim_flags=(_sim, _airsim),
         skip_waypoint=True,
         skip_odlc_and_airdrop=True,
         path_data_path=path_data_path,
@@ -50,4 +54,4 @@ async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
 if __name__ == "__main__":
     print("Pass argument --sim to enable the simulation flag.")
     print()
-    asyncio.run(run_test("--sim" in sys.argv))
+    asyncio.run(run_test("--sim" in sys.argv, "--airsim" in sys.argv))

@@ -76,7 +76,7 @@ class Camera:
     def __init__(self) -> None:
         return None
 
-    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
+    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str] | None:
         """
         Capture a photo and save it to the specified path.
 
@@ -150,7 +150,7 @@ class Camera:
         """
         return None
 
-    async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
+    async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters | None:
         """
         Gets the current camera information based on a drone's position_pitch.
 
