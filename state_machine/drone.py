@@ -1,6 +1,7 @@
 """Defines the Drone class for the state machine."""
 
 import asyncio
+import json
 import logging
 
 import dronekit
@@ -68,6 +69,9 @@ class Drone:
         self.address: str = address
         self.baud: int | None = baud
         self.odlc_scan: bool = True
+
+        with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
+            json.dump({}, file)
 
     @property
     def is_connected(self) -> bool:

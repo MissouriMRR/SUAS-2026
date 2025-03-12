@@ -1,7 +1,7 @@
 {
     "flyzones": {
-        "altitudeMin": 75,
-        "altitudeMax": 150,
+        "altitudeMin": 23.4696,
+        "altitudeMax": 121.92,
         "boundaryPoints": [
             {
                 "latitude": 37.947427,
@@ -63,18 +63,57 @@
     ],
     "odlcAltitude": 26,
     "odlcHeading": 13,
-    "odlcWaypoints": [
+    "odlcWaypointsZ1": [
         {
-            "latitude": 37.948378,
-            "longitude": -91.784311
+            "latitude": 38.315607,
+            "longitude": -76.550800
         },
         {
-            "latitude": 37.948361,
-            "longitude": -91.783528
+            "latitude": 38.3154965,
+            "longitude": -76.5508375
         },
         {
-            "latitude": 37.948683,
-            "longitude": -91.784172
+            "latitude": 38.315386,
+            "longitude": -76.550875
+        },
+        {
+            "latitude": 38.315895,
+            "longitude": -76.552519
+        },
+        {
+            "latitude": 38.315789,
+            "longitude": -76.5525525
+        },
+        {
+            "latitude": 38.315683,
+            "longitude": -76.552586
         }
-    ]
+    ],
+    "odlcWaypointsZ2": [
+        {
+            "latitude": 38.314731,
+            "longitude": -76.545792
+        },
+        {
+            "latitude": 38.31463,
+            "longitude": -76.5458255
+        },
+        {
+            "latitude": 38.314529,
+            "longitude": -76.545859
+        },
+        {
+            "latitude": 38.314441,
+            "longitude": -76.544081
+        },
+        {
+            "latitude": 38.3143345,
+            "longitude": -76.5441185
+        },
+        {
+            "latitude": 38.314228,
+            "longitude": -76.544156
+        }
+    ],
+    "airdropAltitude": 24
 }

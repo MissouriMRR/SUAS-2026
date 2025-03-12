@@ -25,6 +25,7 @@ from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from vision.flyover_vision_pipeline import flyover_pipeline
+from vision.common.constants import CameraConfig
 
 
 async def run(self: ODLC) -> State:
@@ -54,6 +55,14 @@ async def run(self: ODLC) -> State:
     The type hinting for the capture_status variable is broken, see
     https://github.com/python/typeshed/issues/8799
     """
+
+    with open("vision/common/camera_config.json", encoding="ascii") as file:
+        camera_config: CameraConfig = json.load(file)
+        if self.flight_settings.airsim_flag:
+            camera_config["airsim_flag"] = True
+        else:
+            camera_config["airsim_flag"] = False
+        json.dump(camera_config, file)
 
     if self.flight_settings.skip_odlc_and_airdrop:
         return Mapping(self.drone, self.flight_settings)
@@ -113,22 +122,6 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
         camera = None
     else:
         camera = CameraAirSim()
-
-    # The waypoint values stored in waypoint_data.json are all that are needed
-    # to traverse the whole odlc drop location
-    # because it is a small rectangle
-    # The first waypoint is the midpoint of
-    # the left side of the rectangle(one of the short sides), the second point is the
-    # midpoint of the right side of the rectangle(other short side),
-    # and the third point is the top left corner of the rectangle
-    # it goes there for knowing where the drone ends to travel to each of the drop locations,
-    # the altitude is locked at 100 because
-    # we want the drone to stay level and the camera to view the whole odlc boundary
-    # the altitude 100 feet was chosen to cover the whole odlc boundary
-    # because the boundary is 70ft by 360ft the fov of the camera
-    # is vertical 52.1 degrees and horizontal 72.5,
-    # so using the minimum length side of the photo the coverage would be 90 feet allowing
-    # 10 feet overlap on both sides
 
     gps_data: GPSData = extract_gps(self.flight_settings.path_data_path)
 
