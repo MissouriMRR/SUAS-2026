@@ -36,8 +36,6 @@ class MissionConfig(TypedDict):
         Settings to use when running in real mode.
     airsim_mode_config : SimModeConfig
         Settings to use when running in real mode.
-    standard_object_count : int
-        The number of standard objects to attempt to find.
     skip_waypoint : bool
         Whether to skip the waypoint state.
     skip_odlc_and_airdrop : bool
