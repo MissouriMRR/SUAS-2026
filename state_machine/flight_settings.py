@@ -79,7 +79,6 @@ class FlightSettings:
         skip_waypoint: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
         sim_flags: tuple[bool, bool] = (False, False),
-        path_data_path: str = "flight/data/golf_data.json",
         path_data_path: str = "flight/data/waypoint_data.json",
     ) -> None:
         """
