@@ -1,9 +1,18 @@
 {
     "run_title": "SUAS Test Flight",
     "run_description": "Test flight for SUAS 2025",
-    "real_mission_data_path": "flight/data/golf_data.json",
-    "sim_mission_data_path": "flight/data/golf_data.json",
-    "airsim_mission_data_path": "flight/data/golf_data.json",
+    "real_mode_config": {
+        "mission_data_path": "flight/data/golf_data.json",
+        "standard_object_count": 5
+    },
+    "sim_mode_config": {
+        "mission_data_path": "flight/data/golf_data.json",
+        "standard_object_count": 5
+    },
+    "airsim_mode_config": {
+        "mission_data_path": "flight/data/golf_data.json",
+        "standard_object_count": 5
+    },
     "standard_object_count": 5,
     "skip_waypoint": false,
     "skip_odlc_and_airdrop": false,

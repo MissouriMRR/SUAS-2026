@@ -6,6 +6,7 @@ import sys
 from typing import Final
 
 from state_machine import mission_config
+from state_machine.mission_config import MissionConfig, SimModeConfig
 
 DEFAULT_RUN_TITLE: Final[str] = "SUAS Test Flight"
 DEFAULT_RUN_DESCRIPTION: Final[str] = "Test flight for SUAS 2025"
@@ -154,11 +155,11 @@ class FlightSettings:
                 sim_mode.name,
             )
 
-        config: mission_config.MissionConfig = mission_config.get_mission_config()
-        mission_data_path: str = (
-            config["airsim_mission_data_path"]
+        config: MissionConfig = mission_config.get_mission_config()
+        sim_mode_config: SimModeConfig = (
+            config["airsim_mode_config"]
             if airsim_flag
-            else (config["sim_mission_data_path"] if sim_flag else config["real_mission_data_path"])
+            else (config["sim_mode_config"] if sim_flag else config["real_mode_config"])
         )
         config_settings: FlightSettings = FlightSettings(
             config["simple_takeoff"],
@@ -166,9 +167,9 @@ class FlightSettings:
             config["run_description"],
             config["skip_waypoint"],
             config["skip_odlc_and_airdrop"],
-            config["standard_object_count"],
+            sim_mode_config["standard_object_count"],
             sim_mode,
-            mission_data_path,
+            sim_mode_config["mission_data_path"],
         )
         return config_settings
 
