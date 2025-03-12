@@ -1,7 +1,7 @@
 {
     "flyzones": {
-        "altitudeMin": 75,
-        "altitudeMax": 150,
+        "altitudeMin": 22.86,
+        "altitudeMax": 45.72,
         "boundaryPoints": [
             {
                 "latitude": 37.947427,

@@ -1,6 +1,7 @@
 """Implements the behavior of the Mapping state."""
 
 import asyncio
+import json
 import logging
 import math
 from typing import Final
@@ -12,6 +13,7 @@ from flight.extract_gps import extract_gps, GPSData
 from flight.extract_gps import BoundaryPointUtm
 from flight.waypoint.goto import move_to
 
+from state_machine.flight_settings import SimMode
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -20,6 +22,7 @@ from state_machine.state_tracker import (
 from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
+from vision.common.constants import CameraConfig
 
 # These should be moved to a constants file
 MAPPING_ALTITUDE: Final[float] = 30  # meters
@@ -38,6 +41,12 @@ async def run(self: Mapping) -> State:
     ODLC : State
         The next state after the drone has successfully landed.
     """
+
+    with open("vision/common/camera_config.json", encoding="ascii") as file:
+        camera_config: CameraConfig = json.load(file)
+        camera_config["airsim_flag"] = self.flight_settings.sim_mode is SimMode.AIRSIM
+        json.dump(camera_config, file)
+
     try:
         update_state("Mapping")
         update_drone(self.drone)

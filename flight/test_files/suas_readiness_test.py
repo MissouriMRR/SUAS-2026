@@ -21,19 +21,18 @@ async def move_to(
 ) -> None:
     """
     This function takes in a latitude, longitude and altitude and autonomously
-    moves the drone to that waypoint. This function will also auto convert the altitude
-    from feet to meters.
+    moves the drone to that waypoint.
 
     Parameters
     ----------
     drone: System
         a drone object that has all offboard data needed for computation
     latitude: float
-        a float containing the requested latitude to move to
+        a float containing the requested latitude to move to, in degrees
     longitude: float
-        a float containing the requested longitude to move to
+        a float containing the requested longitude to move to, in degrees
     altitude: float
-        a float contatining the requested altitude to go to (in meters)
+        a float contatining the requested altitude to go to, in meters
     fast_param: float
         a float that determines if the drone will take less time checking its precise location
         before moving on to another waypoint. If its 1, it will move at normal speed,
@@ -110,7 +109,7 @@ async def run(flight_settings: FlightSettings) -> None:
     for i in range(43):
         point: int
         for point in range(len(lats)):
-            await move_to(drone.vehicle, lats[point], longs[point], 75)
+            await move_to(drone.vehicle, lats[point], longs[point], 22.86)
             print("Reached waypoint")
         print("Iteration:", i)
 

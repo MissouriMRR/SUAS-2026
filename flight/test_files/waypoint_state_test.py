@@ -103,9 +103,8 @@ async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
     gps_dict: GPSData = extract_gps(flight_settings.mission_data_path)
     waypoints: list[Waylist] = gps_dict["waypoints"]
     boundary: list[BoundaryPoint] = gps_dict["boundary_points"]
-    # 3.28084 ft per m
-    min_altitude: float = gps_dict["altitude_limits"][0] / 3.28084
-    max_altitude: float = gps_dict["altitude_limits"][1] / 3.28084
+    min_altitude: float = gps_dict["altitude_limits"][0]
+    max_altitude: float = gps_dict["altitude_limits"][1]
 
     # Ensure that the flight manager code starts and sets the correct address.
     # 5 seconds is probably far longer than necessary.
