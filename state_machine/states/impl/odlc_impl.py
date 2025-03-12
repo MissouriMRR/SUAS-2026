@@ -25,7 +25,7 @@ from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from vision.flyover_vision_pipeline import flyover_pipeline
-from vision.common.constants import CameraConfig
+from vision.common import camera_config
 
 
 async def run(self: ODLC) -> State:
@@ -56,10 +56,7 @@ async def run(self: ODLC) -> State:
     https://github.com/python/typeshed/issues/8799
     """
 
-    with open("vision/common/camera_config.json", encoding="ascii") as file:
-        camera_config: CameraConfig = json.load(file)
-        camera_config["airsim_flag"] = self.flight_settings.sim_mode is SimMode.AIRSIM
-        json.dump(camera_config, file)
+    camera_config.update_sim_mode(self.flight_settings.sim_mode)
 
     if self.flight_settings.skip_odlc_and_airdrop:
         return Mapping(self.drone, self.flight_settings)
