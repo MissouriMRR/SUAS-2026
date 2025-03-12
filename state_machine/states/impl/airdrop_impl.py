@@ -6,6 +6,10 @@ import json
 
 from flight.extract_gps import extract_gps
 
+# uncomment if automatic
+# from flight.maestro.air_drop import AirdropControl
+from flight.waypoint.goto import move_to
+
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -18,10 +22,6 @@ from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
-
-# uncomment if automatic
-# from flight.maestro.air_drop import AirdropControl
-from flight.waypoint.goto import move_to
 
 
 async def run(self: Airdrop) -> State:
@@ -82,7 +82,7 @@ async def run(self: Airdrop) -> State:
                 break
             elif cylinder_num == "":
                 cylinder_num = cylinder
-        if not cylinders[cylinder]["Loaded"]:
+        else:
             logging.warning("No beacons are loaded?")
             return Mapping(self.drone, self.flight_settings)
 
