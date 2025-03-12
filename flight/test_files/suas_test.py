@@ -6,7 +6,7 @@ import asyncio
 import sys
 
 
-SIM_ADDR: str = "udp://:14540"
+SIM_ADDR: str = "udp:127.0.0.1:14550"
 AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"
 CON_ADDR: str = "serial:///dev/ttyFTDI:921600"
 

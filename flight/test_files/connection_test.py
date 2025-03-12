@@ -6,8 +6,8 @@ import sys
 
 from state_machine.drone import Drone
 
-SIM_ADDR: str = "udp://:14540"  # Address to connect to the ardupilot simulator
-AIRSIM_ADDR: str = "udp://:14030"  # Address to connect to the airsim simulator
+SIM_ADDR: str = "udp:127.0.0.1:14550"  # Address to connect to the ardupilot simulator
+AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"  # Address to connect to the airsim simulator
 CONTROLLER_ADDR: str = "serial:///dev/ttyFTDI:921600"  # Address to connect to a pixhawk board
 
 
