@@ -792,8 +792,7 @@ class CameraAirSim(Camera):
         horizontal_fov: float = self.client.simGetCameraInfo("bottom_center").fov
 
         return CameraParameters(
-            focal_length=SENSOR_WIDTH / (2 * math.tan((horizontal_fov / 2) * math.pi / 180)),
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
             drone_coordinates=[location.lat, location.lon],
-            altitude_f=location.alt,
+            altitude=location.alt,
         )
