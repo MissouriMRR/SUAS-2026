@@ -80,7 +80,7 @@ async def run(self: Airdrop) -> State:
             if cylinders[cylinder]["Loaded"]:
                 cylinder_num = cylinder
                 break
-            elif cylinder_num == "":
+            if cylinder_num == "":
                 cylinder_num = cylinder
         else:
             logging.warning("No beacons are loaded?")
