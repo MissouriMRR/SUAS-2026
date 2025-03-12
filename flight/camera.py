@@ -9,24 +9,25 @@ import logging
 import math
 import os
 from typing import Any, TextIO
+from abc import ABC, abstractmethod
 
 
 import aiofiles  # type: ignore
 import aiohttp
 import dronekit
 from siyi_sdk.siyi_sdk import SIYISDK
+import airsim
 
 from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
 from vision.common.constants import CameraParameters
-from vision.common.constants import SENSOR_WIDTH, SENSOR_HEIGHT
+from vision.common.constants import SENSOR_WIDTH
 
-import airsim
 
 WAYPOINT_TOLERANCE: int = 1  # in meters
 
 
-class Camera:
+class Camera(ABC):
     """
     Initialize a new Camera object to control the SIYI A8 Mini gimbal camera on the drone
 
@@ -79,8 +80,8 @@ class Camera:
         self.base_api_url: str | None = None
         self.camera: SIYISDK | None = None
         self.session_id: int = 0
-        return None
 
+    @abstractmethod
     async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str] | None:
         """
         Capture a photo and save it to the specified path.
@@ -97,6 +98,7 @@ class Camera:
         """
         return None
 
+    @abstractmethod
     async def mapping_move_to(
         self,
         drone: dronekit.Vehicle,
@@ -125,6 +127,7 @@ class Camera:
         """
         return None
 
+    @abstractmethod
     async def odlc_move_to(
         self,
         drone: dronekit.Vehicle,
@@ -155,6 +158,7 @@ class Camera:
         """
         return None
 
+    @abstractmethod
     async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters | None:
         """
         Gets the current camera information based on a drone's position_pitch.
@@ -226,6 +230,7 @@ class CameraIRL(Camera):
     """
 
     def __init__(self) -> None:
+        super().__init__()
         logging.info("Connecting to camera...")
         self.camera: SIYISDK = SIYISDK()
         if not self.camera.connect(maxRetries=10):

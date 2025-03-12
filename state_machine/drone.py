@@ -121,7 +121,7 @@ class Drone:
         )
         logging.info("Drone discovered!")
 
-    def arming_check_set(self, check: int) -> None:
+    def remove_arming_check(self) -> None:
         """
 
         For use with airsim

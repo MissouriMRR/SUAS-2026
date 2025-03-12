@@ -82,10 +82,9 @@ class FlightManager:
 
         if airsim_flag:
 
-            self.drone.arming_check_set(0)
+            self.drone.remove_arming_check()
 
         logging.info("Starting processes")
-
         state_machine_task: asyncio.Task[None] = asyncio.ensure_future(
             StateMachine(
                 Start(self.drone, flight_settings_obj),

@@ -38,7 +38,6 @@ async def run_test(_sim: bool, _airsim: bool) -> None:  # Temporary fix for unus
     flight_settings: FlightSettings = FlightSettings(
         sim_flags=(_sim, _airsim),
         skip_waypoint=True,
-        skip_odlc_and_airdrop=True,
         path_data_path=path_data_path,
     )
     await drone.connect_drone()

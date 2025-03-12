@@ -77,7 +77,6 @@ class FlightSettings:
         title: str = DEFAULT_RUN_TITLE,
         description: str = DEFAULT_RUN_DESCRIPTION,
         skip_waypoint: bool = False,
-        skip_odlc_and_airdrop: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
         sim_flags: tuple[bool, bool] = (False, False),
         path_data_path: str = "flight/data/golf_data.json",
@@ -110,7 +109,6 @@ class FlightSettings:
         self.__run_title: str = title
         self.__run_description: str = description
         self.__skip_waypoint: bool = skip_waypoint
-        self.__skip_odlc_and_airdrop: bool = skip_odlc_and_airdrop
         self.__standard_object_count: int = standard_object_count
         self.__sim_flag: bool = sim_flags[0]
         self.__airsim_flag: bool = sim_flags[1]
@@ -189,7 +187,6 @@ class FlightSettings:
         flag : bool
             Whether to skip the ODLC and airdrop states.
         """
-        self.__skip_odlc_and_airdrop = flag
 
     @property
     def standard_object_count(self) -> int:

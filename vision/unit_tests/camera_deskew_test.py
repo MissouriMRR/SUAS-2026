@@ -1,7 +1,5 @@
 import unittest
-import numpy as np
-from enum import Enum
-from vision.common.constants import Point, CameraParameters, ODLCDict
+from vision.common.constants import CameraParameters
 from vision.common.bounding_box import BoundingBox, ObjectType
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 
@@ -70,7 +68,6 @@ class TestVisionFunctions(unittest.TestCase):
             obj_type=obj_type,
             vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
         )
-        expected_area = 10000
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting

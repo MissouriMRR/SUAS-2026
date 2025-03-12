@@ -7,7 +7,7 @@ from typing import Final
 
 import utm
 
-from flight.camera import CameraIRL, CameraAirSim
+from flight.camera import CameraIRL
 from flight.extract_gps import extract_gps, GPSData
 from flight.extract_gps import BoundaryPointUtm
 from flight.waypoint.goto import move_to

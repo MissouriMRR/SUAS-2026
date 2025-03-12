@@ -11,7 +11,6 @@ import asyncio
 import logging
 import sys
 from state_machine.flight_manager import FlightManager
-from vision.common import constants
 
 if __name__ == "__main__":
     # Run multiprocessing function

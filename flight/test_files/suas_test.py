@@ -5,10 +5,6 @@ File for test way point path for SUAS 3 miles in length
 import asyncio
 import sys
 
-from typing import List
-import logging
-from mavsdk import System
-
 
 SIM_ADDR: str = "udp://:14540"
 AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"
