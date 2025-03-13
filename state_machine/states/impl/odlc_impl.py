@@ -46,7 +46,6 @@ async def run(self: ODLC) -> State:
     asyncio.CancelledError
         If the execution of the ODLC state is canceled.
     """
-
     with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
         camera_config: CameraConfig = json.load(file)
         if self.flight_settings.airsim_flag:
