@@ -1,10 +1,7 @@
 """Implements the behavior of the ODLC state."""
 
 import asyncio
-from ctypes import c_bool
 import logging
-from multiprocessing import Value
-from multiprocessing.sharedctypes import SynchronizedBase
 from pathlib import Path
 import traceback
 
@@ -12,8 +9,6 @@ from flight.camera import Camera
 
 from flight.extract_gps import extract_gps, GPSData
 from flight.waypoint.goto import move_to
-from integration_tests.emg_obj_vision import emg_integration_pipeline
-from state_machine.flight_settings import FlightSettings
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -47,11 +42,6 @@ async def run(self: ODLC) -> State:
     ------
     asyncio.CancelledError
         If the execution of the ODLC state is canceled.
-
-    Notes
-    -----
-    The type hinting for the capture_status variable is broken, see
-    https://github.com/python/typeshed/issues/8799
     """
 
     if self.flight_settings.skip_odlc_and_airdrop:
@@ -63,12 +53,9 @@ async def run(self: ODLC) -> State:
         update_flight_settings(self.flight_settings)
         logging.info("ODLC state running")
 
-        # Syncronized type hint is broken, see https://github.com/python/typeshed/issues/8799
-        capture_status: SynchronizedBase[c_bool] = Value(c_bool, False)  # type: ignore
+        capture_status = asyncio.Event()
 
-        vision_task: asyncio.Task[None] = asyncio.ensure_future(
-            vision_odlc_logic(capture_status, self.flight_settings)
-        )
+        vision_task: asyncio.Task[None] = asyncio.ensure_future(vision_odlc_logic(capture_status))
 
         flight_task: asyncio.Task[None] = asyncio.ensure_future(find_odlcs(self, capture_status))
 
@@ -91,9 +78,14 @@ async def run(self: ODLC) -> State:
     return Airdrop(self.drone, self.flight_settings)
 
 
-async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> None:
+async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     """
     Implements the run method for the ODLC state.
+
+    Parameters
+    ----------
+    capture_status : asyncio.Event
+        An event that is set when the drone has successfully captured all images.
 
     Returns
     -------
@@ -157,21 +149,19 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
 
     if camera:
         camera.camera.disconnect()
-    capture_status.value = c_bool(True)  # type: ignore
+    capture_status.set()
     self.drone.odlc_scan = False
     logging.info("ODLC scan complete")
 
 
-async def vision_odlc_logic(
-    capture_status: "SynchronizedBase[c_bool]", flight_settings: FlightSettings
-) -> None:
+async def vision_odlc_logic(capture_status: asyncio.Event) -> None:
     """
     Implements the run method for the ODLC state.
 
     Parameters
     ----------
-    capture_status : SynchronizedBase[c_bool]
-        A text file containing True if all images have been taken and False otherwise
+    capture_status : asyncio.Event
+        An event that is set when the drone has successfully captured all images.
     flight_settings : FlightSettings
         Settings for this flight.
 
@@ -187,17 +177,13 @@ async def vision_odlc_logic(
     """
     camera_data_filename: str = "flight/data/camera.json"
 
-    pipeline = (
-        emg_integration_pipeline if flight_settings.standard_object_count == 0 else flyover_pipeline
-    )
-
     # Wait until camera.json exists
     logging.info("Waiting for %s to exist", camera_data_filename)
     while not Path(camera_data_filename).is_file():
         await asyncio.sleep(1)
     logging.info("Camera data file found.")
 
-    await pipeline("flight/data/camera.json", capture_status, "flight/data/output.json")
+    await flyover_pipeline("flight/data/camera.json", capture_status, "flight/data/output.json")
 
 
 # Setting the run_callable attribute of the ODLC class to the run function

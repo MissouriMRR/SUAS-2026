@@ -1,10 +1,7 @@
 """Runs the necessary Vision code during the flyover stage of competition"""
 
-import logging
-from ctypes import c_bool
-from multiprocessing.sharedctypes import SynchronizedBase  # pylint: disable=unused-import
-
 import asyncio
+import logging
 
 import vision.common.constants as consts
 
@@ -18,7 +15,7 @@ from vision.yolov9.queue import PhotoQueue
 
 
 async def flyover_pipeline(
-    camera_data_path: str, capture_status: "SynchronizedBase[c_bool]", output_path: str
+    camera_data_path: str, capture_status: asyncio.Event, output_path: str
 ) -> None:
     """
     Finds all standard objects in each image in the input folder
@@ -27,8 +24,8 @@ async def flyover_pipeline(
     ----------
     camera_data_path: str
         The path to the json file containing the CameraParameters entries
-    capture_status: SynchronizedBase[c_bool]
-        A text file containing True if all images have been taken and False otherwise
+    capture_status: asyncio.Event
+        An event that is set when all images have been taken
     output_path: str
         The json file name and path to save the data in
     """
@@ -48,13 +45,9 @@ async def flyover_pipeline(
     await queue.start_queue()
 
     # Wait for and process unfinished images until no more images are being taken
-    all_images_taken: c_bool = c_bool(False)
-    while not all_images_taken:
+    while not capture_status.is_set():
         # Wait to check the file instead of spamming it
         await asyncio.sleep(1)
-
-        # Check if all images have been taken
-        all_images_taken = capture_status.value  # type: ignore
 
         image_parameters = pipe_utils.read_parameter_json(camera_data_path)
 
