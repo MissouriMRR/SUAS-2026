@@ -64,8 +64,7 @@ class CancellableQueue(asyncio.Queue[str]):
         await self.join()
         while self._getters:
             getter = self._getters.popleft()
-            if not getter.done():
-                getter.set_result(None)
+            getter.set_exception(QueueCancelled())
 
 
 class PhotoQueue:
@@ -218,5 +217,9 @@ class PhotoQueue:
         """
         # Cancel the queue to stop runners once the queue is empty
         await self.queue.cancel()
+        if self.runners:
+            await asyncio.wait(self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15)
+
+        cv2.destroyAllWindows()
 
         return self.results
