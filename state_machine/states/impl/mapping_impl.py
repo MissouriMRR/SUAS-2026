@@ -1,5 +1,7 @@
 """Implements the behavior of the Mapping state."""
 
+# pylint: disable=too-many-locals
+
 import asyncio
 import json
 import logging
@@ -41,12 +43,14 @@ async def run(self: Mapping) -> State:
         The next state after the drone has successfully landed.
     """
 
-    with open("vision/common/camera_config.json", encoding="ascii") as file:
+    with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
         camera_config: CameraConfig = json.load(file)
         if self.flight_settings.airsim_flag:
             camera_config["airsim_flag"] = True
         else:
             camera_config["airsim_flag"] = False
+        file.seek(0)
+        file.truncate()
         json.dump(camera_config, file)
 
     try:
