@@ -1,6 +1,7 @@
 """Implements the behavior of the ODLC state."""
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 import traceback
@@ -46,12 +47,14 @@ async def run(self: ODLC) -> State:
         If the execution of the ODLC state is canceled.
     """
 
-    with open("vision/common/camera_config.json", encoding="ascii") as file:
+    with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
         camera_config: CameraConfig = json.load(file)
         if self.flight_settings.airsim_flag:
             camera_config["airsim_flag"] = True
         else:
             camera_config["airsim_flag"] = False
+        file.seek(0)
+        file.truncate()
         json.dump(camera_config, file)
 
     if self.flight_settings.skip_odlc_and_airdrop:

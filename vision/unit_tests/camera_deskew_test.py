@@ -1,9 +1,13 @@
+"""Unit test for camera deskew functionality."""
+
 import unittest
-import numpy as np
-from enum import Enum
-from vision.common.constants import Point, CameraParameters, ODLCDict
-from vision.common.bounding_box import BoundingBox, ObjectType
-from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
+from vision.common.constants import CameraParameters
+from vision.common.bounding_box import BoundingBox
+from vision.deskew.camera_distances import (
+    get_coordinates,
+    bounding_area,
+    calculate_distance,
+)
 
 
 class TestVisionFunctions(unittest.TestCase):
@@ -28,6 +32,10 @@ class TestVisionFunctions(unittest.TestCase):
             altitude=1000.0,
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
+        self.box = BoundingBox(
+            obj_type="object",
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+        )
 
     def test_get_coordinates(self) -> None:
         """
@@ -64,12 +72,6 @@ class TestVisionFunctions(unittest.TestCase):
         -------
             None: This method does not return a value but asserts the area calculation is correct.
         """
-        obj_type = ObjectType(value="")  # Provide the necessary argument
-        self.box = BoundingBox(
-            obj_type=obj_type,
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
-        )
-        expected_area = 10000
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting
