@@ -1,12 +1,71 @@
 """Contains the PhotoQueue class, which is used to manage a queue of photos for object detection."""
 
 import asyncio
+import collections
 import logging
 
 import cv2
 import numpy as np
 
 from vision.yolov9.model import YOLOv9, ObjectDetection
+
+
+class QueueCancelled(Exception):
+    """Exception raised when the queue is cancelled."""
+
+
+class CancellableQueue(asyncio.Queue[str]):
+    """
+    A subclass of the asyncio Queue that adds an event to cancel the queue.
+
+    Attributes
+    ----------
+    cancelled: bool
+        Whether the queue has been cancelled.
+
+    Methods
+    -------
+    empty(self) -> bool
+        Returns True if the queue is empty. Raises QueueCancelled if cancelled and the queue empty.
+    cancel(self) -> None
+        Sets self._cancelled to True which will raise QueueCancelled on get().
+    """
+
+    def __init__(self, maxsize: int = 0) -> None:
+        super().__init__(maxsize)
+        self._cancelled: bool = False
+        self._queue: collections.deque[str]
+        self._getters: collections.deque[asyncio.Future[None]]
+
+    def _get(self) -> str:
+        """
+        Get an item from the queue.
+        Overrides the _get method of the asyncio.Queue class.
+
+        Returns
+        -------
+        str
+            The next item from the queue
+
+        Raises
+        ------
+        QueueCancelled
+            If the queue is empty and cancelled.
+        """
+        if self.empty() and self._cancelled:
+            raise QueueCancelled()
+        return self._queue.popleft()
+
+    async def cancel(self) -> None:
+        """
+        Sets self._cancelled to True which will raise QueueCancelled on get().
+        """
+        self._cancelled = True
+        await self.join()
+        while self._getters:
+            getter = self._getters.popleft()
+            if not getter.done():
+                getter.set_result(None)
 
 
 class PhotoQueue:
@@ -17,14 +76,12 @@ class PhotoQueue:
     ----------
     model: YOLOv9
         The YOLOv9 model used for inference.
-    queue: asyncio.Queue[str]
+    queue: CancellableQueue
         The queue of photos to be processed.
     runners: list[asyncio.Task[None]]
         The list of runners that are running the model inference on the photos.
     results: dict[str, ObjectDetection]
         The dictionary of results for each object class.
-    done_capturing: asyncio.Event
-        The event that is set when all photos have been captured, telling the runners to stop.
     show_results: bool
         Whether to show the results of the object detection.
 
@@ -44,10 +101,9 @@ class PhotoQueue:
 
     def __init__(self, show_results: bool = False):
         self.model = YOLOv9()
-        self.queue: asyncio.Queue[str] = asyncio.Queue()
+        self.queue: CancellableQueue = CancellableQueue()
         self.runners: list[asyncio.Task[None]] = []
         self.results: dict[str, ObjectDetection] = {}
-        self.done_capturing: asyncio.Event = asyncio.Event()
         self.show_results = show_results
 
     async def _draw_results(self, photo: str, results: list[ObjectDetection]) -> cv2.typing.MatLike:
@@ -112,22 +168,15 @@ class PhotoQueue:
         while True:
             # We want to cancel the task if we are done capturing images,
             # but not until the queue is empty
-            queue_task = asyncio.create_task(self.queue.get())
-            event_task = asyncio.create_task(self.done_capturing.wait())
+            # queue_task = asyncio.create_task(self.queue.get())
+            # event_task = asyncio.create_task(self.done_capturing.wait())
 
             # Wait for either one to complete
-            _, pending = await asyncio.wait(
-                [queue_task, event_task], return_when=asyncio.FIRST_COMPLETED
-            )
-
-            if self.done_capturing.is_set():
-                # wait for all the other tasks to finish just in case
-                for task in pending:
-                    task.cancel()
-                await asyncio.wait(pending)
+            try:
+                image: str = await self.queue.get()
+            except QueueCancelled:
+                logging.debug("Runner %d cancelled", num)
                 break
-
-            image: str = queue_task.result()
             logging.debug("Runner %d processing image %s", num, image)
             results = await self.model.process_image(image)
             for result in results:
@@ -140,6 +189,7 @@ class PhotoQueue:
                 cv2.imshow(f"Runner {num} Results", await self._draw_results(image, results))
                 cv2.waitKey(1)
             self.queue.task_done()
+            logging.debug("Runner %d finished processing image %s", num, image)
 
         if self.show_results:
             cv2.destroyWindow(f"Runner {num} Results")
@@ -166,10 +216,7 @@ class PhotoQueue:
         dict[str, ObjectDetection]
             The results of the object detection
         """
-        # Set event to tell runners to stop once they don't have any images
-        self.done_capturing.set()
-
-        # Let runners finish going through the queue
-        await asyncio.gather(*self.runners)
+        # Cancel the queue to stop runners once the queue is empty
+        await self.queue.cancel()
 
         return self.results
