@@ -9,8 +9,9 @@ If running for competition, make sure that the following is set:
 
 import asyncio
 import logging
-import sys
 from state_machine.flight_manager import FlightManager
+from state_machine.flight_settings import FlightSettings
+
 
 if __name__ == "__main__":
     # Run multiprocessing function
@@ -20,11 +21,6 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
         logging.info("Starting processes")
         flight_manager: FlightManager = FlightManager()
-        if "-s" in sys.argv:
-            SIM_FLAG = True
-        elif "-a" in sys.argv:
-            AIRSIM_FLAG = True
-
-        asyncio.run(flight_manager.run_manager(SIM_FLAG, AIRSIM_FLAG))
+        asyncio.run(flight_manager.run_manager(FlightSettings.from_mission_config()))
     finally:
         logging.info("Done!")

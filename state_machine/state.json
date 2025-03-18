@@ -1,7 +1,7 @@
 {
-    "state": "ODLC",
+    "state": "Takeoff",
     "drone": {
-        "address": "udp:127.0.0.1:14550",
+        "address": "tcp:127.0.0.1:5762",
         "odlc_scan": true
     },
     "flight_settings": {

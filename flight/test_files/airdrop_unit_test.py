@@ -11,14 +11,19 @@ from state_machine.states import Airdrop
 from state_machine.drone import Drone
 
 
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     Runs the Airdrop unit test
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
 
     # create a drone object
     drone: Drone = Drone()
-    drone.use_sim_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # initilize drone configurations
@@ -27,9 +32,6 @@ async def run() -> None:
     await drone.arm()
 
     await drone.takeoff(12)
-
-    flight_settings: FlightSettings = FlightSettings(path_data_path="flight/data/golf_data.json")
-
     logging.info("starting airdrop")
 
     await airdrop_run(drone, flight_settings)
@@ -63,4 +65,4 @@ async def airdrop_run(drone: Drone, flight_settings: FlightSettings) -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run())
+    asyncio.run(run(FlightSettings.from_mission_config()))

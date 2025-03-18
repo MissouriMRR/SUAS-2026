@@ -2,34 +2,22 @@
 
 import asyncio
 import logging
-import sys
 
 from state_machine.drone import Drone
-
-SIM_ADDR: str = "udp:127.0.0.1:14550"  # Address to connect to the ardupilot simulator
-AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"  # Address to connect to the airsim simulator
-CONTROLLER_ADDR: str = "serial:///dev/ttyFTDI:921600"  # Address to connect to a pixhawk board
+from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(sim: bool, airsim: bool) -> None:
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Run the state machine.
 
     Parameters
     ----------
-    sim : bool
-        Whether to run the state machine in ardupilot simulation mode.
-    airsim : bool
-        Whether to run the state machine in airsim simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
     drone: Drone = Drone()
-    if sim:
-        drone.use_sim_settings()
-    elif airsim:
-        drone.use_airsim_settings()
-    else:
-        drone.use_real_settings()
-
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # connect to the drone
@@ -42,4 +30,4 @@ async def run_test(sim: bool, airsim: bool) -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run_test("--sim" in sys.argv, "--airsim" in sys.argv))
+    asyncio.run(run_test(FlightSettings.from_mission_config()))

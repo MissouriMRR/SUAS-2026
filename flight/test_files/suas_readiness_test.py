@@ -10,6 +10,7 @@ import dronekit
 
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 
 SIM_ADDR: str = "udp:127.0.0.1:14550"
 AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"
@@ -52,9 +53,9 @@ async def move_to(
     while not location_reached:
         position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
 
-        drone_lat: float = position.latitude_deg
-        drone_long: float = position.longitude_deg
-        drone_alt: float = position.relative_altitude_m
+        drone_lat: float = position.lat
+        drone_long: float = position.lon
+        drone_alt: float = position.alt
 
         total_distance: float = calculate_distance(
             drone_lat,
@@ -77,16 +78,21 @@ async def move_to(
 
 # duplicate code disabled for testing function
 # pylint: disable=duplicate-code
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     Runs
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
 
     lats: list[float] = [37.94893290, 37.947899284]
     longs: list[float] = [-91.784668343, -91.782420970]
 
     drone: Drone = Drone()
-    drone.use_real_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # initilize drone configurations
@@ -98,7 +104,7 @@ async def run() -> None:
 
     # Fly to first waypoint
     print("Going to first waypoint")
-    await drone.vehicle.simple_goto(dronekit.LocationGlobalRelative(lats[0], longs[0], 25))
+    await move_to(drone.vehicle, lats[0], longs[0], 25)
     await asyncio.sleep(10)
 
     # Begin 12 mile flight
@@ -124,8 +130,9 @@ async def run() -> None:
 # the Lats and Longs array and the drone has arrived at each of them
 if __name__ == "__main__":
     try:
+        logging.basicConfig(level=logging.INFO)
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run())
+        loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
         print("Program ended")
         sys.exit(0)

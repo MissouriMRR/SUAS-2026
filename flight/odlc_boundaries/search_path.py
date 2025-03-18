@@ -13,6 +13,7 @@ from shapely.geometry import Polygon
 
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
+from state_machine.flight_settings import SimMode
 
 
 def latlon_to_utm(coords: dict[str, float]) -> dict[str, float]:
@@ -114,7 +115,7 @@ async def run() -> None:
 
     # create a drone object
     drone: Drone = Drone()
-    drone.use_sim_settings()
+    drone.use_settings(SimMode.SIM)
     await drone.connect_drone()
 
     await drone.arm()

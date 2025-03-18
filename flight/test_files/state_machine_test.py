@@ -1,26 +1,24 @@
 """Runs the state machine and kill switch in separate processes in order to test them."""
 
 import asyncio
+import logging
+
 from state_machine.flight_manager import FlightManager
-
-SIM_ADDR: str = "udp:127.0.0.1:14550"  # Address to connect to the ardupilot simulator
-AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"  # Address to connect to the airsim simulator
-CONTROLLER_ADDR: str = "serial:///dev/ttyFTDI"  # Address to connect to a pixhawk board
+from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(sim: bool, airsim: bool) -> None:
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Run the state machine.
 
     Parameters
     ----------
-    sim : bool
-        Whether to run the state machine in ardupilot simulation mode.
-    airsim : bool
-        Whether to run the state machine in airsim simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
-    await FlightManager().run_manager(sim, airsim)
+    await FlightManager().run_manager(flight_settings)
 
 
 if __name__ == "__main__":
-    asyncio.run(run_test(True, False))
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(run_test(FlightSettings.from_mission_config()))

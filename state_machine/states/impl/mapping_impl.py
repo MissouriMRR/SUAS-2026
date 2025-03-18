@@ -3,7 +3,6 @@
 # pylint: disable=too-many-locals
 
 import asyncio
-import json
 import logging
 import math
 from typing import Final
@@ -23,7 +22,7 @@ from state_machine.state_tracker import (
 from state_machine.states.land import Land
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
-from vision.common.constants import CameraConfig
+from vision.common import camera_config
 
 # These should be moved to a constants file
 MAPPING_ALTITUDE: Final[float] = 30  # meters
@@ -43,15 +42,7 @@ async def run(self: Mapping) -> State:
         The next state after the drone has successfully landed.
     """
 
-    with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
-        camera_config: CameraConfig = json.load(file)
-        if self.flight_settings.airsim_flag:
-            camera_config["airsim_flag"] = True
-        else:
-            camera_config["airsim_flag"] = False
-        file.seek(0)
-        file.truncate()
-        json.dump(camera_config, file)
+    camera_config.update_sim_mode(self.flight_settings.sim_mode)
 
     try:
         update_state("Mapping")
@@ -60,7 +51,7 @@ async def run(self: Mapping) -> State:
 
         logging.info("Mapping")
 
-        gps_dict: GPSData = extract_gps(self.flight_settings.path_data_path)
+        gps_dict: GPSData = extract_gps(self.flight_settings.mission_data_path)
         mapping_boundary_utm: list[BoundaryPointUtm] = gps_dict["mapping_boundary_utm"]
 
         # The mapping area should be roughly rectangular with 4 vertices
