@@ -55,13 +55,14 @@ async def run(self: ODLC) -> State:
     The type hinting for the capture_status variable is broken, see
     https://github.com/python/typeshed/issues/8799
     """
-
-    with open("vision/common/camera_config.json", encoding="ascii") as file:
+    with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
         camera_config: CameraConfig = json.load(file)
         if self.flight_settings.airsim_flag:
             camera_config["airsim_flag"] = True
         else:
             camera_config["airsim_flag"] = False
+        file.seek(0)
+        file.truncate()
         json.dump(camera_config, file)
 
     if self.flight_settings.skip_odlc_and_airdrop:
