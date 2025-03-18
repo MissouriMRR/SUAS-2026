@@ -1,5 +1,7 @@
 """Implements the behavior of the Mapping state."""
 
+# pylint: disable=too-many-locals
+
 import asyncio
 import logging
 import math

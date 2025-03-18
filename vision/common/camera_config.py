@@ -14,9 +14,9 @@ def update_sim_mode(sim_mode: SimMode) -> None:
     sim_mode : SimMode
         The sim mode to update camera_config.json with.
     """
-    with open("vision/common/camera_config.json", "r", encoding="ascii") as file:
+    with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
         camera_config: CameraConfig = json.load(file)
         camera_config["airsim_flag"] = sim_mode is SimMode.AIRSIM
-
-    with open("vision/common/camera_config.json", "w", encoding="ascii") as file:
+        file.seek(0)
+        file.truncate()
         json.dump(camera_config, file)
