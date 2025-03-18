@@ -162,72 +162,75 @@ def get_fov() -> tuple[float, float]:
 
     with open("vision/common/camera_config.json", encoding="ascii") as file:
         camera_config: CameraConfig = json.load(file)
-        hFOV: float
-        vFOV: float
+        h_fov: float
+        v_fov: float
         if camera_config["airsim_flag"]:
             if camera_config["Airsim"]["horizontalFOV"] != 0:
-                hFOV = camera_config["Airsim"]["horizontalFOV"]
+                h_fov = camera_config["Airsim"]["horizontalFOV"]
             else:
-                hFOV = calculate_fov("Airsim", "horizontalFOV")
+                h_fov = calculate_fov("Airsim", "horizontalFOV")
 
             if camera_config["Airsim"]["horizontalFOV"] != 0:
-                vFOV = camera_config["Airsim"]["verticalFOV"]
+                v_fov = camera_config["Airsim"]["verticalFOV"]
             else:
-                vFOV = calculate_fov("Airsim", "verticalFOV")
+                v_fov = calculate_fov("Airsim", "verticalFOV")
         else:
             if camera_config["Default"]["horizontalFOV"] != 0:
-                hFOV = camera_config["Default"]["horizontalFOV"]
+                h_fov = camera_config["Default"]["horizontalFOV"]
             else:
-                hFOV = calculate_fov("Default", "horizontalFOV")
+                h_fov = calculate_fov("Default", "horizontalFOV")
 
             if camera_config["Default"]["horizontalFOV"] != 0:
-                vFOV = camera_config["Default"]["verticalFOV"]
+                v_fov = camera_config["Default"]["verticalFOV"]
             else:
-                vFOV = calculate_fov("Default", "verticalFOV")
+                v_fov = calculate_fov("Default", "verticalFOV")
 
-    return hFOV, vFOV
+    return h_fov, v_fov
 
 
-def calculate_fov(camera: str, FOV: str) -> float:
+def calculate_fov(camera: str, fov_type: str) -> float:
     """
-    Converts a given focal length and sensor length to the corresponding field of view in radians stored in camera_config.json
+    Converts a given focal length and sensor length to the corresponding field of view in
+    radians stored in camera_config.json
 
     Parameters
     ----------
     camera : str
-        The camera to calculate FOV for that is stored in camera_config
-
-    FOV : str
-        Whichever FOV is needed to be calculated
+        The camera to calculate FOV for that is stored in camera_config ("Airsim" or "Default")
+    fov_type : str
+        Whichever FOV is needed to be calculated ("horizontalFOV" or "verticalFOV")
     """
     with open("vision/common/camera_config.json", encoding="ascii") as file:
         camera_config: CameraConfig = json.load(file)
+        fov: float
         if camera == "Airsim":
-            if FOV == "horizontalFOV":
+            if fov_type == "horizontalFOV":
                 camera_config["Airsim"]["horizontalFOV"] = 2 * np.arctan(
                     camera_config["Airsim"]["sensorWidth"]
                     / (2 * camera_config["Airsim"]["focal_length"])
                 )
-            if FOV == "verticalFOV":
+            if fov_type == "verticalFOV":
                 camera_config["Airsim"]["verticalFOV"] = 2 * np.arctan(
                     camera_config["Airsim"]["sensorHeight"]
                     / (2 * camera_config["Airsim"]["focal_length"])
                 )
             json.dump(camera_config, file)
-            return camera_config["Airsim"][FOV]
+            fov = camera_config["Airsim"][fov_type]
         else:
-            if FOV == "horizontalFOV":
+            if fov_type == "horizontalFOV":
                 camera_config["Default"]["horizontalFOV"] = 2 * np.arctan(
                     camera_config["Default"]["sensorWidth"]
                     / (2 * camera_config["Default"]["focal_length"])
                 )
-            if FOV == "verticalFOV":
+            if fov_type == "verticalFOV":
                 camera_config["Default"]["verticalFOV"] = 2 * np.arctan(
                     camera_config["Default"]["sensorHeight"]
                     / (2 * camera_config["Default"]["focal_length"])
                 )
             json.dump(camera_config, file)
-            return camera_config["Default"][FOV]
+            fov = camera_config["Default"][fov_type]
+
+        return fov
 
 
 def camera_vector(h_angle: float, v_angle: float) -> Vector:

@@ -1,7 +1,5 @@
 import unittest
-import numpy as np
-from enum import Enum
-from vision.common.constants import Point, CameraParameters, ODLCDict
+from vision.common.constants import CameraParameters
 from vision.common.bounding_box import BoundingBox, ObjectType
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 

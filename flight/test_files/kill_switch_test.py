@@ -3,15 +3,22 @@
 import asyncio
 import logging
 
-from state_machine.flight_manager import FlightManager
 from state_machine.drone import Drone
+from state_machine.flight_manager import FlightManager
+from state_machine.flight_settings import FlightSettings
 
 
-async def run_flight_code() -> None:
-    """Run flight code to hold the drone in mid air and log the flight mode."""
+async def run_flight_code(flight_settings: FlightSettings) -> None:
+    """Run flight code to hold the drone in mid air and log the flight mode.
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
+    """
     logging.info("Starting state machine")
     drone: Drone = Drone()
-    drone.use_sim_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     await drone.arm()
@@ -27,7 +34,7 @@ async def run_flight_code() -> None:
 
 async def start_flight() -> None:
     """Start the flight code in async."""
-    await run_flight_code()
+    await run_flight_code(FlightSettings.from_mission_config())
 
 
 async def start_kill_switch(flight_task: asyncio.Task[None]) -> None:
@@ -43,7 +50,8 @@ async def start_kill_switch(flight_task: asyncio.Task[None]) -> None:
         await asyncio.sleep(1)
 
     flight_manager: FlightManager = FlightManager()
-    flight_manager.drone.use_sim_settings()
+    flight_settings: FlightSettings = FlightSettings.from_mission_config()
+    flight_manager.drone.use_settings(flight_settings.sim_mode)
 
     await flight_manager.kill_switch(flight_task)
 

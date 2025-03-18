@@ -8,7 +8,7 @@ import dronekit
 from state_machine.drone import Drone
 from state_machine.state_machine import StateMachine
 from state_machine.states import Start
-from state_machine.flight_settings import DEFAULT_STANDARD_OBJECT_COUNT, FlightSettings
+from state_machine.flight_settings import FlightSettings
 
 
 class FlightManager:
@@ -19,7 +19,7 @@ class FlightManager:
     -------
     __init__(self) -> None
         Initialize a flight manager object.
-    run_manager() -> Awaitable[None]
+    run_manager(flight_settings: FlightSettings) -> Awaitable[None]
         Run the state machine until completion in a separate process.
         Sets the drone address to the simulation or physical address.
     _run_state_machine(drone: Drone) -> None
@@ -39,10 +39,7 @@ class FlightManager:
 
     async def run_manager(
         self,
-        sim_flag: bool,
-        path_data_path: str = "flight/data/waypoint_data.json",
-        skip_waypoint: bool = False,
-        standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
+        flight_settings: FlightSettings,
     ) -> None:
         """
         Run the state machine until completion in a separate process.
@@ -50,27 +47,11 @@ class FlightManager:
 
         Parameters
         ----------
-        sim_flag : bool
-            A flag representing if the drone is a simulation.
-        path_data_path : str, default "flight/data/waypoint_data.json"
-            The path to the JSON file containing the boundary and waypoint data.
-        skip_waypoint : bool, default False
-            Whether to skip the waypoint state.
-        standard_object_count : int, default DEFAULT_STANDARD_OBJECT_COUNT
-            The number of standard objects to attempt to find.
+        flight_settings : FlightSettings
+            The flight settings to use.
         """
+        self.drone.use_settings(flight_settings.sim_mode)
 
-        if sim_flag:
-            self.drone.use_sim_settings()
-        else:
-            self.drone.use_real_settings()
-
-        flight_settings_obj: FlightSettings = FlightSettings(
-            sim_flag=sim_flag,
-            path_data_path=path_data_path,
-            skip_waypoint=skip_waypoint,
-            standard_object_count=standard_object_count,
-        )
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()
 
@@ -78,9 +59,9 @@ class FlightManager:
 
         state_machine_task: asyncio.Task[None] = asyncio.ensure_future(
             StateMachine(
-                Start(self.drone, flight_settings_obj),
+                Start(self.drone, flight_settings),
                 self.drone,
-                flight_settings_obj,
+                flight_settings,
             ).run()
         )
 
