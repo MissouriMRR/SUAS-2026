@@ -55,7 +55,7 @@ class FlightManager:
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()
 
-        if airsim_flag:
+        if flight_settings.sim_mode.AIRSIM:
 
             self.drone.remove_arming_check()
 

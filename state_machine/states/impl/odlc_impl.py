@@ -110,8 +110,10 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
     """
 
     # Initialize the camera
-    if not self.flight_settings.sim_mode is SimMode.SIM:
-        camera: Camera | None = Camera()
+    if self.flight_settings.sim_mode is SimMode.REAL:
+        camera: CameraIRL | CameraAirSim | None = CameraIRL()
+    elif self.flight_settings.sim_mode is SimMode.AIRSIM:
+        camera = CameraAirSim()
     else:
         camera = None
 
