@@ -7,11 +7,6 @@ import logging
 import sys
 
 
-SIM_ADDR: str = "udp:127.0.0.1:14550"
-AIRSIM_ADDR: str = "tcp:127.0.0.1:5762"
-CON_ADDR: str = "serial:///dev/ttyFTDI:921600"
-
-
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings

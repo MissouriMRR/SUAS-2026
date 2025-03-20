@@ -4,64 +4,116 @@
         "altitudeMax": 121.92,
         "boundaryPoints": [
             {
-                "latitude": 37.947427,
-                "longitude": -91.783078
+                "latitude": 38.31729702009844,
+                "longitude": -76.55617670782419
             },
             {
-                "latitude": 37.948218,
-                "longitude": -91.78329
+                "latitude": 38.31594832826572,
+                "longitude": -76.55657341657302
             },
             {
-                "latitude": 37.948835,
-                "longitude": -91.784535
+                "latitude": 38.31546739500083,
+                "longitude": -76.55376201277696
             },
             {
-                "latitude": 37.948277,
-                "longitude": -91.784524
-            }
-        ],
-        "mappingBoundary": [
-            {
-                "latitude": 37.947427,
-                "longitude": -91.783078
+                "latitude": 38.31470980862425,
+                "longitude": -76.54936361414539
             },
             {
-                "latitude": 37.948218,
-                "longitude": -91.78329
+                "latitude": 38.31424154692598,
+                "longitude": -76.54662761646904
             },
             {
-                "latitude": 37.948835,
-                "longitude": -91.784535
+                "latitude": 38.31369801280048,
+                "longitude": -76.54342380058223
             },
             {
-                "latitude": 37.948277,
-                "longitude": -91.784524
+                "latitude": 38.31331079191371,
+                "longitude": -76.54109648475954
+            },
+            {
+                "latitude": 38.31529941346197,
+                "longitude": -76.54052104837133
+            },
+            {
+                "latitude": 38.31587643291039,
+                "longitude": -76.54361305817427
+            },
+            {
+                "latitude": 38.31861642463319,
+                "longitude": -76.54538594175376
+            },
+            {
+                "latitude": 38.31862683616554,
+                "longitude": -76.55206138505936
+            },
+            {
+                "latitude": 38.31703471119464,
+                "longitude": -76.55244787859773
+            },
+            {
+                "latitude": 38.31674255749409,
+                "longitude": -76.55294546866578
+            },
+            {
+                "latitude": 38.31729702009844,
+                "longitude": -76.55617670782419
             }
         ]
     },
     "waypoints": [
         {
-            "latitude": 37.948658,
-            "longitude": -91.784431,
-            "altitude": 26
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
         },
         {
-            "latitude": 37.9482,
-            "longitude": -91.783406,
-            "altitude": 26
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
         },
         {
-            "latitude": 37.948358,
-            "longitude": -91.783253,
-            "altitude": 26
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
         },
         {
-            "latitude": 37.9488,
-            "longitude": -91.784169,
-            "altitude": 26
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
+        },
+        {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
+        },
+        {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
+        },
+        {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
+        },
+        {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
+        },
+        {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
+        },
+        {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 30.5
         }
     ],
-    "odlcAltitude": 26,
+    "odlcAltitude": 24,
     "odlcHeading": 13,
     "odlcWaypointsZ1": [
         {

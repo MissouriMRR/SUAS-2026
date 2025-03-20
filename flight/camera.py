@@ -21,7 +21,6 @@ import airsim
 from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
 from vision.common.constants import CameraParameters
-from vision.common.constants import SENSOR_WIDTH
 
 
 WAYPOINT_TOLERANCE: int = 1  # in meters
@@ -122,8 +121,6 @@ class Camera(ABC):
             The requested altitude to go to, in meters.
         interval : float
             The interval, in meters, at which to take photos.
-        heading : float, default 0
-            The yaw in which the camera should point, in degrees (0 is north, 90 is west).
         """
         return None
 
@@ -153,8 +150,6 @@ class Camera(ABC):
             The requested altitude to go to, in meters.
         take_photos : bool
             Whether to take a photo once the waypoint has been reached.
-        heading : float, default 0
-            The yaw in which the camera should point, in degrees (0 is north, 90 is west).
         """
         return None
 
