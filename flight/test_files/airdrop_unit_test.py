@@ -4,7 +4,6 @@ File for the airdrop unit test
 
 import asyncio
 import logging
-from mavsdk import System
 
 from state_machine.flight_settings import FlightSettings
 from state_machine.state_machine import StateMachine
@@ -12,20 +11,27 @@ from state_machine.states import Airdrop
 from state_machine.drone import Drone
 
 
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     Runs the Airdrop unit test
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
 
-    logging.info("Creating the drone")
-    drone: Drone = Drone()
     # create a drone object
+    drone: Drone = Drone()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
-    await prep(drone.system)
+    # initilize drone configurations
+    drone.vehicle.airspeed = 20
 
-    flight_settings: FlightSettings = FlightSettings()
+    await drone.arm()
 
+    await drone.takeoff(12)
     logging.info("starting airdrop")
 
     await airdrop_run(drone, flight_settings)
@@ -57,45 +63,6 @@ async def airdrop_run(drone: Drone, flight_settings: FlightSettings) -> None:
     await StateMachine(Airdrop(drone, flight_settings), drone, flight_settings).run()
 
 
-async def prep(drone: System) -> None:
-    """
-    A little prep for the unit test
-
-    Parameters
-    ----------
-    drone:System
-        the drone object
-    """
-
-    logging.info("prepping the drone")
-
-    # initilize drone configurations
-    await drone.action.set_takeoff_altitude(12)
-    await drone.action.set_maximum_speed(20)
-
-    # connect to the drone
-    logging.info("Waiting for drone to connect...")
-    async for state in drone.core.connection_state():
-        if state.is_connected:
-            logging.info("Drone discovered!")
-            break
-
-    logging.info("Waiting for drone to have a global position estimate...")
-    async for health in drone.telemetry.health():
-        if health.is_global_position_ok:
-            logging.info("Global position estimate ok")
-            break
-
-    logging.info("-- Arming")
-    await drone.action.arm()
-
-    logging.info("-- Taking off")
-    await drone.action.takeoff()
-
-    # wait for drone to take off
-    await asyncio.sleep(10)
-
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run())
+    asyncio.run(run(FlightSettings.from_mission_config()))

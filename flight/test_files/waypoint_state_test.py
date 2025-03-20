@@ -1,30 +1,24 @@
 """
-This module contains the implementation of a state machine and a kill switch
-to test them in a simulated or real-world environment. It includes functionality
-to check waypoints and ensure the drone remains within predefined boundaries.
-
-Classes
--------
-BoundaryPoint
-    A point defining a boundary for the drone's operation.
+A unit test for the waypoint state.
 
 Functions
 ---------
 in_bounds(boundary, latitude, longitude, altitude)
     Checks if a given point is within a specified boundary.
 
-waypoint_check(drone, _sim)
+waypoint_check(drone, flight_settings)
     Verifies if a drone reaches each waypoint in a predefined path.
 
-run_test(_sim)
+run_test(flight_settings)
     Initializes the state machine and starts the waypoint check.
 """
 
 import asyncio
 import logging
 import time
-import sys
 from typing import Final
+
+import dronekit
 
 from flight.extract_gps import BoundaryPoint, GPSData, extract_gps
 from flight.extract_gps import Waypoint as Waylist
@@ -94,7 +88,7 @@ def in_bounds(
     return inside
 
 
-async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
+async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
     """
     Checks if the drone reaches each waypoint in a list and remains
     within the specified boundary during its flight.
@@ -103,17 +97,14 @@ async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
     ----------
     drone : Drone
         The drone object from the flight manager.
-    _sim : bool
-        Specifies whether the function is being run in a simulation mode.
-    path_data_path : str
-        The path to the JSON file containing the boundary and waypoint data.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
-    gps_dict: GPSData = extract_gps(path_data_path)
+    gps_dict: GPSData = extract_gps(flight_settings.mission_data_path)
     waypoints: list[Waylist] = gps_dict["waypoints"]
     boundary: list[BoundaryPoint] = gps_dict["boundary_points"]
-    # 3.28084 ft per m
-    min_altitude: float = gps_dict["altitude_limits"][0] / 3.28084
-    max_altitude: float = gps_dict["altitude_limits"][1] / 3.28084
+    min_altitude: float = gps_dict["altitude_limits"][0]
+    max_altitude: float = gps_dict["altitude_limits"][1]
 
     # Ensure that the flight manager code starts and sets the correct address.
     # 5 seconds is probably far longer than necessary.
@@ -122,19 +113,19 @@ async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
     await asyncio.sleep(5.0)
 
     # connect to the drone
-    async for state in drone.system.core.connection_state():
-        if state.is_connected:
-            break
+    while not drone.is_connected:
         await asyncio.sleep(1)
 
     previously_out_of_bounds: bool = False
     previous_log_time: float = time.perf_counter()  # time.perf_counter() is monotonic
     for waypoint_num, waypoint in enumerate(waypoints):
-        async for position in drone.system.telemetry.position():
+        while True:
+            location: dronekit.LocationGlobalRelative = drone.vehicle.location.global_relative_frame
+
             # continuously checks current latitude, longitude and altitude of the drone
-            drone_lat: float = position.latitude_deg
-            drone_lon: float = position.longitude_deg
-            drone_alt: float = position.relative_altitude_m
+            drone_lat: float = location.lat
+            drone_lon: float = location.lon
+            drone_alt: float = location.alt
 
             # checks if drone's location is within boundary
             if not in_bounds(boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude):
@@ -159,40 +150,36 @@ async def waypoint_check(drone: Drone, _sim: bool, path_data_path: str) -> None:
                 logging.info("(Waypoint State Test) %f m to waypoint", distance_to_waypoint)
                 previous_log_time = curr_time
 
+            await asyncio.sleep(0.1)
+
         logging.info("(Waypoint State Test) Waypoint %d reached.", waypoint_num)
 
 
-async def run_test(_sim: bool) -> None:  # Temporary fix for unused variable
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Initialize and run the flight manager and waypoint check for testing
     the state machine in either simulated or real-world mode.
 
     Parameters
     ----------
-    _sim : bool
-        Specifies whether to run the state machine in simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
-    # Output logging info to stdout
-    logging.basicConfig(filename="/dev/stdout", level=logging.INFO)
-
-    path_data_path: str = "flight/data/waypoint_data.json" if _sim else "flight/data/golf_data.json"
-
     drone: Drone = Drone()
+    drone.use_settings(flight_settings.sim_mode)
+
     drone.odlc_scan = False
-    flight_settings: FlightSettings = FlightSettings(sim_flag=_sim, path_data_path=path_data_path)
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
-    await waypoint_check(drone, _sim, path_data_path)
+    await waypoint_check(drone, flight_settings)
 
-    while state_task.done() is False:
+    while not state_task.done():
         await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    print("Pass argument --sim to enable the simulation flag.")
-    print("When the simulation flag is not set, golf data is used for the boundary and waypoints.")
-    print()
-    asyncio.run(run_test("--sim" in sys.argv))
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(run_test(FlightSettings.from_mission_config()))

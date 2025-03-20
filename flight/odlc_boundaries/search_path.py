@@ -8,9 +8,12 @@ Functions for generating search paths to cover an area for finding the standard 
 import logging
 import asyncio
 import utm
+
 from shapely.geometry import Polygon
-from mavsdk import System
-from execute import move_to
+
+from flight.waypoint.goto import move_to
+from state_machine.drone import Drone
+from state_machine.flight_settings import SimMode
 
 
 def latlon_to_utm(coords: dict[str, float]) -> dict[str, float]:
@@ -111,41 +114,24 @@ async def run() -> None:
     }
 
     # create a drone object
-    drone: System = System()
-    await drone.connect(system_address="udp://:14540")
+    drone: Drone = Drone()
+    drone.use_settings(SimMode.SIM)
+    await drone.connect_drone()
 
-    # initilize drone configurations
-    await drone.action.set_takeoff_altitude(12)
-    await drone.action.set_maximum_speed(20)
+    await drone.arm()
 
-    # connect to the drone
-    logging.info("Waiting for drone to connect...")
-    async for state in drone.core.connection_state():
-        if state.is_connected:
-            logging.info("Drone discovered!")
-            break
-
-    logging.info("Waiting for drone to have a global position estimate...")
-    async for health in drone.telemetry.health():
-        if health.is_global_position_ok:
-            logging.info("Global position estimate ok")
-            break
-
-    logging.info("-- Arming")
-    await drone.action.arm()
-
-    logging.info("-- Taking off")
-    await drone.action.takeoff()
-
-    # wait for drone to take off
-    await asyncio.sleep(10)
+    await drone.takeoff(12.0)
 
     # move to each waypoint in mission
     point: int
     for point in range(3):
         logging.info("Moving")
         await move_to(
-            drone, waypoint["lats"][point], waypoint["longs"][point], waypoint["Altitude"][0]
+            drone.vehicle,
+            waypoint["lats"][point],
+            waypoint["longs"][point],
+            waypoint["Altitude"][0],
+            20.0,
         )
 
     # infinite loop till forced disconnect
@@ -156,12 +142,30 @@ async def run() -> None:
 if __name__ == "__main__":
     # Official Coordinates for Maryland
     data_search_area_boundary: list[dict[str, float]] = [
-        {"latitude": 38.3144070396263, "longitude": -76.54394394383165},  # Top Right Corner
-        {"latitude": 38.31430872867596, "longitude": -76.54397320409971},  # Right Midpoint
-        {"latitude": 38.31421041772561, "longitude": -76.54400246436776},  # Bottom Right Corner
-        {"latitude": 38.31461622313521, "longitude": -76.54516993186949},  # Top Left Corner
-        {"latitude": 38.31451966813249, "longitude": -76.54519982319357},  # Left Midpoint
-        {"latitude": 38.31442311312976, "longitude": -76.54522971451763},  # Bottom Left Corner
+        {
+            "latitude": 38.3144070396263,
+            "longitude": -76.54394394383165,
+        },  # Top Right Corner
+        {
+            "latitude": 38.31430872867596,
+            "longitude": -76.54397320409971,
+        },  # Right Midpoint
+        {
+            "latitude": 38.31421041772561,
+            "longitude": -76.54400246436776,
+        },  # Bottom Right Corner
+        {
+            "latitude": 38.31461622313521,
+            "longitude": -76.54516993186949,
+        },  # Top Left Corner
+        {
+            "latitude": 38.31451966813249,
+            "longitude": -76.54519982319357,
+        },  # Left Midpoint
+        {
+            "latitude": 38.31442311312976,
+            "longitude": -76.54522971451763,
+        },  # Bottom Left Corner
     ]
 
     # data_search_area_boundary: List[Dict[str, float]] = [

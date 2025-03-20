@@ -11,7 +11,6 @@ from vision.common.constants import Image, Corners
 
 def perspective_matrix(
     image_shape: tuple[int, int, int] | tuple[int, int],
-    focal_length: float,
     rotation_deg: list[float],
     *,  # The following are keyword-only
     scale: float = 1,
@@ -28,9 +27,6 @@ def perspective_matrix(
     ----------
     image_shape: tuple[int, int, int] | tuple[int, int],
         The shape of the image to deskew. Aspect ratio should match the camera sensor
-    focal_length : float
-        The camera's focal length in millimeters - used to generate the camera's
-        fields of view
     rotation_deg: list[float]
         The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
         camera, stored in constants.py, will be applied first
@@ -72,10 +68,7 @@ def perspective_matrix(
 
     # Numpy converts `None` to NaN
     intersects: Corners = np.array(
-        [
-            pixel_intersect(point, image_shape, focal_length, rotation_deg, 1)
-            for point in source_pts
-        ],
+        [pixel_intersect(point, image_shape, rotation_deg, 1) for point in source_pts],
         dtype=np.float32,
     )
 
@@ -104,7 +97,6 @@ def perspective_matrix(
 
 def deskew(
     image: Image,
-    focal_length: float,
     rotation_deg: list[float],
     *,  # The following are keyword-only
     scale: float = 1,
@@ -123,9 +115,6 @@ def deskew(
     ----------
     image : Image
         The input image to deskew. Aspect ratio should match the camera sensor
-    focal_length : float
-        The camera's focal length in millimeters - used to generate the camera's
-        fields of view
     rotation_deg: list[float]
         The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
         camera, stored in constants.py, will be applied first
@@ -156,7 +145,7 @@ def deskew(
 
     matrix: NDArray[Shape["3, 3"], Float64]
     dst_pts: Corners
-    matrix, dst_pts = perspective_matrix(image.shape, focal_length, rotation_deg, scale=scale)
+    matrix, dst_pts = perspective_matrix(image.shape, rotation_deg, scale=scale)
 
     if matrix is None or dst_pts is None:
         return None, None

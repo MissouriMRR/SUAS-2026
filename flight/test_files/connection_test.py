@@ -2,35 +2,32 @@
 
 import asyncio
 import logging
-import sys
 
 from state_machine.drone import Drone
-
-SIM_ADDR: str = "udp://:14540"  # Address to connect to the simulator
-CONTROLLER_ADDR: str = "serial:///dev/ttyFTDI:921600"  # Address to connect to a pixhawk board
+from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(sim: bool) -> None:
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Run the state machine.
 
     Parameters
     ----------
-    sim : bool
-        Whether to run the state machine in simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
-    address: str = SIM_ADDR if sim else CONTROLLER_ADDR
-    drone: Drone = Drone(address)
+    drone: Drone = Drone()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # connect to the drone
     logging.info("Waiting for drone to connect...")
-    async for state in drone.system.core.connection_state():
-        if state.is_connected:
-            logging.info("Drone discovered!")
-            break
+    while not drone.is_connected:
+        await asyncio.sleep(1)
+
+    logging.info("Drone discovered!")
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run_test("--sim" in sys.argv))
+    asyncio.run(run_test(FlightSettings.from_mission_config()))
