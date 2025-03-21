@@ -2,12 +2,14 @@
 Testing vision.deskew.vector_utils.py
 """
 
+import json
 import unittest
 import numpy as np
+from utils import type_utils
 from scipy.spatial.transform import Rotation
 
 import vision.deskew.vector_utils as vu
-from vision.common.constants import Vector, Point, SENSOR_HEIGHT, SENSOR_WIDTH, ROTATION_OFFSET
+from vision.common.constants import Vector, Point, ROTATION_OFFSET, CameraConfig
 
 
 Test_IHAT: Vector = np.array([1, 0, 0], dtype=np.float64)
@@ -158,20 +160,42 @@ class TestGetFOV(unittest.TestCase):
             If get_fov returns a value other than what was calculated
         """
 
-        # Test values
-        test_focal_length: float = 45.5
-        test_sensor_size: float = 22
+        with open("vision/common/camera_config.json", "rw", encoding="ascii") as file:
+            camera_config: CameraConfig = json.load(file)
+            test_config: CameraConfig = {
+                "Default": {
+                    "sensorHeight": 22,
+                    "sensorWidth": 22,
+                    "horizontalFOV": 0,
+                    "verticalFOV": 0,
+                    "focal_length": 45.5,
+                },
+                "Airsim": {
+                    "sensorHeight": 0,
+                    "sensorWidth": 0,
+                    "horizontalFOV": 0,
+                    "verticalFOV": 0,
+                    "focal_length": 0,
+                },
+                "airsim_flag": False,
+            }
+            json.dump(test_config, file)
 
-        # Expected value
-        expected: float = 2 * np.arctan(test_sensor_size / (test_focal_length))
+            # Test values
+            test_focal_length: float = 45.5
+            test_sensor_size: float = 22
 
-        # Test the function
-        result: float = vu.get_fov(test_focal_length, test_sensor_size)
+            # Expected value
+            expected: float = 2 * np.arctan(test_sensor_size / (2 * test_focal_length))
 
-        # Fail message
-        fail_msg: str = "get_fov returned an incorrect value"
+            # Test the function
+            result: tuple[float, float] = vu.get_fov()
 
-        self.assertEqual(expected, result, fail_msg)
+            # Fail message
+            fail_msg: str = "get_fov returned an incorrect value"
+
+            self.assertEqual(expected, result[0], fail_msg)
+            json.dump(camera_config, file)
 
 
 class TestEdgeAngle(unittest.TestCase):
@@ -269,7 +293,10 @@ class TestRotateDegrees(unittest.TestCase):
         test_rotation_degrees: list[float] = [4.8, 9.1, 43.2]
 
         # Convert degrees to radians
-        test_rotation_radians: list[float] = np.deg2rad(test_rotation_degrees).tolist()
+        test_rotation_radians: list[float] = type_utils.assert_list_type(
+            np.deg2rad(test_rotation_degrees).tolist(),
+            float,
+        )
 
         # Expected value
         expected: Vector = vu.rotate_radians(
@@ -331,40 +358,6 @@ class TestCameraVector(unittest.TestCase):
             self.fail(error_msg)
 
 
-class TestFocalLengthToFOVs(unittest.TestCase):
-    """
-    Testing the focal_length_to_fovs function from the vector utils module
-    """
-
-    def test_focal_length_to_fovs(self) -> None:
-        """
-        Test focal_length_to_fovs with a known example
-
-        Raises
-        ------
-        AssertionError
-            If focal_length_to_fovs returns a value other than what was calculated
-        """
-
-        # Test values
-        test_focal_length: float = 36.5
-
-        # Expected value
-        expected: tuple[float, float] = (
-            vu.get_fov(test_focal_length, SENSOR_WIDTH),
-            vu.get_fov(test_focal_length, SENSOR_HEIGHT),
-        )
-        # The function above has been tested
-
-        # Test the function
-        result: tuple[float, float] = vu.focal_length_to_fovs(test_focal_length)
-
-        # Fail message
-        fail_msg: str = "focal_length_to_fovs returned an incorrect value"
-
-        self.assertEqual(expected, result, fail_msg)
-
-
 class TestPixelVector(unittest.TestCase):
     """
     Testing the pixel_vector function from the vector utils module
@@ -383,14 +376,11 @@ class TestPixelVector(unittest.TestCase):
         # Test values
         test_pixel: tuple[int, int] = (35, 89)
         test_image_shape: tuple[int, int] = (100, 200)
-        test_focal_length: float = 21.5
 
         # Calculate the FOVs
         test_horizontal_fov: float
         test_vertical_fov: float
-        test_horizontal_fov, test_vertical_fov = vu.focal_length_to_fovs(
-            test_focal_length
-        )  # This function has been tested
+        test_horizontal_fov, test_vertical_fov = vu.get_fov()  # This function has been tested
 
         # Expected value
         expected: Vector = vu.camera_vector(
@@ -399,7 +389,7 @@ class TestPixelVector(unittest.TestCase):
         )  # These functions have been tested
 
         # Test the function
-        result: Vector = vu.pixel_vector(test_pixel, test_image_shape, test_focal_length)
+        result: Vector = vu.pixel_vector(test_pixel, test_image_shape)
 
         # This doesn't need a fail message as we will use the one that numpy
         # provides
@@ -429,14 +419,13 @@ class TestPixelIntersect(unittest.TestCase):
         # Test values
         test_pixel: tuple[int, int] = (93, 72)
         test_image_shape: tuple[int, int] = (300, 600)
-        test_focal_length: float = 61.2
         test_height: float = 33.3
         test_rotation_degrees: list[float] = [4.5, 0.3, 8.2]
         # Make a copy of the rotation degrees because of Python's mutable lists
         test_rotation_degrees_func: list[float] = test_rotation_degrees.copy()
 
         # Calculate the pixel vector
-        test_vector: Vector = vu.pixel_vector(test_pixel, test_image_shape, test_focal_length)
+        test_vector: Vector = vu.pixel_vector(test_pixel, test_image_shape)
         # This function above has been tested
 
         # Calculate the rotated vector
@@ -457,7 +446,7 @@ class TestPixelIntersect(unittest.TestCase):
 
         # Test the function
         result: Point | None = vu.pixel_intersect(
-            test_pixel, test_image_shape, test_focal_length, test_rotation_degrees_func, test_height
+            test_pixel, test_image_shape, test_rotation_degrees_func, test_height
         )
 
         # This only needs a fail message if the expected value is not None
