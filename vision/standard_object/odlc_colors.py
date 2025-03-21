@@ -270,8 +270,6 @@ def best_color_range(
 if __name__ == "__main__":
     import argparse
 
-    from vision.common.bounding_box import ObjectType
-
     # parse arguments
     parser: argparse.ArgumentParser = argparse.ArgumentParser("Find ODLC colors.")
 
@@ -289,4 +287,4 @@ if __name__ == "__main__":
     img: Image = cv2.imread(file_name)
 
     # NOTE: to test an image, specify the bounds of the text in the image here
-    bbox = BoundingBox(vertices=((0, 0), (10, 0), (10, 10), (0, 10)), obj_type=ObjectType.TEXT)
+    bbox = BoundingBox((0, 0), 10, 10)

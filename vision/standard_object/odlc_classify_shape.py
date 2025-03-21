@@ -12,7 +12,6 @@ from vision.common import constants as consts
 from vision.common import odlc_characteristics as chars
 from vision.common.bounding_box import BoundingBox as bbox
 from vision.common.bounding_box import tlwh_to_vertices
-from vision.common.bounding_box import ObjectType
 
 # constants
 PolarArray: TypeAlias = NDArray[Shape["128"], Float64]
@@ -110,8 +109,7 @@ def process_shapes(contours: list[consts.Contour]) -> list[bbox]:
         min_x, min_y, width, height = cv2.boundingRect(contour)
         vertices = tlwh_to_vertices(min_x, min_y, width, height)
 
-        bounding_box: bbox = bbox(vertices, ObjectType.STD_OBJECT, None)
-        bounding_box.set_attribute("shape", shape_type)
+        bounding_box: bbox = bbox(vertices[0], width, height)
         bbox_list.append(bounding_box)
     return bbox_list
 
