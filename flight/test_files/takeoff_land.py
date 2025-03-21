@@ -1,66 +1,58 @@
 """
-File for test way point path for SUAS 3 miles in length
+Test for taking off, holding position for 5 seconds, then landing.
 """
 
 import asyncio
 import logging
 import sys
 
-from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
 
 
+# duplicate code disabled for testing function
+# pylint: disable=duplicate-code
 async def run(flight_settings: FlightSettings) -> None:
     """
-    run simple waypoint flight path
+    This function is a driver to test if the drone can take off to an altitude of 15 m
+    and then land.
 
     Parameters
     ----------
     flight_settings : FlightSettings
         The flight settings to use.
+
+    Notes
+    -----
+    15m = 49.2126ft
     """
 
     # create a drone object
     drone: Drone = Drone()
     drone.use_settings(flight_settings.sim_mode)
+
     await drone.connect_drone()
 
     # initilize drone configurations
-    drone.vehicle.airspeed = 30
+    drone.vehicle.airspeed = 10
 
     await drone.arm()
 
-    await drone.takeoff(12)
+    await drone.takeoff(15)
 
-    obj_altitude: float = 12
-    points: list[tuple[float, float]] = [
-        (38.31413, -76.54352),
-        (38.31629, -76.55587),
-        (38.31611, -76.55126),
-        (38.31712, -76.55102),
-        (38.31560, -76.54838),
-        (38.31413, -76.54352),
-        (38.31629, -76.55587),
-        (38.31413, -76.54352),
-        (38.31466, -76.54665),
-    ]
-
-    point: tuple[float, float]
-    for point in points:
-        await move_to(drone.vehicle, point[0], point[1], obj_altitude)
+    # wait in air for 5 seconds once at correct height
+    logging.info("Reached takeoff altitude. Holding position for 5 seconds")
+    await asyncio.sleep(5)
 
     # return home
     await drone.return_to_launch()
-    print("Staying connected, press Ctrl-C to exit")
+    print("Landed. Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect
     while True:
         await asyncio.sleep(1)
 
 
-# Runs through the code until it has looped through each element of
-# the Lats and Longs array and the drone has arrived at each of them
 if __name__ == "__main__":
     try:
         logging.basicConfig(level=logging.INFO)
