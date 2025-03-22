@@ -14,14 +14,14 @@ Vertices: TypeAlias = tuple[tuple[int, int], tuple[int, int], tuple[int, int], t
 
 def tlwh_to_vertices(tl_x: int, tl_y: int, width: int, height: int) -> Vertices:
     """
-    Gets the vertices of a bounding box from a coordinate, width, and height.
+    Gets the vertices of a bounding box from a pixel, width, and height.
 
     Parameters
     ----------
     tl_x : int
-        the top-left x coordinate of the bounding box
+        the top-left x pixels of the bounding box
     tl_y : int
-        the top-left y coordinate of the bounding box
+        the top-left y pixel of the bounding box
     width : int
         the width of the bounding box
     height : int
@@ -30,9 +30,9 @@ def tlwh_to_vertices(tl_x: int, tl_y: int, width: int, height: int) -> Vertices:
     Returns
     -------
     vertices : Vertices
-        Denotes the 4 coordinates representing a box in an image.
-        Vertices is a tuple of 4 coordinates.
-        Each coordinate consists of a tuple 2 integers.
+        Denotes the 4 pixels representing a box in an image.
+        Vertices is a tuple of 4 pixels.
+        Each pixel consists of a tuple 2 integers.
         Order is (top-left, top-right, bottom-right, bottom-left).
     """
 
@@ -46,19 +46,26 @@ def tlwh_to_vertices(tl_x: int, tl_y: int, width: int, height: int) -> Vertices:
 
 class BoundingBox:
     """
-    A set of 4 coordinates that distinguish a region of an image.
-    The top-left coordinate, width, and height are used to create the
+    A set of 4 pixels that distinguish a region of an image.
+    The top-left pixel, width, and height are used to create the
     BoundingBox.
+
+    Attributes
+    ----------
+    center_lat_lon : tuple[float, float]
+        the center latitude (center_lat_lon[0]) and longitude(center_lat_long[1]) of what the bounding box highlights
 
     Parameters
     ----------
     top_left : tuple[int, int]
-        The top-left coordinate of the BoundingBox.
+        The top-left pixel of the BoundingBox.
     width : int
         The width of the BoundingBox.
     height : int
         The height of the BoundingBox.
     """
+
+    center_lat_lon: tuple[float, float]
 
     def __init__(self, top_left: tuple[int, int], width: int, height: int) -> None:
         self.top_left: tuple[int, int] = top_left
@@ -70,7 +77,7 @@ class BoundingBox:
 
     def get_x_vals(self) -> list[int]:
         """
-        Gets the x values of the 4 coordinates.
+        Gets the x values of the 4 pixels.
 
         Returns
         -------
@@ -83,7 +90,7 @@ class BoundingBox:
 
     def get_y_vals(self) -> list[int]:
         """
-        Gets the y values of the 4 coordinates.
+        Gets the y values of the 4 pixels.
 
         Returns
         -------
@@ -128,36 +135,36 @@ class BoundingBox:
 
     def get_x_avg(self) -> int:
         """
-        Gets the average x coordinate of the bounding box.
+        Gets the average x pixel of the bounding box.
 
         Returns
         -------
         average : int
-            the average of the 4 coordinates' x-values
+            the average of the 4 pixels' x-values
         """
 
         return int(np.mean(self.get_x_vals()))
 
     def get_y_avg(self) -> int:
         """
-        Gets the average y coordinate of the bounding box.
+        Gets the average y pixel of the bounding box.
 
         Returns
         -------
         average : int
-            the average of the 4 coordinates' y-values
+            the average of the 4 pixels' y-values
         """
 
         return int(np.mean(self.get_y_vals()))
 
     def get_center_coord(self) -> tuple[int, int]:
         """
-        Gets the coordinate of the center of the BoundingBox
+        Gets the pixel of the center of the BoundingBox
 
         Returns
         -------
         center_pt : tuple[int, int]
-            the coordinate point at the center of the bounding box
+            the pixel point at the center of the bounding box
         """
 
         return (self.get_x_avg(), self.get_y_avg())
@@ -239,4 +246,4 @@ if __name__ == "__main__":
 
     # center
     print()
-    print("Center coordinate:", object_bounds.get_center_coord())
+    print("Center pixel:", object_bounds.get_center_coord())

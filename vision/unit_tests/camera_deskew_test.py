@@ -1,6 +1,6 @@
 import unittest
 from vision.common.constants import CameraParameters
-from vision.common.bounding_box import BoundingBox, ObjectType
+from vision.common.bounding_box import BoundingBox
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 
 
@@ -62,12 +62,11 @@ class TestVisionFunctions(unittest.TestCase):
         -------
             None: This method does not return a value but asserts the area calculation is correct.
         """
-        obj_type = ObjectType(value="")  # Provide the necessary argument
         self.box = BoundingBox(
-            obj_type=obj_type,
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+            (100, 200),
+            100,
+            100,
         )
-        expected_area = 10000
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting
