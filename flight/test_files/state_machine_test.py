@@ -1,20 +1,24 @@
 """Runs the state machine and kill switch in separate processes in order to test them."""
 
 import asyncio
+import logging
+
 from state_machine.flight_manager import FlightManager
+from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(sim: bool) -> None:
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Run the state machine.
 
     Parameters
     ----------
-    sim : bool
-        Whether to run the state machine in simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
-    await FlightManager().run_manager(sim)
+    await FlightManager().run_manager(flight_settings)
 
 
 if __name__ == "__main__":
-    asyncio.run(run_test(True))
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(run_test(FlightSettings.from_mission_config()))

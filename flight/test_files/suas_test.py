@@ -3,20 +3,27 @@ File for test way point path for SUAS 3 miles in length
 """
 
 import asyncio
+import logging
 import sys
 
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 
 
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     run simple waypoint flight path
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
 
     # create a drone object
     drone: Drone = Drone()
-    drone.use_sim_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # initilize drone configurations
@@ -56,8 +63,9 @@ async def run() -> None:
 # the Lats and Longs array and the drone has arrived at each of them
 if __name__ == "__main__":
     try:
+        logging.basicConfig(level=logging.INFO)
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run())
+        loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
         print("Program ended")
         sys.exit(0)

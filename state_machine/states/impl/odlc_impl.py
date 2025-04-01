@@ -1,7 +1,6 @@
 """Implements the behavior of the ODLC state."""
 
 import asyncio
-import json
 import logging
 from pathlib import Path
 import traceback
@@ -10,6 +9,7 @@ from flight.camera import Camera
 
 from flight.extract_gps import extract_gps, GPSData
 from flight.waypoint.goto import move_to
+from state_machine.flight_settings import SimMode
 from state_machine.state_tracker import (
     update_state,
     update_drone,
@@ -21,7 +21,7 @@ from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 
 from vision.vision_pipeline import flyover_pipeline
-from vision.common.constants import CameraConfig
+from vision.common import camera_config
 
 
 async def run(self: ODLC) -> State:
@@ -46,15 +46,8 @@ async def run(self: ODLC) -> State:
     asyncio.CancelledError
         If the execution of the ODLC state is canceled.
     """
-    with open("vision/common/camera_config.json", encoding="ascii", mode="r+") as file:
-        camera_config: CameraConfig = json.load(file)
-        if self.flight_settings.airsim_flag:
-            camera_config["airsim_flag"] = True
-        else:
-            camera_config["airsim_flag"] = False
-        file.seek(0)
-        file.truncate()
-        json.dump(camera_config, file)
+
+    camera_config.update_sim_mode(self.flight_settings.sim_mode)
 
     if self.flight_settings.skip_odlc_and_airdrop:
         return Mapping(self.drone, self.flight_settings)
@@ -110,12 +103,28 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     """
 
     # Initialize the camera
-    if not self.flight_settings.sim_flag:
+    if not self.flight_settings.sim_mode is SimMode.SIM:
         camera: Camera | None = Camera()
     else:
         camera = None
 
-    gps_data: GPSData = extract_gps(self.flight_settings.path_data_path)
+    # The waypoint values stored in waypoint_data.json are all that are needed
+    # to traverse the whole odlc drop location
+    # because it is a small rectangle
+    # The first waypoint is the midpoint of
+    # the left side of the rectangle(one of the short sides), the second point is the
+    # midpoint of the right side of the rectangle(other short side),
+    # and the third point is the top left corner of the rectangle
+    # it goes there for knowing where the drone ends to travel to each of the drop locations,
+    # the altitude is locked at 100 because
+    # we want the drone to stay level and the camera to view the whole odlc boundary
+    # the altitude 100 feet was chosen to cover the whole odlc boundary
+    # because the boundary is 70ft by 360ft the fov of the camera
+    # is vertical 52.1 degrees and horizontal 72.5,
+    # so using the minimum length side of the photo the coverage would be 90 feet allowing
+    # 10 feet overlap on both sides
+
+    gps_data: GPSData = extract_gps(self.flight_settings.mission_data_path)
 
     logging.info("Starting odlc zone flyover")
 
