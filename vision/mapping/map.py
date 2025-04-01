@@ -105,7 +105,7 @@ class Map:
             self.center_coord[0]
         )
         longitude_length: float = coordinate_lengths.longitude_length(
-            map.center_coord[0]
+            self.center_coord[0]
         )
         
         relative_coord_ft = np.array(
@@ -116,11 +116,8 @@ class Map:
         
         updated_map_img = overlaying.offset_overlay(proj_img, self.img, pixel_offset, self.feather_width)
         
-        updated_map_min = np.minimum(self.coord_min, img_min_coord)
-        updated_map_max = np.maximum(self.coord_max, img_max_coord)
-        
-        self.coord_min = updated_map_min
-        self.coord_max = updated_map_max
+        self.coord_min = np.minimum(self.coord_min, img_min_coord)
+        self.coord_max = np.maximum(self.coord_min, img_min_coord)
         self.img = updated_map_img
         
         return
