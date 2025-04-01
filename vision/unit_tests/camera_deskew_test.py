@@ -67,7 +67,6 @@ class TestVisionFunctions(unittest.TestCase):
             obj_type=obj_type,
             vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
         )
-        expected_area = 10000
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting
