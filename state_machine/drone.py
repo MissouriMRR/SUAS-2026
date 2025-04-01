@@ -120,7 +120,7 @@ class Drone:
         self._vehicle = (
             dronekit.connect(self.address, wait_ready=True)
             if self.baud is None
-            else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
+            else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=60)
         )
         logging.info("Drone discovered!")
 
@@ -215,8 +215,8 @@ class Drone:
         """
         match sim_mode:
             case SimMode.REAL:
-                self.address = "/dev/ttyFTDI"
-                self.baud = 921600
+                self.address = "udpout:192.168.43.1:14552"
+                self.baud = None
             case SimMode.SIM:
                 self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
