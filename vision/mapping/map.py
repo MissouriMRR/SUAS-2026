@@ -40,7 +40,7 @@ class Map:
     
     def prepare_image(self, img, camera_parameters):
         
-        projected_image = deskew.deskew(
+        projected_image, _ = deskew.deskew(
             img,
             camera_parameters["focal_length"],
             camera_parameters["rotation_deg"],
@@ -48,17 +48,21 @@ class Map:
         )
         
         blank_channel = np.zeros((projected_image.shape[0], projected_image.shape[1]))
-        projected_image_wdepth: consts.MapImage = np.dstack(projected_image, blank_channel)
+        projected_image_wdepth: consts.MapImage = np.dstack((projected_image, blank_channel))
         
-        # Construct the distance map and put it in the 4th (alpha) channel
-        projected_image_wdepth[:, :, 3] = np.fromfunction(
-            lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
+        distance = lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
                 (x, y),
                 img.shape,
                 camera_parameters["focal_length"],
                 camera_parameters["rotation_deg"],
-                scale=self.pixels_per_foot * camera_parameters["altitude_f"]
-            )),
+                height=self.pixels_per_foot * camera_parameters["altitude_f"]
+            ))
+        
+        print(f"{distance(0,0)=}")
+        
+        # Construct the distance map and put it in the 4th (alpha) channel
+        projected_image_wdepth[:, :, 3] = np.fromfunction(
+            distance,
             (img.shape[0], img.shape[1])
         )
         

@@ -11,6 +11,11 @@ from vision.deskew.deskew import get_corner_points
 
 
 def corner_coords(image_shape, camera_parameters) -> Corners:
+    print([
+            get_coordinates(point, image_shape, camera_parameters)
+            for point in get_corner_points(image_shape)
+        ])
+    
     coords: Corners = np.array(
         [
             get_coordinates(point, image_shape, camera_parameters)
@@ -56,7 +61,7 @@ def get_coordinates(
         Equal to None if there is no valid intersect.
     """
 
-    # Calculate the latitude and longitude lengths (in meters)
+    # Calculate the latitude and longitude lengths (in feet)
     latitude_length: float = coordinate_lengths.latitude_length(
         camera_parameters["drone_coordinates"][0]
     )

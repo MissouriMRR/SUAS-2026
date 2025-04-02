@@ -296,9 +296,11 @@ def rotate_radians(vector: Vector, rotation_rad: list[float]) -> Vector:
     """
 
     # Reverse the Y and Z rotation to match MAVSDK convention
-    rotation_rad[1] *= -1
-    rotation_rad[2] *= -1
-
-    result: Vector = Rotation.from_euler("xyz", rotation_rad).apply(np.array(vector))
+    # rotation_rad[1] *= -1
+    # rotation_rad[2] *= -1
+    
+    print(rotation_rad)
+    rotation = Rotation.from_euler("xyz", rotation_rad)
+    result: Vector = rotation.apply(np.array(vector))
 
     return result

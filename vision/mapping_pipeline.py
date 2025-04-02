@@ -7,7 +7,7 @@ from multiprocessing.sharedctypes import SynchronizedBase  # pylint: disable=unu
 import asyncio
 import cv2
 
-from mapping.map import Map
+from vision.mapping.map import Map
 
 import vision.common.constants as consts
 import vision.pipeline.pipeline_utils as pipe_utils
@@ -15,7 +15,7 @@ import vision.pipeline.pipeline_utils as pipe_utils
 
 # Disable duplicate code checking because the flyover pipeline is similar
 # pylint: disable=duplicate-code
-async def airdrop_pipeline(camera_data_path: str, state_path: str, output_path: str) -> None:
+async def mapping_pipeline(camera_data_path: str, image_dir: str, state_path: str, output_path: str) -> None:
     """
     Runs the code that generates the map from a folder of photos
 
@@ -32,16 +32,21 @@ async def airdrop_pipeline(camera_data_path: str, state_path: str, output_path: 
     # List of filenames for images already completed to prevent repeating work
     completed_images: list[str] = []
 
-    map: Map = Map()
+    map: Map = Map(5)
 
     # Wait for and process unfinished images until no more images are being taken
-    all_images_taken: c_bool = c_bool(False)
-    while not all_images_taken:
+    all_images_taken: c_bool = c_bool(True)
+    first_check = True
+    
+    while not all_images_taken or first_check:
         # Wait to check the file instead of spamming it
-        await asyncio.sleep(1)
+        if not first_check:
+            await asyncio.sleep(1)
+        
+        first_check = False
 
         # Check if all images have been taken
-        all_images_taken = capture_status.value  # type: ignore
+        # all_images_taken = capture_status.value  # type: ignore
 
         # Load in the json containing the camera data
         image_parameters: dict[str, consts.CameraParameters] = pipe_utils.read_parameter_json(
@@ -50,6 +55,8 @@ async def airdrop_pipeline(camera_data_path: str, state_path: str, output_path: 
 
         # Loop through all images in the json - if it hasn't been processed, process it
         for image_path in image_parameters.keys():
+            # image_path = image_dir + image_path
+            
             if image_path not in completed_images:
                 logging.info("Processing image: %s", image_path)
 
@@ -57,10 +64,12 @@ async def airdrop_pipeline(camera_data_path: str, state_path: str, output_path: 
                 completed_images.append(image_path)
 
                 # Load the image to process
-                image: consts.Image = cv2.imread(image_path)
+                image: consts.Image = cv2.imread(image_dir + image_path)
 
                 # Get the camera parameters from the loaded parameter file
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
+                camera_parameters["altitude_f"] = camera_parameters["altitude"]
+                camera_parameters["focal_length"] = 4
 
                 map.add_img(image, camera_parameters)
 
