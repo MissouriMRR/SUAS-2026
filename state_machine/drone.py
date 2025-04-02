@@ -1,11 +1,13 @@
 """Defines the Drone class for the state machine."""
 
 import asyncio
+import json
 import logging
 
 import dronekit
 
 from flight.waypoint.calculate_distance import calculate_distance
+from state_machine.flight_settings import SimMode
 
 
 class Drone:
@@ -44,10 +46,8 @@ class Drone:
         Checks if a drone has been connected to.
     takeoff(self, takeoff_alt: float) -> Awaitable[None]
         Takeoff vertically to the passed altitude.
-    use_real_settings(self) -> None
-        Modify the connection settings to connect to a real vehicle.
-    use_sim_settings(self) -> None
-        Modify the connection settings to connect to a simulated vehicle.
+    use_settings(self, sim_mode: SimMode) -> None
+        Modify the connection settings based on the given simulation mode.
     vehicle(self) -> dronekit.Vehicle
         Get the Dronekit Vehicle object owned by this Drone object.
     """
@@ -68,6 +68,9 @@ class Drone:
         self.address: str = address
         self.baud: int | None = baud
         self.odlc_scan: bool = True
+
+        with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
+            json.dump({}, file)
 
     @property
     def is_connected(self) -> bool:
@@ -121,10 +124,19 @@ class Drone:
         )
         logging.info("Drone discovered!")
 
+    def remove_arming_check(self) -> None:
+        """
+
+        For use with airsim
+
+        """
+        self.vehicle.parameters["ARMING_CHECK"] = 0
+
     async def arm(self) -> None:
         """
         Arm the drone
         """
+
         logging.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
@@ -188,12 +200,28 @@ class Drone:
         """Close the owned DroneKit Vehicle object."""
         self.vehicle.close()
 
-    def use_sim_settings(self) -> None:
-        """Modify the connection settings to connect to a simulated vehicle."""
-        self.address = "tcp:127.0.0.1:5762"
-        self.baud = None
+    def use_settings(self, sim_mode: SimMode) -> None:
+        """Modify the connection settings based on the given simulation mode.
 
-    def use_real_settings(self) -> None:
-        """Modify the connection settings to connect to a real vehicle."""
-        self.address = "/dev/ttyFTDI"
-        self.baud = 921600
+        Parameters
+        ----------
+        sim_mode : SimMode
+            The simulation mode.
+
+        Raises
+        ------
+        ValueError
+            If `sim_mode` is not a valid SimMode.
+        """
+        match sim_mode:
+            case SimMode.REAL:
+                self.address = "/dev/ttyFTDI"
+                self.baud = 921600
+            case SimMode.SIM:
+                self.address = "127.0.0.1:14030"
+                self.baud = None
+            case SimMode.AIRSIM:
+                self.address = "tcp:127.0.0.1:5762"
+                self.baud = None
+            case _:
+                raise ValueError("invalid sim mode")

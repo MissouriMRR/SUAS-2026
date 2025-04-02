@@ -9,20 +9,23 @@ import sys
 from flight import extract_gps
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
-
-# Defining file path constant for extract_gps
-MOVE_TO_TEST_PATH: str = "flight/data/golf_data.json"
+from state_machine.flight_settings import FlightSettings
 
 # Defining altitude and speed
 MOVE_TO_TEST_ALTITUDE: int = 12
 MOVE_TO_TEST_SPEED: int = 20
 
 
-async def run() -> None:
+async def run(flight_settings: FlightSettings) -> None:
     """
     This function is a driver to test the goto function and runs through the
     given waypoints in the lats and longs lists at the altitude of 100.
     Makes the drone move to each location in the lats and longs arrays at the altitude of 100.
+
+    Parameters
+    ----------
+    flight_settings : FlightSettings
+        The flight settings to use.
 
     Notes
     -----
@@ -37,7 +40,7 @@ async def run() -> None:
     longs: list[float] = []
     altitudes: list[float] = []
 
-    waypoint_data = extract_gps.extract_gps(MOVE_TO_TEST_PATH)
+    waypoint_data = extract_gps.extract_gps(flight_settings.mission_data_path)
     waypoints = waypoint_data["waypoints"]
 
     waypoint: tuple[float, float, float]
@@ -48,7 +51,7 @@ async def run() -> None:
 
     # create a drone object
     drone: Drone = Drone()
-    drone.use_sim_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # initilize drone configurations
@@ -77,8 +80,9 @@ async def run() -> None:
 #  the Lats and Longs array and the drone has arrived at each of them
 if __name__ == "__main__":
     try:
+        logging.basicConfig(level=logging.INFO)
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run())
+        loop.run_until_complete(run(FlightSettings.from_mission_config()))
     except KeyboardInterrupt:
         logging.info("CTRL+C: Program ended")
         sys.exit(0)

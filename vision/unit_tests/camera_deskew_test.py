@@ -1,7 +1,5 @@
 import unittest
-import numpy as np
-from enum import Enum
-from vision.common.constants import Point, CameraParameters, ODLCDict
+from vision.common.constants import CameraParameters
 from vision.common.bounding_box import BoundingBox, ObjectType
 from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
 
@@ -23,10 +21,9 @@ class TestVisionFunctions(unittest.TestCase):
 
         """
         self.camera_params = CameraParameters(
-            focal_length=35.0,
             rotation_deg=[0, 0, 0],
             drone_coordinates=[37.7749, -122.4194],
-            altitude_f=1000.0,
+            altitude=1000.0,
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
 
@@ -70,7 +67,6 @@ class TestVisionFunctions(unittest.TestCase):
             obj_type=obj_type,
             vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
         )
-        expected_area = 10000
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting

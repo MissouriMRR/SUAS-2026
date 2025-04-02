@@ -274,9 +274,8 @@ def main() -> None:
         )
         boundary_vertices.append(Point(easting, northing))
 
-    # 3.28084 ft per m
-    min_altitude: float = waypoint_data["flyzones"]["altitudeMin"] / 3.28084
-    max_altitude: float = waypoint_data["flyzones"]["altitudeMax"] / 3.28084
+    min_altitude: float = waypoint_data["flyzones"]["altitudeMin"]
+    max_altitude: float = waypoint_data["flyzones"]["altitudeMax"]
 
     # Generate random waypoints to use for the waypoint state unit test
     # Prints json data to be pasted in ../data/waypoint_data.json

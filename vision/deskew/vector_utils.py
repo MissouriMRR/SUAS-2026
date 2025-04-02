@@ -1,10 +1,12 @@
 """Functions that use vectors to calculate camera intersections with the ground"""
 
+import json
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 from utils import type_utils
-from vision.common.constants import Point, Vector, SENSOR_WIDTH, SENSOR_HEIGHT, ROTATION_OFFSET
+from vision.common.constants import Point, Vector, ROTATION_OFFSET, CameraConfig
 
 
 # Vector pointing toward the +X axis, represents the camera's forward direction when the
@@ -15,7 +17,6 @@ IHAT: Vector = np.array([1, 0, 0], dtype=np.float64)
 def pixel_intersect(
     pixel: tuple[int, int],
     image_shape: tuple[int, int, int] | tuple[int, int],
-    focal_length: float,
     rotation_deg: list[float],
     height: float,
 ) -> Point | None:
@@ -29,8 +30,6 @@ def pixel_intersect(
         The location of the pixel in [X, Y] form
     image_shape : tuple[int, int, int] | tuple[int, int]
         The shape of the image (returned by image.shape when image is a numpy image array)
-    focal_length : float
-        The camera's focal length in millimeters
     rotation_deg : list[float]
         The [roll, pitch, yaw] rotation of the drone in degrees
     height : float
@@ -46,7 +45,7 @@ def pixel_intersect(
     """
 
     # Create the normalized vector representing the direction of the given pixel
-    vector: Vector = pixel_vector(pixel, image_shape, focal_length)
+    vector: Vector = pixel_vector(pixel, image_shape)
 
     # Apply the constant rotation offset
     vector = rotate_degrees(vector, ROTATION_OFFSET)
@@ -97,7 +96,6 @@ def plane_collision(ray_direction: Vector, height: float) -> Point | None:
 def pixel_vector(
     pixel: tuple[int, int],
     image_shape: tuple[int, int, int] | tuple[int, int],
-    focal_length: float,
 ) -> Vector:
     """
     Generates a vector representing the given pixel.
@@ -109,9 +107,6 @@ def pixel_vector(
         The pixel location in [X, Y] form
     image_shape : tuple[int, int, int] | tuple[int, int]
         The shape of the image (returned by image.shape when image is a numpy image array)
-    focal_length : float
-        The camera's focal length in millimeters - used to generate the camera's
-        fields of view
 
     Returns
     -------
@@ -122,7 +117,7 @@ def pixel_vector(
     # Find the FOVs using the focal length
     fov_h: float
     fov_v: float
-    fov_h, fov_v = focal_length_to_fovs(focal_length)
+    fov_h, fov_v = get_fov()
     vector: Vector = camera_vector(
         pixel_angle(fov_h, pixel[0] / image_shape[1]),
         pixel_angle(fov_v, pixel[1] / image_shape[0]),
@@ -155,45 +150,87 @@ def pixel_angle(fov: float, ratio: float) -> float:
     return np.arctan(np.tan(fov / 2) * (1 - 2 * ratio))
 
 
-def focal_length_to_fovs(focal_length: float) -> tuple[float, float]:
+def get_fov() -> tuple[float, float]:
     """
-    Converts a given focal length to the horizontal and vertical fields of view in radians
-
-    Uses SENSOR_WIDTH and SENSOR_HEIGHT
-
-    Parameters
-    ----------
-    focal_length: float
-        The focal length of the camera in millimeters
+    gets the focal length for the current drone
 
     Returns
     -------
-    fields_of_view : tuple[float, float]
-        The fields of view in radians
-        Format is [horizontal, vertical]
+    fov : tuple[float,float]
+        The horizontal and vertical field of view in radians
     """
 
-    return get_fov(focal_length, SENSOR_WIDTH), get_fov(focal_length, SENSOR_HEIGHT)
+    with open("vision/common/camera_config.json", encoding="ascii") as file:
+        camera_config: CameraConfig = json.load(file)
+        h_fov: float
+        v_fov: float
+        if camera_config["airsim_flag"]:
+            if camera_config["Airsim"]["horizontalFOV"] != 0:
+                h_fov = camera_config["Airsim"]["horizontalFOV"]
+            else:
+                h_fov = calculate_fov("Airsim", "horizontalFOV")
+
+            if camera_config["Airsim"]["horizontalFOV"] != 0:
+                v_fov = camera_config["Airsim"]["verticalFOV"]
+            else:
+                v_fov = calculate_fov("Airsim", "verticalFOV")
+        else:
+            if camera_config["Default"]["horizontalFOV"] != 0:
+                h_fov = camera_config["Default"]["horizontalFOV"]
+            else:
+                h_fov = calculate_fov("Default", "horizontalFOV")
+
+            if camera_config["Default"]["horizontalFOV"] != 0:
+                v_fov = camera_config["Default"]["verticalFOV"]
+            else:
+                v_fov = calculate_fov("Default", "verticalFOV")
+
+    return h_fov, v_fov
 
 
-def get_fov(focal_length: float, sensor_size: float) -> float:
+def calculate_fov(camera: str, fov_type: str) -> float:
     """
-    Converts a given focal length and sensor length to the corresponding field of view in radians
+    Converts a given focal length and sensor length to the corresponding field of view in
+    radians stored in camera_config.json
 
     Parameters
     ----------
-    focal_length : float
-        The focal length of the camera in millimeters
-    sensor_size:
-        The sensor size along one axis in millimeters
-
-    Returns
-    -------
-    fov : float
-        The field of view in radians
+    camera : str
+        The camera to calculate FOV for that is stored in camera_config ("Airsim" or "Default")
+    fov_type : str
+        Whichever FOV is needed to be calculated ("horizontalFOV" or "verticalFOV")
     """
+    with open("vision/common/camera_config.json", encoding="ascii") as file:
+        camera_config: CameraConfig = json.load(file)
+        fov: float
+        if camera == "Airsim":
+            if fov_type == "horizontalFOV":
+                camera_config["Airsim"]["horizontalFOV"] = 2 * np.arctan(
+                    camera_config["Airsim"]["sensorWidth"]
+                    / (2 * camera_config["Airsim"]["focal_length"])
+                )
+            if fov_type == "verticalFOV":
+                camera_config["Airsim"]["verticalFOV"] = 2 * np.arctan(
+                    camera_config["Airsim"]["sensorHeight"]
+                    / (2 * camera_config["Airsim"]["focal_length"])
+                )
+            json.dump(camera_config, file)
+            fov = camera_config["Airsim"][fov_type]
+        else:
+            if fov_type == "horizontalFOV":
+                camera_config["Default"]["horizontalFOV"] = 2 * np.arctan(
+                    camera_config["Default"]["sensorWidth"]
+                    / (2 * camera_config["Default"]["focal_length"])
+                )
+            if fov_type == "verticalFOV":
+                camera_config["Default"]["verticalFOV"] = 2 * np.arctan(
+                    camera_config["Default"]["sensorHeight"]
+                    / (2 * camera_config["Default"]["focal_length"])
+                )
+            json.dump(camera_config, file)
+            fov = camera_config["Default"][fov_type]
 
-    return 2 * np.arctan(sensor_size / (focal_length))
+        return fov
 
 
 def camera_vector(h_angle: float, v_angle: float) -> Vector:

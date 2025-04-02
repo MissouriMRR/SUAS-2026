@@ -44,15 +44,13 @@ def get_coordinates(
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
-        focal_length : float
-            The camera's focal length in millimeters
         rotation_deg: list[float]
             The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
             camera, stored in constants.py, will be applied first
         drone_coordinates: list[float]
             The coordinates of the drone in degrees of (latitude, longitude)
-        altitude_f: float
-            The altitude of the drone in feet
+        altitude: float
+            The altitude of the drone in meters
 
     Returns
     -------
@@ -69,14 +67,12 @@ def get_coordinates(
         camera_parameters["drone_coordinates"][0]
     )
 
-    # Need to rename `altitude_f` because it is currently stored in meters anyway
-    altitude_m: float = camera_parameters["altitude_f"]
+    altitude_m: float = camera_parameters["altitude"]
 
     # Find the pixel's intersect with the ground to get the location relative to the drone
     intersect: Point | None = vector_utils.pixel_intersect(
         pixel,
         image_shape,
-        camera_parameters["focal_length"],
         camera_parameters["rotation_deg"],
         altitude_m,
     )
@@ -110,15 +106,13 @@ def bounding_area(
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
-        focal_length : float
-            The camera's focal length in millimeters
         rotation_deg: list[float]
             The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
             camera, stored in constants.py, will be applied first
         drone_coordinates: list[float]
             The coordinates of the drone. Not used in this function.
-        altitude_f: float
-            The altitude of the drone in feet
+        altitude: float
+            The altitude of the drone in meters
 
     Returns
     -------
@@ -162,15 +156,13 @@ def calculate_distance(
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
-        focal_length : float
-            The camera's focal length in millimeters
         rotation_deg: list[float]
             The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
             camera, stored in constants.py, will be applied first
         drone_coordinates: list[float]
             The coordinates of the drone. Not used in this function.
-        altitude_f: float
-            The altitude of the drone in feet
+        altitude: float
+            The altitude of the drone in meters
 
     Returns
     -------
@@ -179,20 +171,21 @@ def calculate_distance(
         Returns None if one or both of the points did not have an intersection
     """
 
+    # Convert meters to feet
+    altitude = camera_parameters["altitude"] * 3.28084
+
     intersect1: Point | None = vector_utils.pixel_intersect(
         pixel1,
         image_shape,
-        camera_parameters["focal_length"],
         camera_parameters["rotation_deg"],
-        camera_parameters["altitude_f"],
+        altitude,
     )
 
     intersect2: Point | None = vector_utils.pixel_intersect(
         pixel2,
         image_shape,
-        camera_parameters["focal_length"],
         camera_parameters["rotation_deg"],
-        camera_parameters["altitude_f"],
+        altitude,
     )
 
     # Checks if the intersects were valid

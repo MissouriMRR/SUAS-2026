@@ -2,25 +2,22 @@
 
 import asyncio
 import logging
-import sys
 
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 
 
-async def run_test(sim: bool) -> None:
+async def run_test(flight_settings: FlightSettings) -> None:
     """
     Run the state machine.
 
     Parameters
     ----------
-    sim : bool
-        Whether to run the state machine in simulation mode.
+    flight_settings : FlightSettings
+        The flight settings to use.
     """
     drone: Drone = Drone()
-    if sim:
-        drone.use_sim_settings()
-    else:
-        drone.use_real_settings()
+    drone.use_settings(flight_settings.sim_mode)
     await drone.connect_drone()
 
     # connect to the drone
@@ -33,4 +30,4 @@ async def run_test(sim: bool) -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run_test("--sim" in sys.argv))
+    asyncio.run(run_test(FlightSettings.from_mission_config()))
