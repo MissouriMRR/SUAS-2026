@@ -74,7 +74,6 @@ class Camera(ABC):
     """
 
     def __init__(self) -> None:
-
         self.image_id: int = 0
         self.base_api_url: str | None = None
         self.camera: SIYISDK | None = None
@@ -269,6 +268,10 @@ class CameraIRL(Camera):
         if not took_photo:
             logging.error("Failed to take photo")
             raise ValueError("Failed to take photo")
+
+        # Need to wait a bit after sending the capture command to allow the
+        # gimbal to process/save the photo, else we run into a race condition
+        await asyncio.sleep(0.5)
 
         # Retrieve the image from the gimbal SD card
         session: aiohttp.ClientSession
@@ -784,7 +787,6 @@ class CameraAirSim(Camera):
         roll_deg: float = math.degrees(attitude.roll)
         pitch_deg: float = math.degrees(attitude.pitch)
         yaw_deg: float = math.degrees(attitude.yaw)
-        horizontal_fov: float = self.client.simGetCameraInfo("bottom_center").fov
 
         return CameraParameters(
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
