@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 import traceback
 
-from flight.camera import Camera
+from flight.camera import CameraIRL, CameraAirSim
 
 from flight.extract_gps import extract_gps, GPSData
 from flight.waypoint.goto import move_to
@@ -103,8 +103,10 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     """
 
     # Initialize the camera
-    if not self.flight_settings.sim_mode is SimMode.SIM:
-        camera: Camera | None = Camera()
+    if self.flight_settings.sim_mode is SimMode.REAL:
+        camera: CameraIRL | CameraAirSim | None = CameraIRL()
+    elif self.flight_settings.sim_mode is SimMode.AIRSIM:
+        camera = CameraAirSim()
     else:
         camera = None
 
@@ -153,7 +155,7 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
             )
 
     if camera:
-        camera.camera.disconnect()
+        camera.disconnect()
     capture_status.set()
     self.drone.odlc_scan = False
     logging.info("ODLC scan complete")

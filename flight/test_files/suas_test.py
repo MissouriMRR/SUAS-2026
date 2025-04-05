@@ -6,6 +6,7 @@ import asyncio
 import logging
 import sys
 
+
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings

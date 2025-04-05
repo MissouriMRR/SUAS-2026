@@ -9,10 +9,11 @@ from typing import Final
 
 import utm
 
-from flight.camera import Camera
+from flight.camera import CameraIRL, CameraAirSim
 from flight.extract_gps import extract_gps, GPSData
 from flight.extract_gps import BoundaryPointUtm
 from flight.waypoint.goto import move_to
+from state_machine.flight_settings import SimMode
 
 from state_machine.state_tracker import (
     update_state,
@@ -89,7 +90,12 @@ async def run(self: Mapping) -> State:
 
         utm_zone_number = mapping_boundary_utm[0].zone_number
         utm_zone_letter = mapping_boundary_utm[0].zone_letter
-        camera: Camera = Camera()
+        if self.flight_settings.sim_mode is SimMode.REAL:
+            camera: CameraIRL | CameraAirSim | None = CameraIRL()
+        elif self.flight_settings.sim_mode is SimMode.AIRSIM:
+            camera = CameraAirSim()
+        else:
+            camera = None
         reverse_direction: bool = False
         for i in range(step_count + 1):
             lerp_t = i / step_count
@@ -121,17 +127,19 @@ async def run(self: Mapping) -> State:
             await move_to(self.drone.vehicle, lat, lon, MAPPING_ALTITUDE)
 
             lat, lon = utm.to_latlon(end_easting, end_northing, utm_zone_number, utm_zone_letter)
-            await camera.mapping_move_to(
-                self.drone.vehicle,
-                lat,
-                lon,
-                MAPPING_ALTITUDE,
-                HORIZONTAL_PHOTO_SPACING,
-            )
+
+            if camera is not None:
+                await camera.mapping_move_to(
+                    self.drone.vehicle,
+                    lat,
+                    lon,
+                    MAPPING_ALTITUDE,
+                    HORIZONTAL_PHOTO_SPACING,
+                )
 
             reverse_direction = not reverse_direction
-
-        camera.camera.disconnect()
+        if camera is not None and camera.camera is not None:
+            camera.camera.disconnect()
 
         logging.info("Mapping state complete.")
     except asyncio.CancelledError as ex:

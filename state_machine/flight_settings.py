@@ -143,11 +143,11 @@ class FlightSettings:
         """
         sim_flag: bool = "-s" in sys.argv or "--sim" in sys.argv
         airsim_flag: bool = "-a" in sys.argv or "--airsim" in sys.argv
+        sim_mode: SimMode = (
+            SimMode.AIRSIM if airsim_flag else SimMode.SIM if sim_flag else SimMode.REAL
+        )
         if not FlightSettings._read_sim_mode:
             FlightSettings._read_sim_mode = True
-            sim_mode: SimMode = (
-                SimMode.AIRSIM if airsim_flag else SimMode.SIM if sim_flag else SimMode.REAL
-            )
             logging.info(
                 "Running in %s mode."
                 " Pass -s or --sim to run in sim mode."

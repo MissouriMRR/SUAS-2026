@@ -72,6 +72,10 @@ class TestVisionFunctions(unittest.TestCase):
         -------
             None: This method does not return a value but asserts the area calculation is correct.
         """
+        self.box = BoundingBox(
+            obj_type="",
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+        )
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
         # Ensure result is not None before asserting
