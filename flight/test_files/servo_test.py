@@ -1,4 +1,4 @@
-"""Does a simple connection test to make sure the computer can connect to the drone."""
+"""Contains a function for testing the servos on the drone."""
 
 import asyncio
 import logging
