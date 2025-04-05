@@ -336,7 +336,7 @@ class YOLOv9:
         scores: npt.NDArray[np.float32] = confidences[confidences > CONFIDENCE_THRESHOLD]
 
         logging.info(
-            "Found %d detections with confidence above %f",
+            "Found %d detections with confidence above %.2f",
             len(scores),
             CONFIDENCE_THRESHOLD,
         )
@@ -415,7 +415,6 @@ class YOLOv9:
             trigger.results = results
             trigger.completed()
 
-        logging.info("Processing image: %s", image_path)
         image: Image = cv2.imread(image_path).astype(np.uint8)
         height: int
         width: int
