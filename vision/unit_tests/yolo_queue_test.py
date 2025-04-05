@@ -1,24 +1,26 @@
 """A unit test for running image inference using the PhotoQueue class"""
 
 import asyncio
+import itertools
 import logging
 import os
 import sys
+from typing import Iterable
 
 from vision.yolov9.model import ObjectDetection
 from vision.yolov9.queue import PhotoQueue
 
 
 async def test_queue(
-    all_images: list[str], test_early_stop: bool = False
+    images: Iterable[str], test_early_stop: bool = False
 ) -> dict[str, ObjectDetection]:
     """
     Test the PhotoQueue class by adding images to the queue and running inference on them.
 
     Parameters
     ----------
-    all_images : list[str]
-        A list of image paths to be added to the queue.
+    images : Iterable[str]
+        An iterable of image paths to be added to the queue.
     test_early_stop : bool, default=False
         Whether to stop the queue early for testing purposes, by default False
 
@@ -27,12 +29,13 @@ async def test_queue(
     dict[str, ObjectDetection]
         A dictionary mapping image paths to their corresponding best ObjectDetection results.
     """
-    initial_size: int = len(all_images)
+    initial_size: int = 0
     queue: PhotoQueue = PhotoQueue(True)
-    logging.info("Starting queue with %d images", initial_size)
-    for image_path in all_images:
+    for image_path in images:
+        initial_size += 1
         await queue.add_photo(image_path)
 
+    logging.info("%d images loaded into the queue. Starting queue...", initial_size)
     await queue.start_queue()
     while not queue.queue.empty():
         if test_early_stop and queue.queue.qsize() < initial_size / 2:
@@ -57,8 +60,7 @@ def get_all_images(path: str, limit: int = 10) -> list[str]:
     list[str]
         A list of image paths.
     """
-    photos: list[str] = [os.path.join(path, f) for f in os.listdir(path)]
-    return photos[:limit]
+    return list(itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit))
 
 
 if __name__ == "__main__":
@@ -67,5 +69,5 @@ if __name__ == "__main__":
         logging.info("Need to provide a directory")
         sys.exit(1)
     directory: str = sys.argv[1]
-    images: list[str] = get_all_images(directory)
-    logging.info(asyncio.run(test_queue(images)))
+    all_images: list[str] = get_all_images(directory)
+    logging.info(asyncio.run(test_queue(all_images)))

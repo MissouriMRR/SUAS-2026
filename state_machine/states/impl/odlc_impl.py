@@ -138,7 +138,7 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
 
         logging.info("Moving to ODLC scan point %d", point)
 
-        if camera:
+        if camera is not None:
             await camera.odlc_move_to(
                 self.drone.vehicle,
                 gps_data["odlc_waypoints"][point].latitude,

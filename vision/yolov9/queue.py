@@ -3,18 +3,21 @@
 import asyncio
 import collections
 import logging
+from typing import TypeVar, Iterable
 
 import cv2
 import numpy as np
 
 from vision.yolov9.model import YOLOv9, ObjectDetection
 
+T = TypeVar("T")
+
 
 class QueueCancelled(Exception):
     """Exception raised when the queue is cancelled."""
 
 
-class CancellableQueue(asyncio.Queue[str]):
+class CancellableQueue(asyncio.Queue[T]):
     """
     A subclass of the asyncio Queue that adds an event to cancel the queue.
 
@@ -34,17 +37,17 @@ class CancellableQueue(asyncio.Queue[str]):
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
         self._cancelled: bool = False
-        self._queue: collections.deque[str]
+        self._queue: collections.deque[T]
         self._getters: collections.deque[asyncio.Future[None]]
 
-    def _get(self) -> str:
+    def _get(self) -> T:
         """
         Get an item from the queue.
         Overrides the _get method of the asyncio.Queue class.
 
         Returns
         -------
-        str
+        T
             The next item from the queue
 
         Raises
@@ -86,8 +89,6 @@ class PhotoQueue:
 
     Methods
     -------
-    _draw_results(photo: str, results: list[ObjectDetection])
-        Draws the bboxes of the object detection on the photo.
     add_photo(photo_path: str)
         Adds a photo to the queue.
     photo_runner(num: int)
@@ -100,12 +101,14 @@ class PhotoQueue:
 
     def __init__(self, show_results: bool = False):
         self.model = YOLOv9()
-        self.queue: CancellableQueue = CancellableQueue()
+        self.queue: CancellableQueue[str] = CancellableQueue()
         self.runners: list[asyncio.Task[None]] = []
         self.results: dict[str, ObjectDetection] = {}
         self.show_results = show_results
 
-    async def _draw_results(self, photo: str, results: list[ObjectDetection]) -> cv2.typing.MatLike:
+    async def _draw_results(
+        self, photo: str, results: Iterable[ObjectDetection]
+    ) -> cv2.typing.MatLike:
         """
         Draw detected object bboxes on the image.
 
@@ -113,8 +116,8 @@ class PhotoQueue:
         ----------
         photo : str
             Path to the image file.
-        results : list[ObjectDetection]
-            List of detected objects.
+        results : Iterable[ObjectDetection]
+            Iterable of detected objects.
 
         Returns
         -------
@@ -178,9 +181,10 @@ class PhotoQueue:
                 break
             logging.debug("Runner %d processing image %s", num, image)
             results = await self.model.process_image(image)
+            result: ObjectDetection
             for result in results:
                 if result.category in self.results:
-                    if result > self.results[result.category]:
+                    if result.confidence > self.results[result.category].confidence:
                         self.results[result.category] = result
                 else:
                     self.results[result.category] = result

@@ -31,7 +31,7 @@ async def flyover_pipeline(
     """
 
     # Load model and queue
-    queue = PhotoQueue(True)
+    queue: PhotoQueue = PhotoQueue(True)
 
     # List of filenames for images already completed to prevent repeating work
     completed_images: list[str] = []
@@ -75,8 +75,9 @@ async def flyover_pipeline(
 
     # Convert the final detections to BoundingBoxes
     bounding_boxes: list[BoundingBox] = []
+    detection: ObjectDetection
     for detection in detected_objects.values():
-        image_name = detection.image.split("/")[-1]
+        image_name: str = detection.image.split("/")[-1]
         parameters: consts.CameraParameters = image_parameters[image_name]
         bounding_boxes.append(pipe_utils.detection_to_bbox(detection, parameters))
 

@@ -1,6 +1,6 @@
 """Functions that perform standard object detection, localization, and classification"""
 
-from typing import TypeAlias
+from typing import TypeAlias, Iterable
 
 import vision.common.constants as consts
 
@@ -111,18 +111,18 @@ def set_shape_attributes(
     return True
 
 
-def create_odlc_dict(bounding_boxes: list[BoundingBox]) -> consts.ODLCDict:
+def create_odlc_dict(bounding_boxes: Iterable[BoundingBox]) -> consts.ODLCDict:
     """
     Creates the ODLC_Dict dictionary from a list of shape bounding boxes
 
     Parameters
     ----------
-    sorted_odlcs: list[BoundingBox]
-        The list of sightings of each object, matched to bottles
+    bounding_boxes: Iterable[BoundingBox]
+        An iterable of the sightings of each object, matched to bottles
 
     Returns
     -------
-    odlc_dict: consts.ODLC_Dict
+    odlc_dict: consts.ODLCDict
         The dictionary of ODLCs matching the output format
     """
 
@@ -141,7 +141,8 @@ def filter_objects(
     detections: dict[str, ObjectDetection],
 ) -> dict[str, ObjectDetection]:
     """
-    Filters out objects to the best 4 detections
+    Filters out objects to the best 4 detections.
+    Only needs to be called if there are more than 4 detections.
 
     Parameters
     ----------
@@ -155,8 +156,10 @@ def filter_objects(
     """
     # This might seem strange, but we want to avoid false judge detections
     if "person" in detections:
-        detections.pop("person")
+        del detections["person"]
 
-    sorted_detections = sorted(detections.items(), key=lambda x: x[1].confidence, reverse=True)
+    reverse_sorted_detections = sorted(
+        detections.items(), key=lambda x: x[1].confidence, reverse=True
+    )
 
-    return dict(sorted_detections[:4])
+    return dict(reverse_sorted_detections[:4])

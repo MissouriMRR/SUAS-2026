@@ -17,7 +17,12 @@ class TestVisionFunctions(unittest.TestCase):
 
     Attributes
     ----------
+    camera_params: CameraParameters
+        Sample camera parameters to be used in the test.
+    image_shape: tuple[int, int, int]
         The dimensions of the image used in tests, specified as (height, width, channels).
+    box: BoundingBox
+        Sample bounding box of an object to be used in the test.
     """
 
     def setUp(self) -> None:

@@ -69,7 +69,7 @@ def set_generic_attributes(
         The bounding box of the object to which the attributes will be set
     image_path: str
         The path for the image the bounding box is from
-    image_shape : tuple[int, ...]
+    image_shape : consts.ImageShape
         The shape of the image (returned by `image.shape` when image is a numpy image array)
     camera_parameters: CameraParameters
         The details of how and where the photo was taken

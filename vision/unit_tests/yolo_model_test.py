@@ -21,18 +21,18 @@ async def test_image(image_path: str) -> None:
         Path to the image to be processed
     """
     yolov9: YOLOv9 = YOLOv9()
-    logging.info(yolov9.model_output[0])
     results: list[ObjectDetection] = await yolov9.process_image(image_path)
     image: cv2.typing.MatLike = cv2.imread(image_path)
     for detection in results:
         conv: npt.NDArray[np.int32] = detection.bbox.astype(np.int32)
         logging.info(
-            "Detected %s at (%d, %d), (%d, %d)",
+            "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f",
             detection.category,
             conv[0],
             conv[1],
             conv[2],
             conv[3],
+            detection.confidence,
         )
         image = cv2.rectangle(
             image,
@@ -41,6 +41,7 @@ async def test_image(image_path: str) -> None:
             (0, 255, 0),
             2,
         )
+    image = cv2.resize(image, (1280, 720))
     cv2.imshow("YOLOv9 Detection", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -63,7 +64,7 @@ async def run_all_images(image_paths: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) < 2:
         logging.error("No image paths provided")
         sys.exit(1)
