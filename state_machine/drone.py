@@ -5,6 +5,7 @@ import json
 import logging
 
 import dronekit
+from pymavlink import mavutil
 
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.flight_settings import SimMode
@@ -71,6 +72,33 @@ class Drone:
 
         with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
             json.dump({}, file)
+
+    async def _send_servo_msg(self, servo_num: int, pwm: int) -> None:
+        """Send a DO_SET_SERVO MAVLink message to the drone.
+
+        Parameters
+        ----------
+        servo_num : int
+            The number of the servo to control.
+            This should be the same value that is shown in MissionPlanner
+            and the parameters of the drone.
+        pwm : int
+            The PWM value to send to the servo.
+        """
+        msg = self.vehicle.message_factory.command_long_encode(
+            0,  # target_system, should always be 0
+            0,  # target_component, should always be 0
+            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
+            0,  # confirmation
+            servo_num,  # servo number
+            pwm,  # servo value
+            0,
+            0,
+            0,
+            0,
+            0,  # param3-7 unused
+        )
+        self.vehicle.send_mavlink(msg)
 
     @property
     def is_connected(self) -> bool:
@@ -186,6 +214,34 @@ class Drone:
         ):  # Ensure drone gets within 8in above ground
             await asyncio.sleep(0.5)
         logging.info("Reached ground.")
+
+    async def open_servo(self, servo_num: int) -> None:
+        """
+        Open the servo with the given number.
+        This will set the PWM to 1000 microseconds.
+
+        Parameters
+        ----------
+        servo_num : int
+            The number of the servo to open. This should
+            be from 1 to 4, and matches with the AUX port on
+            the carrier board that the servo is connected to.
+        """
+        await self._send_servo_msg(servo_num + 8, 1000)
+
+    async def close_servo(self, servo_num: int) -> None:
+        """
+        Close the servo with the given number.
+        This will set the PWM to 2000 microseconds.
+
+        Parameters
+        ----------
+        servo_num : int
+            The number of the servo to close. This should
+            be from 1 to 4, and matches with the AUX port on
+            the carrier board that the servo is connected to.
+        """
+        await self._send_servo_msg(servo_num + 8, 2000)
 
     async def close(self) -> None:
         """Close the owned DroneKit Vehicle object."""
