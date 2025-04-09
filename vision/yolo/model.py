@@ -33,7 +33,7 @@ CLASS_NAMES: dict[int, str] = {
 }
 
 # The confidence needed to accept a prediction from the YOLO model
-CONFIDENCE_THRESHOLD: float = 0.01
+CONFIDENCE_THRESHOLD: float = 0.3
 
 
 class ImageTrigger:
