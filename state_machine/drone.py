@@ -144,11 +144,7 @@ class Drone:
 
         message_1: str = "Waiting for user input to continue... "
         message_2: str = "(press enter when ready) "
-        input(
-            f"\x1b[38;2;255;255;0m{message_1}"
-            f"\x1b[3m{message_2}"
-            "\x1b[0m"
-        )
+        input(f"\x1b[38;2;255;255;0m{message_1}" f"\x1b[3m{message_2}" "\x1b[0m")
 
     def remove_arming_check(self) -> None:
         """
