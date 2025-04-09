@@ -244,10 +244,10 @@ class Drone:
 
         match sim_mode:
             case SimMode.REAL:
-                self.address = "/dev/ttyFTDI"
-                self.baud = 921600
+                self.address = "/dev/ttyUSB0"
+                self.baud = 57600
             case SimMode.SIM:
-                self.address = "127.0.0.1:14030"
+                self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
             case SimMode.AIRSIM:
                 self.address = "tcp:127.0.0.1:5762"
