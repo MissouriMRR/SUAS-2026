@@ -64,7 +64,7 @@ async def run_all_images(image_paths: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     if len(sys.argv) < 2:
         logging.error("No image paths provided")
         sys.exit(1)
