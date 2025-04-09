@@ -160,7 +160,7 @@ vision_videos/
 *.flv
 
 # Vision Models
-vision/yolov9/training/*.yaml
+vision/yolo/training/*.yaml
 *.pt
 *.onnx
 

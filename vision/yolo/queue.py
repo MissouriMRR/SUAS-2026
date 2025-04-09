@@ -8,7 +8,7 @@ from typing import TypeVar, Iterable
 import cv2
 import numpy as np
 
-from vision.yolov9.model import YOLOv9, ObjectDetection
+from vision.yolo.model import YOLO, ObjectDetection
 
 T = TypeVar("T")
 
@@ -76,8 +76,8 @@ class PhotoQueue:
 
     Attributes
     ----------
-    model: YOLOv9
-        The YOLOv9 model used for inference.
+    model: YOLO
+        The YOLO model used for inference.
     queue: CancellableQueue
         The queue of photos to be processed.
     runners: list[asyncio.Task[None]]
@@ -100,7 +100,7 @@ class PhotoQueue:
     """
 
     def __init__(self, show_results: bool = False):
-        self.model = YOLOv9()
+        self.model = YOLO()
         self.queue: CancellableQueue[str] = CancellableQueue()
         self.runners: list[asyncio.Task[None]] = []
         self.results: dict[str, ObjectDetection] = {}

@@ -10,8 +10,8 @@ from vision.common.bounding_box import BoundingBox
 import vision.pipeline.standard_pipeline as std_obj
 import vision.pipeline.pipeline_utils as pipe_utils
 
-from vision.yolov9.model import ObjectDetection
-from vision.yolov9.queue import PhotoQueue
+from vision.yolo.model import ObjectDetection
+from vision.yolo.queue import PhotoQueue
 
 
 async def flyover_pipeline(

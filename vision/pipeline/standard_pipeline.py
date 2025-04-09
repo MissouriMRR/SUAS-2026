@@ -14,7 +14,7 @@ from vision.standard_object.odlc_text_detection import get_odlc_text
 from vision.standard_object.odlc_colors import find_colors
 
 import vision.pipeline.pipeline_utils as pipe_utils
-from vision.yolov9.model import ObjectDetection
+from vision.yolo.model import ObjectDetection
 
 ContourHeirarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 

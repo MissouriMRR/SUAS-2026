@@ -7,8 +7,8 @@ import os
 import sys
 from typing import Iterable
 
-from vision.yolov9.model import ObjectDetection
-from vision.yolov9.queue import PhotoQueue
+from vision.yolo.model import ObjectDetection
+from vision.yolo.queue import PhotoQueue
 
 
 async def test_queue(

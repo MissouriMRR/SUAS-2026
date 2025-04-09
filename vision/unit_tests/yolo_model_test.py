@@ -1,4 +1,4 @@
-"""A unit test for running singular images on the YOLOv9 model"""
+"""A unit test for running singular images on the YOLO model"""
 
 import asyncio
 import logging
@@ -9,19 +9,19 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
-from vision.yolov9.model import ObjectDetection, YOLOv9
+from vision.yolo.model import ObjectDetection, YOLO
 
 
 async def test_image(image_path: str) -> None:
-    """Test a single image using the YOLOv9 model and show the results
+    """Test a single image using the YOLO model and show the results
 
     Parameters
     ----------
     image_path : str
         Path to the image to be processed
     """
-    yolov9: YOLOv9 = YOLOv9()
-    results: list[ObjectDetection] = await yolov9.process_image(image_path)
+    yolo: YOLO = YOLO()
+    results: list[ObjectDetection] = await yolo.process_image(image_path)
     image: cv2.typing.MatLike = cv2.imread(image_path)
     for detection in results:
         conv: npt.NDArray[np.int32] = detection.bbox.astype(np.int32)
@@ -42,7 +42,7 @@ async def test_image(image_path: str) -> None:
             2,
         )
     image = cv2.resize(image, (1280, 720))
-    cv2.imshow("YOLOv9 Detection", image)
+    cv2.imshow("YOLO Detection", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 

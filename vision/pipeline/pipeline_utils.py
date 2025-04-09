@@ -7,7 +7,7 @@ import vision.common.constants as consts
 from vision.common.bounding_box import BoundingBox
 
 from vision.deskew.camera_distances import get_coordinates
-from vision.yolov9.model import ObjectDetection
+from vision.yolo.model import ObjectDetection
 
 
 def read_parameter_json(json_path: str) -> dict[str, consts.CameraParameters]:
