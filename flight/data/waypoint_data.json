@@ -59,6 +59,78 @@
                 "latitude": 38.31729702009844,
                 "longitude": -76.55617670782419
             }
+        ],
+        "odlcBoundaryZ1": [
+            {
+                "latitude": 38.315386,
+                "longitude": -76.550875
+            },
+            {
+                "latitude": 38.315683,
+                "longitude": -76.552586
+            },
+            {
+                "latitude": 38.315895,
+                "longitude": -76.552519
+            },
+            {
+                "latitude": 38.315607,
+                "longitude": -76.5508
+            }
+        ],
+        "odlcBoundaryZ2": [
+            {
+                "latitude": 38.314529,
+                "longitude": -76.545859
+            },
+            {
+                "latitude": 38.314731,
+                "longitude": -76.545792
+            },
+            {
+                "latitude": 38.314441,
+                "longitude": -76.544081
+            },
+            {
+                "latitude": 38.314228,
+                "longitude": -76.544156
+            }
+        ],
+        "mappingBoundaryZ1": [
+            {
+                "latitude": 38.314816,
+                "longitude": -76.548947
+            },
+            {
+                "latitude": 38.31546,
+                "longitude": -76.552653
+            },
+            {
+                "latitude": 38.316639,
+                "longitude": -76.55233
+            },
+            {
+                "latitude": 38.316016,
+                "longitude": -76.5486
+            }
+        ],
+        "mappingBoundaryZ2": [
+            {
+                "latitude": 38.314669,
+                "longitude": -76.547987
+            },
+            {
+                "latitude": 38.315873,
+                "longitude": -76.547611
+            },
+            {
+                "latitude": 38.315208,
+                "longitude": -76.54384
+            },
+            {
+                "latitude": 38.314008,
+                "longitude": -76.544237
+            }
         ]
     },
     "waypoints": [
@@ -118,7 +190,7 @@
     "odlcWaypointsZ1": [
         {
             "latitude": 38.315607,
-            "longitude": -76.550800
+            "longitude": -76.5508
         },
         {
             "latitude": 38.3154965,
