@@ -260,35 +260,39 @@ def create_odlc_dict(sorted_odlcs: list[list[BoundingBox]]) -> consts.ODLCDict:
 
     i: int
     bottle: list[BoundingBox]
+    object_index: int = 0
     for i, bottle in enumerate(sorted_odlcs):
         coords_list: list[tuple[int, int]] = []
+
+        if not bottle:
+            continue
 
         shape: BoundingBox
         for shape in bottle:
             coords_list.append((shape.get_attribute("latitude"), shape.get_attribute("longitude")))
 
-        if len(bottle) > 0:
-            coords_array: NDArray[Shape["*, 2"], Float32] = np.array(coords_list)
+        coords_array: NDArray[Shape["*, 2"], Float32] = np.array(coords_list)
 
-            average_coord: NDArray[Shape["2"], Float32] = np.average(coords_array, axis=0)
-            location: consts.Location = {
-                "latitude": average_coord[0],
-                "longitude": average_coord[1],
-            }
+        average_coord: NDArray[Shape["2"], Float32] = np.average(coords_array, axis=0)
+        location: consts.Location = {
+            "latitude": average_coord[0],
+            "longitude": average_coord[1],
+        }
 
-            # Check if in bounds
-            easting: float
-            northing: float
-            easting, northing, _, _ = utm.from_latlon(
-                location["latitude"],
-                location["longitude"],
-                force_zone_number=zone_number,
-                force_zone_letter=zone_letter,
-            )
-            object_location_point: Point = Point(easting, northing)
-            if not object_location_point.is_inside_shape(odlc_boundary):
-                continue
+        # Check if in bounds
+        easting: float
+        northing: float
+        easting, northing, _, _ = utm.from_latlon(
+            location["latitude"],
+            location["longitude"],
+            force_zone_number=zone_number,
+            force_zone_letter=zone_letter,
+        )
+        object_location_point: Point = Point(easting, northing)
+        if not object_location_point.is_inside_shape(odlc_boundary):
+            continue
 
-            odlc_dict[str(i)] = location
+        odlc_dict[str(object_index)] = location
+        object_index += 1
 
     return odlc_dict
