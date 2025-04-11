@@ -3,8 +3,14 @@
 from typing import TypeAlias
 
 import numpy as np
+import utm
 
 from nptyping import NDArray, Shape, UInt8, Float32
+
+from state_machine.flight_settings import FlightSettings
+from flight.extract_gps import extract_gps, GPSData
+from flight.waypoint.geometry import Point
+
 import vision.common.constants as consts
 
 from vision.common.crop import crop_image
@@ -242,6 +248,16 @@ def create_odlc_dict(sorted_odlcs: list[list[BoundingBox]]) -> consts.ODLCDict:
 
     odlc_dict: consts.ODLCDict = {}
 
+    # Get ODLC boundary
+    flight_settings: FlightSettings = FlightSettings.from_mission_config()
+    gps_data: GPSData = extract_gps(flight_settings.mission_data_path)
+    odlc_boundary: list[Point] = [
+        Point(odlc_boundary_point.easting, odlc_boundary_point.northing)
+        for odlc_boundary_point in gps_data["odlc_boundary_utm"]
+    ]
+    zone_number: int = gps_data["odlc_boundary_utm"][0].zone_number
+    zone_letter: str = gps_data["odlc_boundary_utm"][0].zone_letter
+
     i: int
     bottle: list[BoundingBox]
     for i, bottle in enumerate(sorted_odlcs):
@@ -255,7 +271,24 @@ def create_odlc_dict(sorted_odlcs: list[list[BoundingBox]]) -> consts.ODLCDict:
             coords_array: NDArray[Shape["*, 2"], Float32] = np.array(coords_list)
 
             average_coord: NDArray[Shape["2"], Float32] = np.average(coords_array, axis=0)
+            location: consts.Location = {
+                "latitude": average_coord[0],
+                "longitude": average_coord[1],
+            }
 
-            odlc_dict[str(i)] = {"latitude": average_coord[0], "longitude": average_coord[1]}
+            # Check if in bounds
+            easting: float
+            northing: float
+            easting, northing, _, _ = utm.from_latlon(
+                location["latitude"],
+                location["longitude"],
+                force_zone_number=zone_number,
+                force_zone_letter=zone_letter,
+            )
+            object_location_point: Point = Point(easting, northing)
+            if not object_location_point.is_inside_shape(odlc_boundary):
+                continue
+
+            odlc_dict[str(i)] = location
 
     return odlc_dict
