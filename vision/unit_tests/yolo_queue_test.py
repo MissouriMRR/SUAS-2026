@@ -7,11 +7,12 @@ import os
 import sys
 from typing import Iterable
 
+from vision.pipeline.standard_pipeline import filter_objects
 from vision.yolo.model import ObjectDetection
 from vision.yolo.queue import PhotoQueue
 
 
-async def test_queue(
+async def run_queue(
     images: Iterable[str], test_early_stop: bool = False
 ) -> dict[str, ObjectDetection]:
     """
@@ -63,11 +64,28 @@ def get_all_images(path: str, limit: int = 10) -> list[str]:
     return list(itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit))
 
 
+async def test_queue() -> None:
+    """Runs the YOLO queue test. Prints each filtered detection."""
+    directory: str = sys.argv[1]
+    all_images: list[str] = get_all_images(directory)
+    results: dict[str, ObjectDetection] = await run_queue(all_images)
+    filtered: dict[str, ObjectDetection] = filter_objects(results, True, 0.2)
+    for result in filtered.values():
+        logging.info(
+            "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
+            result.category,
+            result.bbox[0],
+            result.bbox[1],
+            result.bbox[2],
+            result.bbox[3],
+            result.confidence,
+            result.image,
+        )
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) < 2:
         logging.info("Need to provide a directory")
         sys.exit(1)
-    directory: str = sys.argv[1]
-    all_images: list[str] = get_all_images(directory)
-    logging.info(asyncio.run(test_queue(all_images)))
+    asyncio.run(test_queue())

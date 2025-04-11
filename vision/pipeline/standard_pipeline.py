@@ -26,6 +26,26 @@ PROCESSING_THRESHOLDS: list[tuple[int, int]] = [
     (75, 350),
 ]
 
+# We only care about the object classes that will actually appear in the competition
+# You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
+CLASS_NAMES: list[str] = [
+    "person",
+    "car",
+    "motorcycle",
+    "airplane",
+    "bus",
+    "boat",
+    "stop sign",
+    "umbrella",
+    "suitcase",
+    "skis",
+    "snowboard",
+    "sports ball",
+    "baseball bat",
+    "tennis racket",
+    "bed",
+]
+
 
 def find_standard_objects(
     original_image: consts.Image,
@@ -139,15 +159,24 @@ def create_odlc_dict(bounding_boxes: Iterable[BoundingBox]) -> consts.ODLCDict:
 
 def filter_objects(
     detections: dict[str, ObjectDetection],
+    expand_cats: bool = False,
+    buffer: float = 0.0,
 ) -> dict[str, ObjectDetection]:
     """
     Filters out objects to the best 4 detections.
     Only needs to be called if there are more than 4 detections.
+    You can enable expand_cats to allow categories that are not in the competition list,
+    and use buffer to set a higher priority for categories that are.
+    The buffer will be added to the confidence value of the categories in the list.
 
     Parameters
     ----------
     detections: dict[str, ObjectDetection]
         The dictionary of detections to filter
+    expand_cats: bool
+        Whether to include categories not in the competition list
+    buffer: float
+        The value to add to confidence values of categories in the competition list
 
     Returns
     -------
@@ -155,11 +184,24 @@ def filter_objects(
         The dictionary of filtered detections
     """
     # This might seem strange, but we want to avoid false judge detections
-    if "person" in detections:
+    if not expand_cats and "person" in detections:
         del detections["person"]
 
-    reverse_sorted_detections = sorted(
-        detections.items(), key=lambda x: x[1].confidence, reverse=True
-    )
+    reverse_sorted_detections: list[tuple[str, ObjectDetection]]
+    if expand_cats:
+        reverse_sorted_detections = sorted(
+            detections.items(),
+            key=lambda x: x[1].confidence + buffer if x[0] in CLASS_NAMES else x[1].confidence,
+            reverse=True,
+        )
+    else:
+        for category in detections.keys():
+            if category not in CLASS_NAMES:
+                del detections[category]
+        reverse_sorted_detections = sorted(
+            detections.items(), key=lambda x: x[1].confidence, reverse=True
+        )
 
-    return dict(reverse_sorted_detections[:4])
+    if len(reverse_sorted_detections) > 4:
+        return dict(reverse_sorted_detections[:4])
+    return dict(reverse_sorted_detections)
