@@ -5,9 +5,6 @@ import logging
 import json
 
 from flight.extract_gps import extract_gps
-
-# uncomment if automatic
-# from flight.maestro.air_drop import AirdropControl
 from flight.waypoint.goto import move_to
 
 from state_machine.state_tracker import (
@@ -17,6 +14,7 @@ from state_machine.state_tracker import (
 )
 
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings, SimMode
 
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
@@ -47,15 +45,6 @@ async def run(self: Airdrop) -> State:
         update_drone(self.drone)
         update_flight_settings(self.flight_settings)
         logging.info("Airdrop state running")
-
-        # implement servo logic her !!!!!!!!!
-        # uncomment if automatic
-        # if self.drone.address == "serial:///dev/ttyFTDI:921600":
-        #   setup airdrop
-        #   airdrop = AirdropControl()
-
-        # if automatic un comment servo num
-        # servo_num: int
 
         with open("flight/data/output.json", encoding="utf8") as output:
             drop_locations: dict[str, dict[str, int]] = json.load(output)
@@ -88,6 +77,7 @@ async def run(self: Airdrop) -> State:
 
         dropped: bool = await attempt_drop(
             self.drone,
+            self.flight_settings,
             drop_locations,
             cylinders,
             attempted_locations,
@@ -119,6 +109,7 @@ async def run(self: Airdrop) -> State:
 
 async def attempt_drop(
     drone: Drone,
+    flight_settings: FlightSettings,
     drop_locations: dict[str, dict[str, int]],
     cylinders: dict[str, dict[str, int | bool]],
     attempted_locations: set[str],
@@ -133,6 +124,8 @@ async def attempt_drop(
     ----------
     drone : Drone
         The drone object to control
+    flight_settings : FlightSettings
+        The flight settings object
     drop_locations : dict
         Dictionary of available drop locations
     cylinders : dict
@@ -183,10 +176,8 @@ async def attempt_drop(
                 location_id,
             )
 
-        # implement servo logic here
-        # If bottle drop is automatic these would be used
-        # if self.drone.address == "serial:///dev/ttyFTDI:921600":
-        #   await airdrop.drop_bottle(servo_num)
+        if flight_settings.sim_mode is SimMode.REAL:
+            await drone.open_servo((cylinders[cylinder_num])["Servo"])
 
         (cylinders[cylinder_num])["Loaded"] = False
 
