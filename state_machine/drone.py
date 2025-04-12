@@ -148,14 +148,23 @@ class Drone:
         self._vehicle = (
             dronekit.connect(self.address, wait_ready=True)
             if self.baud is None
-            else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=60)
+            else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
         )
         logging.info("Drone discovered!")
+
+    def remove_arming_check(self) -> None:
+        """
+
+        For use with airsim
+
+        """
+        self.vehicle.parameters["ARMING_CHECK"] = 0
 
     async def arm(self) -> None:
         """
         Arm the drone
         """
+
         logging.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
@@ -262,13 +271,13 @@ class Drone:
         """
         match sim_mode:
             case SimMode.REAL:
-                self.address = "udpout:192.168.43.1:14552"
-                self.baud = None
+                self.address = "/dev/ttyFTDI"
+                self.baud = 921600
             case SimMode.SIM:
-                self.address = "tcp:127.0.0.1:5762"
+                self.address = "127.0.0.1:14030"
                 self.baud = None
             case SimMode.AIRSIM:
-                self.address = "127.0.0.1:14030"
+                self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
             case _:
                 raise ValueError("invalid sim mode")

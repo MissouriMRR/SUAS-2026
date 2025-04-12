@@ -55,8 +55,11 @@ class FlightManager:
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()
 
-        logging.info("Starting processes")
+        if flight_settings.sim_mode.AIRSIM:
 
+            self.drone.remove_arming_check()
+
+        logging.info("Starting processes")
         state_machine_task: asyncio.Task[None] = asyncio.ensure_future(
             StateMachine(
                 Start(self.drone, flight_settings),
