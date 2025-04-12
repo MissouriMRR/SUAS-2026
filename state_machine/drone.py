@@ -146,9 +146,9 @@ class Drone:
 
         logging.info("Waiting for drone to connect...")
         self._vehicle = (
-            dronekit.connect(self.address, wait_ready=True)
+            dronekit.connect(self.address, wait_ready=True, timeout=90)
             if self.baud is None
-            else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
+            else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
         )
         logging.info("Drone discovered!")
 
@@ -236,7 +236,10 @@ class Drone:
             be from 1 to 4, and matches with the AUX port on
             the carrier board that the servo is connected to.
         """
-        await self._send_servo_msg(servo_num + 8, 1000)
+        if servo_num < 1 or servo_num > 4:
+            raise ValueError("Servo number must be between 1 and 4")
+        open_values: list[int] = [2000, 1100, 1900, 1100]
+        await self._send_servo_msg(servo_num + 8, open_values[servo_num - 1])
 
     async def close_servo(self, servo_num: int) -> None:
         """
@@ -250,7 +253,10 @@ class Drone:
             be from 1 to 4, and matches with the AUX port on
             the carrier board that the servo is connected to.
         """
-        await self._send_servo_msg(servo_num + 8, 2000)
+        if servo_num < 1 or servo_num > 4:
+            raise ValueError("Servo number must be between 1 and 4")
+        closed_values: list[int] = [1100, 1600, 1100, 1900]
+        await self._send_servo_msg(servo_num + 8, closed_values[servo_num - 1])
 
     async def close(self) -> None:
         """Close the owned DroneKit Vehicle object."""
@@ -271,8 +277,8 @@ class Drone:
         """
         match sim_mode:
             case SimMode.REAL:
-                self.address = "/dev/ttyFTDI"
-                self.baud = 921600
+                self.address = "/dev/ttyUSB0"
+                self.baud = 57600
             case SimMode.SIM:
                 self.address = "127.0.0.1:14030"
                 self.baud = None
