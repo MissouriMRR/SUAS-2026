@@ -17,7 +17,7 @@ from vision.standard_object.odlc_colors import find_colors
 import vision.pipeline.pipeline_utils as pipe_utils
 from vision.yolo.model import ObjectDetection
 
-ContourHeirarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
+ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 
 # The various thresholds to run the image processing at
 PROCESSING_THRESHOLDS: list[tuple[int, int]] = [
