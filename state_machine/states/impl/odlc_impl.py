@@ -60,7 +60,9 @@ async def run(self: ODLC) -> State:
 
         capture_status = asyncio.Event()
 
-        vision_task: asyncio.Task[None] = asyncio.ensure_future(vision_odlc_logic(capture_status))
+        vision_task: asyncio.Task[None] = asyncio.ensure_future(
+            vision_odlc_logic(self, capture_status)
+        )
 
         flight_task: asyncio.Task[None] = asyncio.ensure_future(find_odlcs(self, capture_status))
 
@@ -85,10 +87,12 @@ async def run(self: ODLC) -> State:
 
 async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     """
-    Implements the run method for the ODLC state.
+    Implements the flight logic fro the run method of the ODLC state.
 
     Parameters
     ----------
+    self : ODLC
+        The ODLC state object.
     capture_status : asyncio.Event
         An event that is set when the drone has successfully captured all images.
 
@@ -161,12 +165,14 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     logging.info("ODLC scan complete")
 
 
-async def vision_odlc_logic(capture_status: asyncio.Event) -> None:
+async def vision_odlc_logic(self: ODLC, capture_status: asyncio.Event) -> None:
     """
-    Implements the run method for the ODLC state.
+    Implements the vision logic for the run method of the ODLC state.
 
     Parameters
     ----------
+    self : ODLC
+        The ODLC state object.
     capture_status : asyncio.Event
         An event that is set when the drone has successfully captured all images.
     flight_settings : FlightSettings
@@ -190,7 +196,12 @@ async def vision_odlc_logic(capture_status: asyncio.Event) -> None:
         await asyncio.sleep(1)
     logging.info("Camera data file found.")
 
-    await flyover_pipeline("flight/data/camera.json", capture_status, "flight/data/output.json")
+    await flyover_pipeline(
+        self.flight_settings,
+        "flight/data/camera.json",
+        capture_status,
+        "flight/data/output.json",
+    )
 
 
 # Setting the run_callable attribute of the ODLC class to the run function

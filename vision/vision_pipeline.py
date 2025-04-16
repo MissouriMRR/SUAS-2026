@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from state_machine.flight_settings import FlightSettings
+
 import vision.common.constants as consts
 
 from vision.common.bounding_box import BoundingBox
@@ -15,13 +17,18 @@ from vision.yolo.queue import PhotoQueue
 
 
 async def flyover_pipeline(
-    camera_data_path: str, capture_status: asyncio.Event, output_path: str
+    flight_settings: FlightSettings,
+    camera_data_path: str,
+    capture_status: asyncio.Event,
+    output_path: str,
 ) -> None:
     """
     Finds all standard objects in each image in the input folder
 
     Parameters
     ----------
+    flight_settings: FlightSettings
+        The flight settings
     camera_data_path: str
         The path to the json file containing the CameraParameters entries
     capture_status: asyncio.Event
@@ -69,9 +76,10 @@ async def flyover_pipeline(
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)
 
-    # Filter the detections if there are more than 4
-    if len(detected_objects) > 4:
-        detected_objects = std_obj.filter_objects(detected_objects)
+    # Filter the detections if there are more than the number of standard objects
+    detected_objects = std_obj.filter_objects(
+        detected_objects, True, 0.5, flight_settings.standard_object_count
+    )
 
     # Convert the final detections to BoundingBoxes
     bounding_boxes: list[BoundingBox] = []

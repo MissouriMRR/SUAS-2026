@@ -1,7 +1,7 @@
 """Functions that perform standard object detection, localization, and classification"""
 
 import heapq
-from typing import Final, Iterable, TypeAlias
+from typing import Iterable, TypeAlias
 
 import vision.common.constants as consts
 
@@ -29,22 +29,22 @@ PROCESSING_THRESHOLDS: list[tuple[int, int]] = [
 
 # We only care about the object classes that will actually appear in the competition
 # You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
-CLASS_NAMES: set[str] = {
-    "person",
-    "car",
-    "motorcycle",
-    "airplane",
-    "bus",
-    "boat",
-    "stop sign",
-    "umbrella",
-    "suitcase",
-    "skis",
-    "snowboard",
-    "sports ball",
-    "baseball bat",
-    "tennis racket",
-    "bed",
+CLASS_PRIORITIES: dict[str, float] = {
+    "person": 0.5,
+    "car": 1.0,
+    "motorcycle": 1.0,
+    "airplane": 1.0,
+    "bus": 1.0,
+    "boat": 1.0,
+    "stop sign": 1.0,
+    "umbrella": 1.0,
+    "suitcase": 1.0,
+    "skis": 1.0,
+    "snowboard": 1.0,
+    "sports ball": 1.0,
+    "baseball bat": 1.0,
+    "tennis racket": 1.0,
+    "bed": 1.0,
 }
 
 
@@ -162,6 +162,7 @@ def filter_objects(
     detections: dict[str, ObjectDetection],
     expand_categories: bool = False,
     buffer: float = 0.0,
+    output_count: int = 4,
 ) -> dict[str, ObjectDetection]:
     """
     Filters out objects to the best 4 detections.
@@ -174,10 +175,12 @@ def filter_objects(
     ----------
     detections : dict[str, ObjectDetection]
         The dictionary of detections to filter
-    expand_categories : bool
+    expand_categories : bool, default False
         Whether to include categories not in the competition set
-    buffer : float
+    buffer : float, default 0.0
         The value to add to confidence values of categories in the competition set
+    output_count : int, default 4
+        The maximum number of detections to output
 
     Returns
     -------
@@ -185,20 +188,14 @@ def filter_objects(
         The dictionary of filtered detections
     """
     best_detections: list[tuple[float, str, ObjectDetection]] = []  # min heap
-    output_count: Final[int] = 4
 
     # Get the entries with the highest confidence
     category: str
     detection: ObjectDetection
     for category, detection in detections.items():
-        if category == "person" and not expand_categories:
-            # Ignore judge detections
-            continue
-
         confidence: float = detection.confidence
-        if category in CLASS_NAMES:
-            if expand_categories:
-                confidence += buffer
+        if category in CLASS_PRIORITIES:
+            confidence += buffer * CLASS_PRIORITIES[category]
         elif not expand_categories:
             continue
 
