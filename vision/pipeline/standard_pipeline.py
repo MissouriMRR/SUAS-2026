@@ -1,6 +1,7 @@
 """Functions that perform standard object detection, localization, and classification"""
 
-from typing import TypeAlias, Iterable
+import heapq
+from typing import Final, Iterable, TypeAlias
 
 import vision.common.constants as consts
 
@@ -28,7 +29,7 @@ PROCESSING_THRESHOLDS: list[tuple[int, int]] = [
 
 # We only care about the object classes that will actually appear in the competition
 # You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
-CLASS_NAMES: list[str] = [
+CLASS_NAMES: set[str] = {
     "person",
     "car",
     "motorcycle",
@@ -44,7 +45,7 @@ CLASS_NAMES: list[str] = [
     "baseball bat",
     "tennis racket",
     "bed",
-]
+}
 
 
 def find_standard_objects(
@@ -159,49 +160,54 @@ def create_odlc_dict(bounding_boxes: Iterable[BoundingBox]) -> consts.ODLCDict:
 
 def filter_objects(
     detections: dict[str, ObjectDetection],
-    expand_cats: bool = False,
+    expand_categories: bool = False,
     buffer: float = 0.0,
 ) -> dict[str, ObjectDetection]:
     """
     Filters out objects to the best 4 detections.
     Only needs to be called if there are more than 4 detections.
-    You can enable expand_cats to allow categories that are not in the competition list,
-    and use buffer to set a higher priority for categories that are.
-    The buffer will be added to the confidence value of the categories in the list.
+    You can enable expand_categories to allow categories that are not in the competition
+    set, and use buffer to set a higher priority for categories that are.
+    The buffer will be added to the confidence value of the categories in the set.
 
     Parameters
     ----------
-    detections: dict[str, ObjectDetection]
+    detections : dict[str, ObjectDetection]
         The dictionary of detections to filter
-    expand_cats: bool
-        Whether to include categories not in the competition list
-    buffer: float
-        The value to add to confidence values of categories in the competition list
+    expand_categories : bool
+        Whether to include categories not in the competition set
+    buffer : float
+        The value to add to confidence values of categories in the competition set
 
     Returns
     -------
     filtered_detections: dict[str, ObjectDetection]
         The dictionary of filtered detections
     """
-    # This might seem strange, but we want to avoid false judge detections
-    if not expand_cats and "person" in detections:
-        del detections["person"]
+    best_detections: list[tuple[float, str, ObjectDetection]] = []  # min heap
+    output_count: Final[int] = 4
 
-    reverse_sorted_detections: list[tuple[str, ObjectDetection]]
-    if expand_cats:
-        reverse_sorted_detections = sorted(
-            detections.items(),
-            key=lambda x: x[1].confidence + buffer if x[0] in CLASS_NAMES else x[1].confidence,
-            reverse=True,
-        )
-    else:
-        for category in detections.keys():
-            if category not in CLASS_NAMES:
-                del detections[category]
-        reverse_sorted_detections = sorted(
-            detections.items(), key=lambda x: x[1].confidence, reverse=True
-        )
+    # Get the entries with the highest confidence
+    category: str
+    detection: ObjectDetection
+    for category, detection in detections.items():
+        if category == "person" and not expand_categories:
+            # Ignore judge detections
+            continue
 
-    if len(reverse_sorted_detections) > 4:
-        return dict(reverse_sorted_detections[:4])
-    return dict(reverse_sorted_detections)
+        confidence: float = detection.confidence
+        if category in CLASS_NAMES:
+            if expand_categories:
+                confidence += buffer
+        elif not expand_categories:
+            continue
+
+        heap_entry: tuple[float, str, ObjectDetection] = confidence, category, detection
+        if len(best_detections) == output_count:
+            heapq.heappushpop(best_detections, heap_entry)
+        else:
+            heapq.heappush(best_detections, heap_entry)
+
+    # Sort by confidence from highest to lowest (dicts maintain insertion order)
+    best_detections.sort(key=lambda entry: -entry[0])
+    return {entry[1]: entry[2] for entry in best_detections}
