@@ -76,7 +76,6 @@ async def flyover_pipeline(
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)
 
-    # Filter the detections if there are more than the number of standard objects
     detected_objects = std_obj.filter_objects(
         detected_objects, True, 0.5, flight_settings.standard_object_count
     )
