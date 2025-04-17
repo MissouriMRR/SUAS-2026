@@ -3,7 +3,6 @@ Bounding box objects represent an area in an image and
 are used to convey information between flight and vision processes.
 """
 
-
 from typing import Any, TypeAlias
 
 
@@ -69,7 +68,6 @@ class BoundingBox:
 
     center_lat_lon: tuple[float, float]
 
-
     def __init__(self, top_left: tuple[int, int], width: int, height: int) -> None:
         self.top_left: tuple[int, int] = top_left
         self.width: int = width
@@ -77,7 +75,6 @@ class BoundingBox:
 
         # Calculate the 4 vertices of the bounding box
         self.vertices: Vertices = tlwh_to_vertices(top_left[0], top_left[1], width, height)
-
 
     def get_x_vals(self) -> list[int]:
         """
