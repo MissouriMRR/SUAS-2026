@@ -19,14 +19,6 @@ from vision.yolo.model import ObjectDetection
 
 ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 
-# The various thresholds to run the image processing at
-PROCESSING_THRESHOLDS: list[tuple[int, int]] = [
-    (0, 50),
-    (25, 150),
-    (50, 250),
-    (75, 350),
-]
-
 # We only care about the object classes that will actually appear in the competition
 # You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
 CLASS_PRIORITIES: dict[str, float] = {

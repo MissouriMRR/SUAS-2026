@@ -296,7 +296,7 @@ class YOLO:
     input_width : int
         The width of the input image expected by the model.
     log_results : bool
-        Whether to show the results of the object detection.
+        Whether to log the results of the object detection.
 
     Raises
     ------
@@ -396,18 +396,13 @@ class YOLO:
         inferences: npt.NDArray[np.float32] = squeezed[:, confidences > CONFIDENCE_THRESHOLD]
         scores: npt.NDArray[np.float32] = confidences[confidences > CONFIDENCE_THRESHOLD]
 
-        logging.info(
-            "Found %d detections with confidence above %.2f",
-            len(scores),
-            CONFIDENCE_THRESHOLD,
-        )
         # Get the column index of the best confidence score
         classes: npt.NDArray[np.float32] = np.argmax(inferences[4:, :], axis=0)
 
         # Get just the bounding box info, transpose
         boxes: npt.NDArray[np.float32] = inferences[:4, :].T
 
-        # We only care about the classes that will appear in competition, choose the best one
+        # Choose the best guess for each class
         best_guesses: dict[int, tuple[npt.NDArray[np.float32], float]] = {}
         for i in range(len(classes)):
             if classes[i] in best_guesses:
@@ -430,6 +425,26 @@ class YOLO:
             box[1] -= box[3] / 2  # Y1
             box[2] += box[0]  # X2
             box[3] += box[1]  # Y2
+
+        # Log results if desired
+        if self.log_results:
+            logging.info(
+                "Found %d detections with confidence above %.2f:",
+                len(scores),
+                CONFIDENCE_THRESHOLD,
+            )
+            class_num: int
+            confidence: float
+            for class_num, (box, confidence) in best_guesses.items():
+                logging.info(
+                    "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f",
+                    ALL_COCO_CLASSES[class_num],
+                    box[0],
+                    box[1],
+                    box[2],
+                    box[3],
+                    confidence,
+                )
 
         return best_guesses
 

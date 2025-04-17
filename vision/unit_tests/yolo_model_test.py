@@ -20,26 +20,26 @@ async def test_image(image_path: str) -> None:
     image_path : str
         Path to the image to be processed
     """
-    yolo: YOLO = YOLO()
+    yolo: YOLO = YOLO(log_results=True)
     results: list[ObjectDetection] = await yolo.process_image(image_path)
     image: cv2.typing.MatLike = cv2.imread(image_path)
     for detection in results:
         conv: npt.NDArray[np.int32] = detection.bbox.astype(np.int32)
-        logging.info(
-            "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f",
-            detection.category,
-            conv[0],
-            conv[1],
-            conv[2],
-            conv[3],
-            detection.confidence,
-        )
-        image = cv2.rectangle(
+        cv2.rectangle(
             image,
             (conv[0], conv[1]),
             (conv[2], conv[3]),
             (0, 255, 0),
             2,
+        )
+        # Add caption with class
+        cv2.putText(
+            image,
+            detection.category,
+            (conv[0], conv[3] + 15),
+            cv2.FONT_HERSHEY_PLAIN,
+            1,
+            (0, 255, 0),
         )
     image = cv2.resize(image, (1280, 720))
     cv2.imshow("YOLO Detection", image)
