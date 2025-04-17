@@ -101,7 +101,6 @@ def process_shapes(contours: list[consts.Contour]) -> list[bbox]:
     """
     bbox_list: List[bbox] = []
     for contour in contours:
-        shape_type: chars.ODLCShape | None = classify_shape(np.copy(contour))
         vertices: consts.Corners
         min_x: int
         min_y: int

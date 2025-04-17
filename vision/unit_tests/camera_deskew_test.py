@@ -34,8 +34,9 @@ class TestVisionFunctions(unittest.TestCase):
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
         self.box = BoundingBox(
-            obj_type="object",
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+            (100, 200),
+            100,
+            100,
         )
 
     def test_get_coordinates(self) -> None:

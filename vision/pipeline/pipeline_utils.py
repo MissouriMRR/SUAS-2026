@@ -130,8 +130,10 @@ def detection_to_bbox(
         (detection.bbox[0], detection.bbox[3]),
     )
 
-    bbox = BoundingBox(vertices, detection.category)
+    bbox = BoundingBox(
+        vertices[0], detection.bbox[2] - detection.bbox[0], detection.bbox[3] - detection.bbox[1]
+    )
 
-    set_generic_attributes(bbox, detection.image, detection.shape, parameters)
+    set_generic_attributes(bbox, detection.shape, parameters)
 
     return bbox

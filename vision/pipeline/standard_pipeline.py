@@ -69,85 +69,10 @@ def find_standard_objects(
     shape: BoundingBox
     for shape in shapes:
         # Set the shape attributes by reference. If successful, keep the shape
-        if set_shape_attributes(shape, original_image) and pipe_utils.set_generic_attributes(
-            shape, image_path, original_image.shape, camera_parameters
-        ):
+        if pipe_utils.set_generic_attributes(shape, original_image.shape, camera_parameters):
             found_odlcs.append(shape)
 
     return found_odlcs
-
-
-def set_shape_attributes(
-    shape: BoundingBox,
-    original_image: consts.Image,
-) -> bool:
-    """
-    Gets the attributes of a shape returned from process_shapes()
-    Modifies `shape` in place
-
-    Parameters
-    ----------
-    shape: BoundingBox
-        The bounding box of the shape. Attribute "shape" must be set
-    original_image: Image
-        The image used to get the details for each shape
-
-    Returns
-    -------
-    attributes_found: bool
-        Returns true if all attributes were successfully found
-    """
-
-    if shape.get_attribute("shape") is None:
-        return False
-
-    odlc_img: consts.Image = crop_image(original_image, shape)
-
-    text_bounding: BoundingBox = get_odlc_text(odlc_img)
-
-    shape_color: ODLCColor
-    text_color: ODLCColor
-
-    if not text_bounding.get_attribute("text"):
-        # No text was found, we can only get the shape color
-        _, shape_color = find_colors(odlc_img)
-        shape.set_attribute("shape_color", shape_color)
-    else:
-        # Text found, we can try to look for both colors
-        shape.set_attribute("text", text_bounding.get_attribute("text"))
-        text_img: consts.Image = crop_image(odlc_img, text_bounding)
-        shape_color, text_color = find_colors(text_img)
-
-        shape.set_attribute("shape_color", shape_color)
-        shape.set_attribute("text_color", text_color)
-
-    return True
-
-
-def create_odlc_dict(bounding_boxes: Iterable[BoundingBox]) -> consts.ODLCDict:
-    """
-    Creates the ODLC_Dict dictionary from a list of shape bounding boxes
-
-    Parameters
-    ----------
-    bounding_boxes: Iterable[BoundingBox]
-        An iterable of the sightings of each object, matched to bottles
-
-    Returns
-    -------
-    odlc_dict: consts.ODLCDict
-        The dictionary of ODLCs matching the output format
-    """
-
-    odlc_dict: consts.ODLCDict = {}
-
-    for bbox in bounding_boxes:
-        odlc_dict[bbox.obj_type] = {
-            "latitude": bbox.get_attribute("latitude"),
-            "longitude": bbox.get_attribute("longitude"),
-        }
-
-    return odlc_dict
 
 
 def filter_objects(
