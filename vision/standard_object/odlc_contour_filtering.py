@@ -71,7 +71,7 @@ def filter_contour(
             cnt_bound_box_retval[2],
             cnt_bound_box_retval[3],
         ),
-        bbox.ObjectType.STD_OBJECT,
+        "object",
     )
 
     # test smallness, bounding_box, min_area_box, and spikiness
@@ -225,7 +225,8 @@ def test_spikiness(contour: consts.Contour) -> bool:
     # m10/m00 is the x coordinate of the center of the contour
     # m01/m00 is the y coordinate of the center of the contour
     com: NDArray[Shape["2"], Float32] = np.array(
-        ((moments["m10"] / moments["m00"]), (moments["m01"] / moments["m00"])), dtype=np.float64
+        ((moments["m10"] / moments["m00"]), (moments["m01"] / moments["m00"])),
+        dtype=np.float64,
     )
 
     # Holds the distance of each point in the contour to the center of the contour
@@ -277,7 +278,7 @@ def min_common_bounding_box(contours: list[consts.Contour]) -> bbox.BoundingBox:
                     contour_box[2],
                     contour_box[3],
                 ),
-                bbox.ObjectType.STD_OBJECT,
+                "object",
             )
         )
 
@@ -286,7 +287,8 @@ def min_common_bounding_box(contours: list[consts.Contour]) -> bbox.BoundingBox:
     min_y: int = np.min(np.array([box.get_y_extremes()[0] for box in boxes]))
     max_y: int = np.max(np.array([box.get_y_extremes()[1] for box in boxes]))
     min_box: bbox.BoundingBox = bbox.BoundingBox(
-        ((min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)), bbox.ObjectType.STD_OBJECT
+        ((min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)),
+        "object",
     )
     return min_box
 
@@ -483,7 +485,7 @@ if __name__ == "__main__":
                 cntr_bbox_retval[2],
                 cntr_bbox_retval[3],
             ),
-            bbox.ObjectType.STD_OBJECT,
+            "object",
         )
         cntr_msk: consts.Mask = generate_mask(cntr, cntr_bbox)
         cntr_sc_img: consts.ScImage = np.where(cntr_msk, 255, 0).astype(np.uint8)
