@@ -6,7 +6,7 @@ from pathlib import Path
 import traceback
 
 from flight.camera import CameraIRL, CameraAirSim
-from flight.extract_gps import extract_gps, GPSData, OdlcWaypoint
+from flight.extract_gps import extract_gps, GPSData
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
 from state_machine.state_tracker import (
@@ -21,7 +21,6 @@ from state_machine.states.state import State
 
 from vision.vision_pipeline import flyover_pipeline
 from vision.common import camera_config
-from vision.common.constants import ODLCDict
 
 
 async def run(self: ODLC) -> State:
