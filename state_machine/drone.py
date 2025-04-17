@@ -124,10 +124,19 @@ class Drone:
         )
         logging.info("Drone discovered!")
 
+    def remove_arming_check(self) -> None:
+        """
+
+        For use with airsim
+
+        """
+        self.vehicle.parameters["ARMING_CHECK"] = 0
+
     async def arm(self) -> None:
         """
         Arm the drone
         """
+
         logging.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
@@ -209,10 +218,10 @@ class Drone:
                 self.address = "/dev/ttyFTDI"
                 self.baud = 921600
             case SimMode.SIM:
-                self.address = "tcp:127.0.0.1:5762"
+                self.address = "127.0.0.1:14030"
                 self.baud = None
             case SimMode.AIRSIM:
-                self.address = "127.0.0.1:14030"
+                self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
             case _:
                 raise ValueError("invalid sim mode")

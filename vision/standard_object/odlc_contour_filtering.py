@@ -226,7 +226,8 @@ def test_spikiness(contour: consts.Contour) -> bool:
     # m10/m00 is the x coordinate of the center of the contour
     # m01/m00 is the y coordinate of the center of the contour
     com: NDArray[Shape["2"], Float32] = np.array(
-        ((moments["m10"] / moments["m00"]), (moments["m01"] / moments["m00"])), dtype=np.float64
+        ((moments["m10"] / moments["m00"]), (moments["m01"] / moments["m00"])),
+        dtype=np.float64,
     )
 
     # Holds the distance of each point in the contour to the center of the contour

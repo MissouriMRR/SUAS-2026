@@ -2,6 +2,7 @@
 
 import json
 from typing import List, Tuple, TypeAlias
+
 import cv2
 import numpy as np
 import scipy
@@ -108,7 +109,6 @@ def process_shapes(contours: list[consts.Contour]) -> list[bbox]:
         height: int
         min_x, min_y, width, height = cv2.boundingRect(contour)
         vertices = tlwh_to_vertices(min_x, min_y, width, height)
-
         bounding_box: bbox = bbox(vertices[0], width, height)
         bbox_list.append(bounding_box)
     return bbox_list
@@ -276,7 +276,7 @@ def generate_polar_array(cnt: consts.Contour) -> PolarArray:
 
 
 def condense_polar(
-    polar_array: NDArray[Shape["*, 2"], Float64]
+    polar_array: NDArray[Shape["*, 2"], Float64],
 ) -> NDArray[Shape["128,2"], Float64]:
     """
     Condenses a polar array to have 'NUM_STEPS' data points for analysis
@@ -335,7 +335,7 @@ def cartesian_to_polar(x: float, y: float) -> tuple[float, float]:
 
 
 def cartesian_array_to_polar(
-    cartesian_array: NDArray[Shape["*,2,2"], Float64]
+    cartesian_array: NDArray[Shape["*,2,2"], Float64],
 ) -> NDArray[Shape["*,2"], Float64]:
     """
     Converts an array of rectangular (cartesian) coordinates to an array of polar coordinates

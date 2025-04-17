@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 
-from flight.camera import Camera
+from flight.camera import CameraIRL
 
 
 async def test_capture_image(photo_count: int = 5) -> None:
@@ -15,7 +15,7 @@ async def test_capture_image(photo_count: int = 5) -> None:
     photo_count : int, default 5
         The number of photos to take.
     """
-    camera: Camera = Camera()
+    camera: CameraIRL = CameraIRL()
     logging.info("Current camera attitude: %s", camera.camera.getAttitude())
     logging.info("Capturing images...")
 

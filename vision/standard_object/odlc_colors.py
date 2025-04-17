@@ -98,7 +98,12 @@ def run_kmeans(cropped_img: Image) -> Image:
     label: NDArray[Shape["*, *"], Int32]  # label array for the clusters
     center: NDArray[Shape["2, 5"], Float32]  # cluster centers
     _, label, center = cv2.kmeans(
-        np.float32(vectorized), K=k_val, bestLabels=None, criteria=term_crit, attempts=10, flags=0
+        np.float32(vectorized),
+        K=k_val,
+        bestLabels=None,
+        criteria=term_crit,
+        attempts=10,
+        flags=0,
     )
 
     center_int: NDArray[Shape["2, 3"], UInt8] = center.astype(np.uint8)[:, :3]  # xy removed
@@ -256,7 +261,11 @@ def best_color_range(
         col_range: NDArray[Shape["2, 3"], UInt8]
         for col_range in COLOR_RANGES[col]:  # for each range of the color
             mid: NDArray[Shape["3"], Float64] = np.array(
-                [np.mean(col_range[:, 0]), np.mean(col_range[:, 1]), np.mean(col_range[:, 2])]
+                [
+                    np.mean(col_range[:, 0]),
+                    np.mean(col_range[:, 1]),
+                    np.mean(col_range[:, 2]),
+                ]
             )  # midpoint of range
             dist = np.sum(np.abs(color_val - mid)).astype(float)  # dist of color to range mid
 
@@ -274,7 +283,10 @@ if __name__ == "__main__":
     parser: argparse.ArgumentParser = argparse.ArgumentParser("Find ODLC colors.")
 
     parser.add_argument(
-        "-f", "--file_name", type=str, help="Name and path to the image file. Required argument."
+        "-f",
+        "--file_name",
+        type=str,
+        help="Name and path to the image file. Required argument.",
     )
 
     args: argparse.Namespace = parser.parse_args()

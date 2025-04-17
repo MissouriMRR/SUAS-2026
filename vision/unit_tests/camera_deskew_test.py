@@ -1,3 +1,5 @@
+"""Unit test for camera deskew functionality."""
+
 import unittest
 from vision.common.constants import CameraParameters
 from vision.common.bounding_box import BoundingBox
@@ -11,7 +13,12 @@ class TestVisionFunctions(unittest.TestCase):
 
     Attributes
     ----------
+    camera_params: CameraParameters
+        Sample camera parameters to be used in the test.
+    image_shape: tuple[int, int, int]
         The dimensions of the image used in tests, specified as (height, width, channels).
+    box: BoundingBox
+        Sample bounding box of an object to be used in the test.
     """
 
     def setUp(self) -> None:
@@ -26,6 +33,10 @@ class TestVisionFunctions(unittest.TestCase):
             altitude=1000.0,
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
+        self.box = BoundingBox(
+            obj_type="object",
+            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+        )
 
     def test_get_coordinates(self) -> None:
         """
