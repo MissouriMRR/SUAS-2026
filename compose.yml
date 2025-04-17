@@ -1,0 +1,30 @@
+version: "3"
+services:
+  env:
+    build:
+      context: .
+      dockerfile: Env.Containerfile
+    network_mode: host
+    volumes:
+      - type: bind
+        source: ./
+        target: /SUAS
+    working_dir: /SUAS
+    command: bash
+    stdin_open: true
+    tty: true 
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+  sim:
+    build:
+      context: .
+      dockerfile: Simulation.Containerfile
+    network_mode: host
+    stdin_open: true
+    tty: true 
+    
