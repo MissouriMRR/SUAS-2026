@@ -28,6 +28,9 @@ class Drone:
     odlc_scan : bool
         A boolean to tell if the odlc zone needs to be scanned, used the
         first run and if odlc needs to be scanned any other time
+    sim_mode
+    _sim_mode : SimMode | None
+        The simulation mode of this drone, or None if one has not been specified.
     vehicle
     _vehicle : dronekit.Vehicle | None
         The Dronekit Vehicle object that controls the drone, or None if a connection
@@ -65,6 +68,7 @@ class Drone:
         baud : int, default None
             The baud rate, or None to use the default.
         """
+        self._sim_mode: SimMode | None = None
         self._vehicle: dronekit.Vehicle | None = None
         self.address: str = address
         self.baud: int | None = baud
@@ -112,6 +116,17 @@ class Drone:
         return self._vehicle is not None
 
     @property
+    def sim_mode(self) -> SimMode | None:
+        """Get the simulation mode of this drone.
+
+        Returns
+        -------
+        SimMode | None
+            The simulation mode of this drone, or None if one has not been specified.
+        """
+        return self._sim_mode
+
+    @property
     def vehicle(self) -> dronekit.Vehicle:
         """Get the DroneKit Vehicle object owned by this Drone object.
 
@@ -151,6 +166,13 @@ class Drone:
             else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
         )
         logging.info("Drone discovered!")
+
+        if self._sim_mode is not SimMode.REAL:
+            return
+
+        message_1: str = "Waiting for user input to continue... "
+        message_2: str = "(press enter when ready) "
+        input(f"\x1b[38;2;255;255;0m{message_1}" f"\x1b[3m{message_2}" "\x1b[0m")
 
     def remove_arming_check(self) -> None:
         """
@@ -263,7 +285,8 @@ class Drone:
         self.vehicle.close()
 
     def use_settings(self, sim_mode: SimMode) -> None:
-        """Modify the connection settings based on the given simulation mode.
+        """Set the simulation mode of this drone and update the connection settings
+        according to the simulation mode.
 
         Parameters
         ----------
@@ -275,12 +298,14 @@ class Drone:
         ValueError
             If `sim_mode` is not a valid SimMode.
         """
+        self._sim_mode = sim_mode
+
         match sim_mode:
             case SimMode.REAL:
                 self.address = "/dev/ttyUSB0"
                 self.baud = 57600
             case SimMode.SIM:
-                self.address = "127.0.0.1:14030"
+                self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
             case SimMode.AIRSIM:
                 self.address = "tcp:127.0.0.1:5762"

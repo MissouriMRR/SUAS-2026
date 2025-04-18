@@ -21,6 +21,8 @@ from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
 
+from vision.common.constants import Location, ODLCDict
+
 
 async def run(self: Airdrop) -> State:
     """
@@ -47,7 +49,7 @@ async def run(self: Airdrop) -> State:
         logging.info("Airdrop state running")
 
         with open("flight/data/output.json", encoding="utf8") as output:
-            drop_locations: dict[str, dict[str, int]] = json.load(output)
+            drop_locations: ODLCDict = json.load(output)
 
         with open("flight/data/bottles.json", encoding="utf8") as output:
             cylinders: dict[str, dict[str, int | bool]] = json.load(output)
@@ -110,7 +112,7 @@ async def run(self: Airdrop) -> State:
 async def attempt_drop(
     drone: Drone,
     flight_settings: FlightSettings,
-    drop_locations: dict[str, dict[str, int]],
+    drop_locations: ODLCDict,
     cylinders: dict[str, dict[str, int | bool]],
     attempted_locations: set[str],
     cylinder_num: str,
@@ -126,7 +128,7 @@ async def attempt_drop(
         The drone object to control
     flight_settings : FlightSettings
         The flight settings object
-    drop_locations : dict
+    drop_locations : ODLCDict
         Dictionary of available drop locations
     cylinders : dict
         Dictionary of cylinder states
@@ -148,7 +150,7 @@ async def attempt_drop(
         # Find next available drop location
         available_locations = set(drop_locations.keys()) - attempted_locations
         location_id: str
-        drop_loc: dict[str, int]
+        drop_loc: Location
 
         if available_locations:
             # Get the next location ID (using min for consistent ordering)
