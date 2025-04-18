@@ -5,14 +5,10 @@ from typing import Iterable, TypeAlias
 
 import vision.common.constants as consts
 
-from vision.common.crop import crop_image
 from vision.common.bounding_box import BoundingBox
-from vision.common.odlc_characteristics import ODLCColor
 
 from vision.standard_object.odlc_contour_detection import fetch_shape_contours
 from vision.standard_object.odlc_classify_shape import process_shapes
-from vision.standard_object.odlc_text_detection import get_odlc_text
-from vision.standard_object.odlc_colors import find_colors
 
 import vision.pipeline.pipeline_utils as pipe_utils
 from vision.yolo.model import ObjectDetection
@@ -73,6 +69,27 @@ def find_standard_objects(
             found_odlcs.append(shape)
 
     return found_odlcs
+
+
+def create_odlc_dict(bounding_boxes: Iterable[BoundingBox]) -> consts.ODLCDict:
+    """
+    Creates the ODLC_Dict dictionary from a list of shape bounding boxes
+    Parameters
+    ----------
+    bounding_boxes: Iterable[BoundingBox]
+        An iterable of the sightings of each object, matched to bottles
+    Returns
+    -------
+    odlc_dict: consts.ODLCDict
+        The dictionary of ODLCs matching the output format
+    """
+    odlc_dict: consts.ODLCDict = {}
+    for index, bbox in enumerate(bounding_boxes):
+        odlc_dict[str(index)] = {
+            "latitude": bbox.center_lat_lon[0],
+            "longitude": bbox.center_lat_lon[1],
+        }
+    return odlc_dict
 
 
 def filter_objects(
