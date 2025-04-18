@@ -78,7 +78,6 @@ def find_standard_objects(
     return found_odlcs
 
 
-
 def create_odlc_dict(
     bounding_boxes: Iterable[BoundingBox], flight_settings: FlightSettings
 ) -> consts.ODLCDict:
