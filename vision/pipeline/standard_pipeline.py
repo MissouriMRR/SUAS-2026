@@ -110,13 +110,13 @@ def create_odlc_dict(
     odlc_dict: consts.ODLCDict = {}
 
     bbox: BoundingBox
-    for bbox in bounding_boxes:
+    for index, bbox in enumerate(bounding_boxes):
         # Check if in bounds
         easting: float
         northing: float
         easting, northing, _, _ = utm.from_latlon(
-            bbox.get_attribute("latitude"),
-            bbox.get_attribute("longitude"),
+            bbox.center_lat_lon[0],
+            bbox.center_lat_lon[1],
             force_zone_number=zone_number,
             force_zone_letter=zone_letter,
         )
