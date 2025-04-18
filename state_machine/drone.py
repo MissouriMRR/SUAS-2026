@@ -40,14 +40,22 @@ class Drone:
     -------
     __init__(connection_string: str) -> None
         Initialize a new Drone object, but do not connect to a drone.
-    arm(self) -> Awaitable[none]
+    arm(self) -> Awaitable[None]
         Arm the drone.
-    close(self) -> Awaitable[none]
+    close(self) -> Awaitable[None]
         Close the owned DroneKit Vehicle object.
+    close_servo(self, servo_num: int) -> Awaitable[None]:
+        Close the servo with the given number.
     connect_drone(self) -> Awaitable[None]
         Connect to a drone.
     is_connected(self) -> bool
         Checks if a drone has been connected to.
+    open_servo(self, servo_num: int) -> Awaitable[None]:
+        Open the servo with the given number.
+    remove_arming_check(self) -> None
+        For use with airsim.
+    return_to_launch(self) -> Awaitable[none]
+        Method to move vehicle above home location, then descend vertically.
     takeoff(self, takeoff_alt: float) -> Awaitable[None]
         Takeoff vertically to the passed altitude.
     use_settings(self, sim_mode: SimMode) -> None
@@ -176,15 +184,13 @@ class Drone:
 
     def remove_arming_check(self) -> None:
         """
-
-        For use with airsim
-
+        For use with airsim.
         """
         self.vehicle.parameters["ARMING_CHECK"] = 0
 
     async def arm(self) -> None:
         """
-        Arm the drone
+        Arm the drone.
         """
 
         logging.info("Waiting for vehicle to intialize...")
@@ -202,7 +208,7 @@ class Drone:
 
     async def takeoff(self, takeoff_alt: float) -> None:
         """
-        Takeoff vertically to the passed altitude
+        Takeoff vertically to the passed altitude.
 
         Parameters
         ----------
@@ -219,7 +225,7 @@ class Drone:
 
     async def return_to_launch(self) -> None:
         """
-        Method to move vehicle above home location, then descend vertically
+        Method to move vehicle above home location, then descend vertically.
         """
         home_loc = dronekit.LocationGlobalRelative(
             self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23
@@ -249,7 +255,6 @@ class Drone:
     async def open_servo(self, servo_num: int) -> None:
         """
         Open the servo with the given number.
-        This will set the PWM to 1000 microseconds.
 
         Parameters
         ----------
@@ -266,7 +271,6 @@ class Drone:
     async def close_servo(self, servo_num: int) -> None:
         """
         Close the servo with the given number.
-        This will set the PWM to 2000 microseconds.
 
         Parameters
         ----------
