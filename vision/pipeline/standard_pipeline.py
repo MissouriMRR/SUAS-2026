@@ -3,6 +3,13 @@
 import heapq
 from typing import Iterable, TypeAlias
 
+import utm
+
+from flight.extract_gps import extract_gps, GPSData
+from flight.waypoint.geometry import Point
+
+from state_machine.flight_settings import FlightSettings
+
 import vision.common.constants as consts
 
 from vision.common.bounding_box import BoundingBox
@@ -71,20 +78,52 @@ def find_standard_objects(
     return found_odlcs
 
 
-def create_odlc_dict(bounding_boxes: Iterable[BoundingBox]) -> consts.ODLCDict:
+
+def create_odlc_dict(
+    bounding_boxes: Iterable[BoundingBox], flight_settings: FlightSettings
+) -> consts.ODLCDict:
     """
-    Creates the ODLC_Dict dictionary from a list of shape bounding boxes
+    Creates the ODLCDict dictionary from a list of shape bounding boxes.
+    Discards bounding boxes whose center is not inside the airdrop boundary.
+
     Parameters
     ----------
-    bounding_boxes: Iterable[BoundingBox]
-        An iterable of the sightings of each object, matched to bottles
+    bounding_boxes : Iterable[BoundingBox]
+        An iterable of the sightings of each object.
+    flight_settings : FlightSettings
+        The flight settings.
+        Used to get the airdrop boundary.
     Returns
     -------
-    odlc_dict: consts.ODLCDict
-        The dictionary of ODLCs matching the output format
+    odlc_dict : consts.ODLCDict
+        The dictionary of ODLCs matching the output format.
     """
+
+    # Get ODLC boundary
+    gps_data: GPSData = extract_gps(flight_settings.mission_data_path)
+    odlc_boundary: list[Point] = [
+        Point(odlc_boundary_point.easting, odlc_boundary_point.northing)
+        for odlc_boundary_point in gps_data["odlc_boundary_utm"]
+    ]
+    zone_number: int = gps_data["odlc_boundary_utm"][0].zone_number
+    zone_letter: str = gps_data["odlc_boundary_utm"][0].zone_letter
+
     odlc_dict: consts.ODLCDict = {}
-    for index, bbox in enumerate(bounding_boxes):
+
+    bbox: BoundingBox
+    for bbox in bounding_boxes:
+        # Check if in bounds
+        easting: float
+        northing: float
+        easting, northing, _, _ = utm.from_latlon(
+            bbox.get_attribute("latitude"),
+            bbox.get_attribute("longitude"),
+            force_zone_number=zone_number,
+            force_zone_letter=zone_letter,
+        )
+        if not Point(easting, northing).is_inside_shape(odlc_boundary):
+            continue
+
         odlc_dict[str(index)] = {
             "latitude": bbox.center_lat_lon[0],
             "longitude": bbox.center_lat_lon[1],
