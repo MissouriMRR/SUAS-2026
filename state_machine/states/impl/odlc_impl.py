@@ -6,8 +6,7 @@ from pathlib import Path
 import traceback
 
 from flight.camera import CameraIRL, CameraAirSim
-
-from flight.extract_gps import extract_gps, GPSData
+from flight.extract_gps import extract_gps, GPSData, OdlcWaypoint
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
 from state_machine.state_tracker import (
@@ -136,25 +135,26 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
 
     # traverses the 3 waypoints starting at the midpoint on left to midpoint on the right
     # then to the top left corner at the rectangle
-    point: int
-    for point in range(len(gps_data["odlc_waypoints"])):
+    i: int
+    point: OdlcWaypoint
+    for i, point in enumerate(gps_data["odlc_waypoints"]):
         take_photos: bool = True
 
-        logging.info("Moving to ODLC scan point %d", point)
+        logging.info("Moving to ODLC scan point %d", i)
 
         if camera is not None:
             await camera.odlc_move_to(
                 self.drone.vehicle,
-                gps_data["odlc_waypoints"][point].latitude,
-                gps_data["odlc_waypoints"][point].longitude,
+                point.latitude,
+                point.longitude,
                 gps_data["odlc_altitude"],
                 take_photos,
             )
         else:
             await move_to(
                 self.drone.vehicle,
-                gps_data["odlc_waypoints"][point].latitude,
-                gps_data["odlc_waypoints"][point].longitude,
+                point.latitude,
+                point.longitude,
                 gps_data["odlc_altitude"],
             )
 
