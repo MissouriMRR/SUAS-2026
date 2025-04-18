@@ -89,5 +89,5 @@ async def flyover_pipeline(
         bounding_boxes.append(pipe_utils.detection_to_bbox(detection, parameters))
 
     odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(bounding_boxes, flight_settings)
-    logging.info("%d ODLCs found: %s", len(detected_objects), odlc_dict)
+    logging.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)
     pipe_utils.output_odlc_json(output_path, odlc_dict)
