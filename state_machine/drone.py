@@ -6,6 +6,7 @@ import logging
 
 import dronekit
 from pymavlink import mavutil
+from pymavlink.dialects.v20.all import MAVLink_command_long_message
 
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.flight_settings import SimMode
@@ -97,7 +98,7 @@ class Drone:
         pwm : int
             The PWM value to send to the servo.
         """
-        msg = self.vehicle.message_factory.command_long_encode(
+        msg: MAVLink_command_long_message = self.vehicle.message_factory.command_long_encode(
             0,  # target_system, should always be 0
             0,  # target_component, should always be 0
             mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
