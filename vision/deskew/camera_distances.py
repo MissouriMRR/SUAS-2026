@@ -11,16 +11,16 @@ from vision.deskew.deskew import get_corner_points
 
 
 def corner_coords(image_shape, camera_parameters) -> Corners:
-    print([
-            get_coordinates(point, image_shape, camera_parameters)
-            for point in get_corner_points(image_shape)
-        ])
+
     
+    
+    coordinate_list=[get_coordinates(point, image_shape, camera_parameters) for point in get_corner_points(image_shape)]
+    for coordinate in coordinate_list:
+        if(coordinate==None):
+            raise ValueError("One or more of the coordinates are zero, ensure that the image rotation is downward")
     coords: Corners = np.array(
-        [
-            get_coordinates(point, image_shape, camera_parameters)
-            for point in get_corner_points(image_shape)
-        ],
+        
+        coordinate_list,
         dtype=np.float64,
     )
 
@@ -64,7 +64,7 @@ def get_coordinates(
         camera_parameters["drone_coordinates"][0]
     )
     longitude_length: float = coordinate_lengths.longitude_length(
-        camera_parameters["drone_coordinates"][0]
+        camera_parameters["drone_coordinates"][1]
     )
 
     altitude_m: float = camera_parameters["altitude"]
@@ -76,9 +76,13 @@ def get_coordinates(
         camera_parameters["rotation_deg"],
         altitude_m,
     )
-
+    
     if intersect is None:
-        return None
+        print(f"pixel {pixel}")
+        print(f"image_shape {image_shape}")
+        print(f"camera_parameters" +str(camera_parameters["rotation_deg"]))
+        print(f"altitude_m {altitude_m}")
+        return
 
     # Invert the X axis so that the longitude is correct
     intersect[1] *= -1

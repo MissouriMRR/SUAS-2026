@@ -9,9 +9,9 @@
     "Airsim":{
         "sensorHeight": 0,
         "sensorWidth": 0,
-        "horizontalFOV": 0,
-        "verticalFOV": 0,
+        "horizontalFOV": 1.57079633,
+        "verticalFOV": 0.883572936,
         "focal_length": 0
     },
-    "airsim_flag": false
+    "airsim_flag": true
 }

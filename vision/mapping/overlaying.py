@@ -29,7 +29,7 @@ def calculate_padding(img1, img2, r12):
 
 def pad_image(img, padding):
     value = np.array([0, 0, 0, np.inf])  # Zero for color channels, inf for depth channel
-    padded = cv2.copyMakeBorder(img, padding[0], padding[1], padding[2], padding[3], cv2.BORDER_CONSTANT, value=value)
+    padded = cv2.copyMakeBorder(img, int(padding[0]), int(padding[1]), int(padding[2]), int(padding[3]), cv2.BORDER_CONSTANT, value=value)
     
     return padded
 
@@ -38,8 +38,9 @@ def alpha_over(img1, img2, alpha_channel):
     """
     Overlays img1 on top of img2 using alpha_channel
     """
+   
     
-    overlayed = img1 * alpha_channel + (1 - alpha_channel) * img2
+    overlayed = img1 * alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
     
     return overlayed
 
@@ -70,14 +71,14 @@ def offset_overlay(new_img, base_img, new_location, feather_width):
     bottom_left = new_offset + np.array(new_img.shape[:2])
     
     # Get the section of the padded image where img1 will be overlayed
-    padded_section = padded[new_offset[0]:bottom_left[0], new_offset[1]:bottom_left[1], :]
+    padded_section = padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :]
     
     alpha_channel = distance_alpha(new_img[:, :, 3], padded_section[:, :, 3], feather_width)
     
     overlayed_section = alpha_over(new_img, padded_section, alpha_channel)
     
     # Write the overlayed section back to the image
-    padded[new_offset[0]:bottom_left[0], new_offset[1]:bottom_left[1], :] = overlayed_section
+    padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :] = overlayed_section
     
     return padded
 

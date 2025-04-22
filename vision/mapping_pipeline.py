@@ -6,6 +6,7 @@ from multiprocessing.sharedctypes import SynchronizedBase  # pylint: disable=unu
 
 import asyncio
 import cv2
+import numpy as np
 
 from vision.mapping.map import Map
 
@@ -32,7 +33,7 @@ async def mapping_pipeline(camera_data_path: str, image_dir: str, state_path: st
     # List of filenames for images already completed to prevent repeating work
     completed_images: list[str] = []
 
-    map: Map = Map(5)
+    map: Map = Map(5) 
 
     # Wait for and process unfinished images until no more images are being taken
     all_images_taken: c_bool = c_bool(True)
@@ -58,20 +59,24 @@ async def mapping_pipeline(camera_data_path: str, image_dir: str, state_path: st
             # image_path = image_dir + image_path
             
             if image_path not in completed_images:
+                
                 logging.info("Processing image: %s", image_path)
 
                 # Save the image path as completed so it isn't processed again
                 completed_images.append(image_path)
 
                 # Load the image to process
-                image: consts.Image = cv2.imread(image_dir + image_path)
+                image: consts.Image = cv2.imread(image_dir +"/"+ image_path)
 
                 # Get the camera parameters from the loaded parameter file
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
-                camera_parameters["altitude_f"] = camera_parameters["altitude"]
+                camera_parameters["altitude_f"] = camera_parameters["altitude"] 
                 camera_parameters["focal_length"] = 4
 
                 map.add_img(image, camera_parameters)
+           
+    map.img=np.delete(map.img,3,2)
+    print(map.img.shape)
 
     # Output final map
     cv2.imwrite("map.png", map.img)

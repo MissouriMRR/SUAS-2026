@@ -77,7 +77,8 @@ def plane_collision(ray_direction: Vector, height: float) -> Point | None:
         `height`
         Returns None if there is no intersect.
     """
-
+    
+    
     # Find the "time" at which the line intersects the plane.
     # Line is defined as ray_direction * time + vertex. Vertex is the point at
     #   X, Y, Z = (0, 0, height)
@@ -118,6 +119,7 @@ def pixel_vector(
     fov_h: float
     fov_v: float
     fov_h, fov_v = get_fov()
+    
     vector: Vector = camera_vector(
         pixel_angle(fov_h, pixel[0] / image_shape[1]),
         pixel_angle(fov_v, pixel[1] / image_shape[0]),
@@ -170,7 +172,7 @@ def get_fov() -> tuple[float, float]:
             else:
                 h_fov = calculate_fov("Airsim", "horizontalFOV")
 
-            if camera_config["Airsim"]["horizontalFOV"] != 0:
+            if camera_config["Airsim"]["verticalFOV"] != 0:
                 v_fov = camera_config["Airsim"]["verticalFOV"]
             else:
                 v_fov = calculate_fov("Airsim", "verticalFOV")
@@ -180,7 +182,7 @@ def get_fov() -> tuple[float, float]:
             else:
                 h_fov = calculate_fov("Default", "horizontalFOV")
 
-            if camera_config["Default"]["horizontalFOV"] != 0:
+            if camera_config["Default"]["verticalFOV"] != 0:
                 v_fov = camera_config["Default"]["verticalFOV"]
             else:
                 v_fov = calculate_fov("Default", "verticalFOV")
@@ -333,10 +335,9 @@ def rotate_radians(vector: Vector, rotation_rad: list[float]) -> Vector:
     """
 
     # Reverse the Y and Z rotation to match MAVSDK convention
-    # rotation_rad[1] *= -1
-    # rotation_rad[2] *= -1
+    rotation_rad[1] *= -1
+    rotation_rad[2] *= -1
     
-    print(rotation_rad)
     rotation = Rotation.from_euler("xyz", rotation_rad)
     result: Vector = rotation.apply(np.array(vector))
 

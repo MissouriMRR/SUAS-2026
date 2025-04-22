@@ -42,30 +42,31 @@ class Map:
         
         projected_image, _ = deskew.deskew(
             img,
-            camera_parameters["focal_length"],
             camera_parameters["rotation_deg"],
             scale=self.pixels_per_foot * camera_parameters["altitude_f"]
         )
         
-        blank_channel = np.zeros((projected_image.shape[0], projected_image.shape[1]))
-        projected_image_wdepth: consts.MapImage = np.dstack((projected_image, blank_channel))
         
+        blank_channel = np.zeros((projected_image.shape[0], projected_image.shape[1]))
+        blank_channel=blank_channel*255
+        
+        projected_image_wdepth: consts.MapImage = np.dstack((projected_image, blank_channel))
+        """
         distance = lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
                 (x, y),
                 img.shape,
-                camera_parameters["focal_length"],
                 camera_parameters["rotation_deg"],
                 height=self.pixels_per_foot * camera_parameters["altitude_f"]
             ))
         
-        print(f"{distance(0,0)=}")
         
         # Construct the distance map and put it in the 4th (alpha) channel
         projected_image_wdepth[:, :, 3] = np.fromfunction(
             distance,
             (img.shape[0], img.shape[1])
         )
-        
+        '''
+        """
         return projected_image_wdepth
     
     
@@ -73,12 +74,13 @@ class Map:
         
         img_corner_coords = camera_distances.corner_coords(img.shape, camera_parameters)
         
-        img_min_coord = np.min(img_corner_coords, axis=1)
-        img_max_coord = np.max(img_corner_coords, axis=1)
         
         projected_image_wdepth = self.prepare_image(img, camera_parameters)
         
         if self.img_count == 0:
+            
+            img_min_coord = np.min(img_corner_coords, axis=0)
+            img_max_coord = np.max(img_corner_coords, axis=0)
             self.img = projected_image_wdepth
             self.coord_min = img_min_coord
             self.coord_max = img_max_coord
@@ -93,8 +95,9 @@ class Map:
     def add_projected_image(self, proj_img, img_corner_coords):
         # Calculate the "top left" and "bottom right" corners of the bounding box in GPS coordinate space
         # May not actually be top left and bottom right, but it doesn't really matter - we just care about the bounds
-        img_min_coord = np.min(img_corner_coords, axis=1)
-        img_max_coord = np.max(img_corner_coords, axis=1)
+        
+        img_min_coord = np.min(img_corner_coords, axis=0)
+        img_max_coord = np.max(img_corner_coords, axis=0)
         
         # Calculate the center of the projected image
         center_coord = (img_min_coord + img_max_coord) / 2
@@ -106,10 +109,10 @@ class Map:
         
         # Calculate the latitude and longitude lengths (in meters)
         latitude_length: float = coordinate_lengths.latitude_length(
-            self.center_coord[0]
+            center_coord[0]
         )
         longitude_length: float = coordinate_lengths.longitude_length(
-            self.center_coord[0]
+            center_coord[1]
         )
         
         relative_coord_ft = np.array(
