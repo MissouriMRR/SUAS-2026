@@ -223,7 +223,8 @@ def deskew(
         matrix,
         (result_width, result_height),
         flags=interpolation,
-        borderMode=cv2.BORDER_TRANSPARENT,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(0, 0, 0, 0),
     )
 
     return deskewed_image, dst_pts.astype(np.int32)
