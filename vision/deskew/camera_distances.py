@@ -13,14 +13,16 @@ from flight.waypoint.calculate_distance import calculate_distance as coordinate_
 
 def corner_coords(image_shape, camera_parameters) -> Corners:
 
-    
-    
-    coordinate_list=[get_coordinates(point, image_shape, camera_parameters) for point in get_corner_points(image_shape)]
+    coordinate_list = [
+        get_coordinates(point, image_shape, camera_parameters)
+        for point in get_corner_points(image_shape)
+    ]
     for coordinate in coordinate_list:
-        if(coordinate==None):
-            raise ValueError("One or more of the coordinates are zero, ensure that the image rotation is downward")
+        if coordinate == None:
+            raise ValueError(
+                "One or more of the coordinates are zero, ensure that the image rotation is downward"
+            )
     coords: Corners = np.array(
-        
         coordinate_list,
         dtype=np.float64,
     )
@@ -77,11 +79,11 @@ def get_coordinates(
         camera_parameters["rotation_deg"],
         altitude_m,
     )
-    
+
     if intersect is None:
         print(f"pixel {pixel}")
         print(f"image_shape {image_shape}")
-        print(f"camera_parameters" +str(camera_parameters["rotation_deg"]))
+        print(f"camera_parameters" + str(camera_parameters["rotation_deg"]))
         print(f"altitude_m {altitude_m}")
         return
 
@@ -203,11 +205,16 @@ def calculate_distance(
     return distance
 
 
-def pixel_per_foot(image_shape: tuple[int, int, int] | tuple[int, int], camera_parameters: CameraParameters) -> int:
+def pixel_per_foot(
+    image_shape: tuple[int, int, int] | tuple[int, int], camera_parameters: CameraParameters
+) -> int:
     Corner_list: Corners = corner_coords(image_shape, camera_parameters)
-    #using this calculate distance instead so it will use coordinates instead of having to parse the image data makes it a little faster
-    #returning in feet pls change this at some point
+    # using this calculate distance instead so it will use coordinates instead of having to parse the image data makes it a little faster
+    # returning in feet pls change this at some point
     # uisng the top left and top right parts of the image
-    return (FEET_PER_METER * coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0)) / image_shape[1]
-
-
+    return (
+        FEET_PER_METER
+        * coordinate_calculate_distance(
+            Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0
+        )
+    ) // image_shape[1]
