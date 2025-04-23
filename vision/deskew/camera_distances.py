@@ -2,12 +2,13 @@
 
 import numpy as np
 
-from vision.common.constants import Corners, Point, CameraParameters
+from vision.common.constants import Corners, Point, CameraParameters, FEET_PER_METER
 from vision.common.bounding_box import BoundingBox
 
 from vision.deskew import coordinate_lengths
 from vision.deskew import vector_utils
 from vision.deskew.deskew import get_corner_points
+from flight.waypoint.calculate_distance import calculate_distance as coordinate_calculate_distance
 
 
 def corner_coords(image_shape, camera_parameters) -> Corners:
@@ -200,3 +201,13 @@ def calculate_distance(
     distance: float = float(np.linalg.norm(intersect1 - intersect2))
 
     return distance
+
+
+def pixel_per_foot(image_shape: tuple[int, int, int] | tuple[int, int], camera_parameters: CameraParameters) -> int:
+    Corner_list: Corners = corner_coords(image_shape, camera_parameters)
+    #using this calculate distance instead so it will use coordinates instead of having to parse the image data makes it a little faster
+    #returning in feet pls change this at some point
+    # uisng the top left and top right parts of the image
+    return (FEET_PER_METER * coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0)) / image_shape[1]
+
+
