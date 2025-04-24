@@ -1,5 +1,7 @@
 import numpy as np
 import vision.common.constants as consts
+from PIL import Image
+import matplotlib.pyplot as plt
 
 from vision.deskew import camera_distances
 from vision.deskew import deskew
@@ -39,18 +41,32 @@ class Map:
     
     
     def prepare_image(self, img, camera_parameters):
+
         
-        projected_image, _ = deskew.deskew(
-            img,
+        blank_channel = np.zeros((img.shape[0], img.shape[1]))
+        blank_channel=blank_channel+255
+
+        image_wdepth: consts.MapImage = np.dstack((img, blank_channel))
+
+
+        print(f"pixels per foot{self.pixels_per_foot}")
+
+        projected_image_wdepth, _ = deskew.deskew(
+            image_wdepth,
             camera_parameters["rotation_deg"],
-            scale=self.pixels_per_foot * camera_parameters["altitude_f"]
+            scale=self.pixels_per_foot * camera_parameters["altitude_f"]# new pixels_per_foot is kindof messed up
         )
+                
+
+        troubleimage=projected_image_wdepth.astype(np.uint8)
+        pillowimg= Image.fromarray(troubleimage,"RGBA")
+        pillowimg.save("projected.png")
+        print("imageing")
+        input()
         
+
         
-        blank_channel = np.zeros((projected_image.shape[0], projected_image.shape[1]))
-        blank_channel=blank_channel*255
-        
-        projected_image_wdepth: consts.MapImage = np.dstack((projected_image, blank_channel))
+
         """
         distance = lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
                 (x, y),
@@ -67,6 +83,7 @@ class Map:
         )
         '''
         """
+
         return projected_image_wdepth
     
     
@@ -76,7 +93,12 @@ class Map:
         
         
         projected_image_wdepth = self.prepare_image(img, camera_parameters)
-        
+
+
+        #projected_image_wdepth = np.delete(projected_image_wdepth, 3, 2)
+
+
+
         if self.img_count == 0:
             
             img_min_coord = np.min(img_corner_coords, axis=0)
@@ -88,6 +110,7 @@ class Map:
             self.add_projected_image(projected_image_wdepth, img_corner_coords)
         
         self.img_count += 1
+        
         
         return
     

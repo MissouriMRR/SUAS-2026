@@ -38,9 +38,10 @@ def alpha_over(img1, img2, alpha_channel):
     """
     Overlays img1 on top of img2 using alpha_channel
     """
-   
-    
-    overlayed = img1 * alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
+    print("HMM")
+    print(img1.shape)
+    print(img2.shape)
+    overlayed = img1 #* alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
     
     return overlayed
 

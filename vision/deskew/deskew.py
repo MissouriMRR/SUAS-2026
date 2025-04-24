@@ -1,10 +1,9 @@
 """Distorts an image to generate an overhead view of flat terrain."""
 
 from nptyping import NDArray, Shape, Float64
-
+import PIL 
 import cv2
 import numpy as np
-
 from vision.deskew.vector_utils import pixel_intersect
 from vision.common.constants import Image, Corners
 
@@ -226,5 +225,9 @@ def deskew(
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(0, 0, 0, 0),
     )
-
+    print(deskewed_image.shape)
+    pillowimg= PIL.Image.fromarray(deskewed_image,"RGB")
+    pillowimg.save("projected.png")
+    print("imageing1")
+    input()
     return deskewed_image, dst_pts.astype(np.int32)
