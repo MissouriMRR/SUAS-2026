@@ -499,9 +499,9 @@ class CameraIRL(Camera):
         gimbal_attitude = self.camera.getAttitude()
 
         attitude: dronekit.Attitude = drone.attitude
-        roll_deg: float = math.degrees(attitude.roll) - gimbal_attitude[2]
-        pitch_deg: float = math.degrees(attitude.pitch) - gimbal_attitude[1]
-        yaw_deg: float = math.degrees(attitude.yaw) - gimbal_attitude[0]
+        roll_deg: float = math.degrees(attitude.roll) + gimbal_attitude[2]
+        pitch_deg: float = math.degrees(attitude.pitch) + gimbal_attitude[1]
+        yaw_deg: float = math.degrees(attitude.yaw) + gimbal_attitude[0]
 
         return CameraParameters(
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
