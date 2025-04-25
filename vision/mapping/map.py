@@ -58,11 +58,7 @@ class Map:
         )
                 
 
-        troubleimage=projected_image_wdepth.astype(np.uint8)
-        pillowimg= Image.fromarray(troubleimage,"RGBA")
-        pillowimg.save("projected.png")
-        print("imageing")
-        input()
+
         
 
         
@@ -108,7 +104,13 @@ class Map:
             self.coord_max = img_max_coord
         else:
             self.add_projected_image(projected_image_wdepth, img_corner_coords)
-        
+
+        troubleimage=self.img.astype(np.uint8)
+        pillowimg= Image.fromarray(troubleimage,"RGBA")
+        pillowimg.save("projected.png")
+        print("imageing")
+        input()
+
         self.img_count += 1
         
         
@@ -132,10 +134,10 @@ class Map:
         
         # Calculate the latitude and longitude lengths (in meters)
         latitude_length: float = coordinate_lengths.latitude_length(
-            center_coord[0]
+            center_coord[1]
         )
         longitude_length: float = coordinate_lengths.longitude_length(
-            center_coord[1]
+            center_coord[0]
         )
         
         relative_coord_ft = np.array(

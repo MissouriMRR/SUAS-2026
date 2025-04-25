@@ -51,35 +51,35 @@
     {
       "latitude": 37.9486921,
       "longitude": -91.7841599,
-      "altitude": 26
+      "altitude": 100
     },
     {
       "latitude": 37.9482764,
       "longitude": -91.7832256,
-      "altitude": 26
+      "altitude": 100
     },
     {
       "latitude": 37.9479159,
       "longitude": -91.7835693,
-      "altitude": 26
+      "altitude": 100
     },
     {
       "latitude": 37.9483448,
       "longitude": -91.7844035,
-      "altitude": 26
+      "altitude": 100
     },
     {
       "latitude": 37.9488342,
       "longitude": -91.7844135,
-      "altitude": 26
+      "altitude": 100
     },
     {
       "latitude": 37.9483264,
       "longitude": -91.7838496,
-      "altitude": 26
+      "altitude": 100
     }
   ],
-  "odlcAltitude": 26,
+  "odlcAltitude": 100,
   "odlcHeading": 13,
   "odlcWaypoints": [
     {
