@@ -43,7 +43,7 @@ def alpha_over(img1, img2, alpha_channel):
     #overlayed =
     #overlayed = img1 #* alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
     
-    return img1+img2
+    return img1 #+img2
 
 
 def rgb2rgba(img):
