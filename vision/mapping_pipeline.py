@@ -46,11 +46,7 @@ async def mapping_pipeline(
         )
     # using first image taken for mapping to determine pixels per foot
     first_image: str = next(iter(image_parameters))
-    print(image_parameters[first_image])
-    print(first_image)
-    print(pixel_per_foot(
-            cv2.imread(image_dir + "/" + first_image).shape, image_parameters[first_image]
-        ))
+
     map: Map = Map(
         pixel_per_foot(
             cv2.imread(image_dir + "/" + first_image).shape, image_parameters[first_image]
@@ -94,11 +90,11 @@ async def mapping_pipeline(
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
                 camera_parameters["altitude_f"] = camera_parameters["altitude"]
                 camera_parameters["focal_length"] = 4
-                print(image.shape)
+                
                 map.add_img(image, camera_parameters)
 
     #map.img = np.delete(map.img, 3, 2)
-    #print(map.img.shape)
+   
 
     # Output final map
     cv2.imwrite("map.png", map.img)

@@ -49,8 +49,6 @@ class Map:
         image_wdepth: consts.MapImage = np.dstack((img, blank_channel))
 
 
-        print(f"pixels per foot{self.pixels_per_foot}")
-
         projected_image_wdepth, _ = deskew.deskew(
             image_wdepth,
             camera_parameters["rotation_deg"],
@@ -105,11 +103,7 @@ class Map:
         else:
             self.add_projected_image(projected_image_wdepth, img_corner_coords)
 
-        troubleimage=self.img.astype(np.uint8)
-        pillowimg= Image.fromarray(troubleimage,"RGBA")
-        pillowimg.save("projected.png")
-        print("imageing")
-        input()
+
 
         self.img_count += 1
         
@@ -134,10 +128,10 @@ class Map:
         
         # Calculate the latitude and longitude lengths (in meters)
         latitude_length: float = coordinate_lengths.latitude_length(
-            center_coord[1]
+            center_coord[0]
         )
         longitude_length: float = coordinate_lengths.longitude_length(
-            center_coord[0]
+            center_coord[1]
         )
         
         relative_coord_ft = np.array(

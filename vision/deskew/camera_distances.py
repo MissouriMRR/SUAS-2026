@@ -213,9 +213,6 @@ def pixel_per_foot(
     # using this calculate distance instead so it will use coordinates instead of having to parse the image data makes it a little faster
     # returning in feet pls change this at some point
     # uisng the top left and top right parts of the image
-    print(f"image_shape {image_shape[1]}")
-    print(Corner_list)
 
-    print(f"coordinate calculated distance {coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0)}")
     return (image_shape[1]/(FEET_PER_METER*coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0))
     )  

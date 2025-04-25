@@ -38,12 +38,12 @@ def alpha_over(img1, img2, alpha_channel):
     """
     Overlays img1 on top of img2 using alpha_channel
     """
-    print(f"alpha {alpha_channel[:,:,None].shape}")
-    #overlayed=img1
+   
+    #overlayed=img1* alpha_channel[:,:,None]
     #overlayed =
-    overlayed = img1 #* alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
+    #overlayed = img1 #* alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
     
-    return overlayed
+    return img1+img2
 
 
 def rgb2rgba(img):
@@ -75,7 +75,7 @@ def offset_overlay(new_img, base_img, new_location, feather_width):
     padded_section = padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :]
     
     alpha_channel = distance_alpha(new_img[:, :, 3], padded_section[:, :, 3], feather_width)
-    #print(f"alpha_channel{alpha_channel}")
+    
     overlayed_section = alpha_over(new_img, padded_section, alpha_channel)
     
     # Write the overlayed section back to the image

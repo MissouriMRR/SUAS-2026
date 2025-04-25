@@ -225,9 +225,5 @@ def deskew(
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(0, 0, 0, 0),
     )
-    print(deskewed_image.shape)
-    pillowimg= PIL.Image.fromarray(deskewed_image,"RGB")
-    pillowimg.save("projected.png")
-    print("imageing1")
-    input()
+
     return deskewed_image, dst_pts.astype(np.int32)
