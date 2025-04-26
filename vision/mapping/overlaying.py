@@ -41,9 +41,9 @@ def alpha_over(img1, img2, alpha_channel):
    
     #overlayed=img1* alpha_channel[:,:,None]
     #overlayed =
-    #overlayed = img1 #* alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
+    overlayed = img1 * alpha_channel[:,:,None] + (1 - alpha_channel[:,:,None]) * img2
     
-    return img1 #+img2
+    return img1
 
 
 def rgb2rgba(img):
@@ -56,7 +56,6 @@ def rgb2rgba(img):
 
 def distance_alpha(distance1, distance2, feather_width):
     # Sigmoid function
-    
     return (np.tanh(4 * (distance1 - distance2) / feather_width) + 1) / 2
 
 

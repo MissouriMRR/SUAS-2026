@@ -10,6 +10,8 @@ from vision.deskew import vector_utils
 
 from vision.mapping import overlaying
 
+import cv2
+import math
 
 class Map:
     """
@@ -42,44 +44,71 @@ class Map:
     
     def prepare_image(self, img, camera_parameters):
 
-        
         blank_channel = np.zeros((img.shape[0], img.shape[1]))
-        blank_channel=blank_channel+255
+        blank_channel=blank_channel+1
 
         image_wdepth: consts.MapImage = np.dstack((img, blank_channel))
-
 
         projected_image_wdepth, _ = deskew.deskew(
             image_wdepth,
             camera_parameters["rotation_deg"],
-            scale=self.pixels_per_foot * camera_parameters["altitude_f"]# new pixels_per_foot is kindof messed up
+            scale=self.pixels_per_foot * camera_parameters["altitude_f"] * consts.FEET_PER_METER
         )
-                
-
-
         
+        projected_image_wdepth = self.fill_distances(projected_image_wdepth, camera_parameters)
 
-        
+        return projected_image_wdepth
+    
 
-        """
+    def fill_distances(self, img: consts.Image , camera_parameters: consts.CameraParameters) -> consts.Image:
         distance = lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
                 (x, y),
                 img.shape,
                 camera_parameters["rotation_deg"],
                 height=self.pixels_per_foot * camera_parameters["altitude_f"]
             ))
-        
-        
-        # Construct the distance map and put it in the 4th (alpha) channel
-        projected_image_wdepth[:, :, 3] = np.fromfunction(
-            distance,
-            (img.shape[0], img.shape[1])
-        )
-        '''
-        """
+        height: int = img.shape[0] -1
+        width: int = img.shape[1] -1
+        center_height: int = img.shape[0] //2
+        center_width: int = img.shape[1] //2
+        # has the pixel coordinates of the start and end indexes of each fourth of the image
 
-        return projected_image_wdepth
-    
+        #calculating distance for each pixel takes way too long, so it will be simplified by making the points up to the center on top,bottom, and center linearly scaled
+        # then filling the rest linearly
+
+        #initialize corners and center distances
+        img[0,0,3] = distance(0,0)
+        img[0,width,3] = distance(width,0)
+        img[height,width,3]= distance(width, height)
+        img[height, 0] = distance(0, width)
+        
+        img[center_height, center_width,3] = distance(center_width, center_height)
+        img[0, center_width,3] = distance(center_width, 0)
+        img[center_height, 0] = distance(0, center_height)
+        img[height, center_width,3] = distance(center_width, height)
+        img[center_height, width,3] = distance(width, center_height)
+
+        # start by filling top, bottom, and center
+        for i in [0,center_height,height]:
+            for pixel in range(1, width):
+                if pixel < center_width:
+                    img[i,pixel,3] = int(img[i,0,3]* pixel/(center_width) + img[i,center_width,3] * (1-pixel/(center_width)))
+                if pixel > center_width:
+                    #percentages are close enough not perfect
+                    img[i,pixel,3] = int(img[i,center_width,3]* (pixel-center_width)/(center_width) + img[i,width,3] * (1-(pixel-center_width)/(center_width)))
+
+        # fill the rest
+        for column in range(0, img.shape[1]):
+            for pixel in range(1,height):
+                if pixel < center_height:
+                    img[pixel,column,3] = int(img[0,column,3]* pixel/(center_height) + img[center_height,column,3] * (1-pixel/(center_height)))
+                if pixel > center_height:
+                    #percentages are close enough not perfect
+                    img[pixel,column,3] = int(img[center_height,column,3]* (pixel-center_height)/(center_height) + img[height,column,3] * (1-(pixel-center_height)/(center_height)))
+        
+        return img
+        
+
     
     def add_img(self, img, camera_parameters):
         

@@ -80,11 +80,4 @@ class CameraParameters(TypedDict):
     drone_coordinates: list[float]
     altitude: float
 
-
-# The rotation offset of the camera to the drone. The offset is applied
-#   in vision.vector_utils.pixel_intersect()
-# In degrees of [roll, pitch, yaw]
-# Set to [0.0, -90.0, 0.0] when the camera is facing directly downwards
-ROTATION_OFFSET: list[float] = [0.0, 0.0, 0.0]
-
 FEET_PER_METER: float = 3.28084

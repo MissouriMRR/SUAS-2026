@@ -6,7 +6,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from utils import type_utils
-from vision.common.constants import Point, Vector, ROTATION_OFFSET, CameraConfig
+from vision.common.constants import Point, Vector, CameraConfig
 
 
 # Vector pointing toward the +X axis, represents the camera's forward direction when the
@@ -31,7 +31,7 @@ def pixel_intersect(
     image_shape : tuple[int, int, int] | tuple[int, int]
         The shape of the image (returned by image.shape when image is a numpy image array)
     rotation_deg : list[float]
-        The [roll, pitch, yaw] rotation of the drone in degrees
+        The [roll, pitch, yaw] rotation of the camera in degrees
     height : float
         The height that the image was taken at. The units of the output will be the units of the
         input.
@@ -39,16 +39,13 @@ def pixel_intersect(
     Returns
     -------
     intersect : Point | None
-        The coordinates [X,Y] where the pixel's vector intersects with the ground. Units
-            are the same as `height`
+        The coordinates/distance [X,Y] where the pixel's vector intersects with the ground. Units
+            are the same as the units of `height`
         Returns None if there is no intersect.
     """
 
     # Create the normalized vector representing the direction of the given pixel
     vector: Vector = pixel_vector(pixel, image_shape)
-
-    # Apply the constant rotation offset
-    vector = rotate_degrees(vector, ROTATION_OFFSET)
 
     # Apply the drone rotation
     vector = rotate_degrees(vector, rotation_deg)
