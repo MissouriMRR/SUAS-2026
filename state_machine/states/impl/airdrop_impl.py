@@ -5,6 +5,8 @@ import logging
 import json
 import math
 
+import utm
+
 from flight.extract_gps import extract_gps
 
 # uncomment if automatic
@@ -96,6 +98,8 @@ async def run(self: Airdrop) -> State:
             attempted_locations,
             cylinder_num,
             self.flight_settings.mission_data_path,
+            self.flight_settings.mean_wind_speed,
+            self.flight_settings.mean_wind_direction,
         )
 
         with open("flight/data/bottles.json", "w", encoding="utf8") as output:
@@ -120,6 +124,7 @@ async def run(self: Airdrop) -> State:
         pass
 
 
+# pylint: disable=too-many-arguments,too-many-locals
 async def attempt_drop(
     drone: Drone,
     drop_locations: ODLCDict,
@@ -127,6 +132,8 @@ async def attempt_drop(
     attempted_locations: set[str],
     cylinder_num: str,
     path: str,
+    mean_wind_speed: float,
+    mean_wind_direction: float,
     retry_mode: bool = False,
 ) -> bool:
     """
@@ -146,7 +153,12 @@ async def attempt_drop(
         The cylinder number to use for the drop
     path : str
         the path to where our waypoint/flight locations are stored
-    retry_mode : bool
+    mean_wind_speed : float, default 0.0
+        The mean wind speed, in meters per second.
+    mean_wind_direction : float, default 0.0
+        The mean wind direction, in degrees.
+        A value of 0 represents north, and 90 represents west.
+    retry_mode : bool, default False
         Whether we're in retry mode (attempting previously visited locations)
 
     Returns
@@ -173,7 +185,24 @@ async def attempt_drop(
 
         airdrop_altitude: float = extract_gps(path)["airdrop_altitude"]
 
-        await move_to(drone.vehicle, drop_loc["latitude"], drop_loc["longitude"], airdrop_altitude)
+        wind_offset: float = calculate_airdrop_wind_offset(mean_wind_speed, airdrop_altitude)
+
+        easting: float
+        northing: float
+        zone_number: int
+        zone_letter: str
+        easting, northing, zone_number, zone_letter = utm.from_latlon(
+            drop_loc["latitude"], drop_loc["longitude"]
+        )
+
+        easting += wind_offset * -math.sin(math.radians(mean_wind_direction))
+        northing += wind_offset * math.cos(math.radians(mean_wind_direction))
+
+        drop_lat: float
+        drop_lon: float
+        drop_lat, drop_lon = utm.to_latlon(easting, northing, zone_number, zone_letter)
+
+        await move_to(drone.vehicle, drop_lat, drop_lon, airdrop_altitude)
 
         if retry_mode:
             logging.info(
