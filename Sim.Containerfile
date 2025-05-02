@@ -19,6 +19,10 @@ RUN git submodule update --init --recursive
 
 RUN ./waf configure --board sitl && ./waf copter
 
-RUN pip install mavproxy
+RUN pip install mavproxy geocoder matplotlib numpy opencv-python
+RUN pip install -U numpy
+
+# add GolfCourse location to ArduPilot locations
+RUN echo '# Multirotor Locations\nGolfCourse=37.9490953,-91.7848293,0,0' >> /ardupilot/Tools/autotest/locations.txt
 
 CMD python /ardupilot/Tools/autotest/sim_vehicle.py -v ArduCopter -f airsim-copter --out=127.0.0.1:14550

@@ -34,3 +34,5 @@ RUN poetry install --no-interaction --no-ansi
 
 # additional, non-essential packages/libraries
 RUN apt-get update && apt-get install -y tmux iproute2
+
+RUN pip install pre-commit

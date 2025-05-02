@@ -1,0 +1,10 @@
+version: "3"
+services:
+  env:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

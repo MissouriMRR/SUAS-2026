@@ -4,8 +4,9 @@ compose=podman-compose
 oci_cmd=podman
 
 function find_container_name() {
+    # find container name that matches passed argument
     test=$(eval "$oci_cmd ps --format '{{.Names}}' | grep $1")
-    echo $test
+    echo $test  # return matched container name
 }
 
 function usage() {
@@ -28,6 +29,7 @@ function usage() {
     echo
 }
 
+# very simple command implementation
 case $1 in
     ""|all)
         eval "$compose up -d"
@@ -36,10 +38,10 @@ case $1 in
         eval "$compose down"
     ;;
     sim)
-        eval "$compose start sim"
+        eval "$compose run --rm sim"
     ;;
     env)
-        eval "$compose start env"
+        eval "$compose run --rm env"
     ;;
     h|help)
         usage

@@ -1,0 +1,7 @@
+version: "3"
+services:
+  sim:
+    # based off command taken from old installation guide
+    # alternatively, you can replace this command with "bash" to open an interactive terminal instead
+    command: python /ardupilot/Tools/autotest/sim_vehicle.py -v copter -L GolfCourse --map
+    
