@@ -160,3 +160,4 @@ vision_videos/
 *.flv
 
 /state_machine/state.json
+compose.override.yml
