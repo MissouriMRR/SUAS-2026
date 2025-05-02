@@ -20,6 +20,23 @@ class SimModeConfig(TypedDict):
     standard_object_count: int
 
 
+class WindConfig(TypedDict):
+    """
+    A configuration containing manually entered wind speed and direction.
+
+    Attributes
+    ----------
+    mean_wind_speed : float
+        The mean wind speed, in meters per second.
+    mean_wind_direction : float
+        The mean wind direction, in degrees.
+        A value of 0 represents north, and 90 represents west.
+    """
+
+    mean_wind_speed: float
+    mean_wind_direction: float
+
+
 class MissionConfig(TypedDict):
     """
     A configuration for a flight mission.
@@ -42,6 +59,8 @@ class MissionConfig(TypedDict):
         Whether to skip the ODLC and airdrop states.
     simple_takeoff : bool
         Sets if flight will use a simple vertical takeoff.
+    wind : WindConfig
+        Manually entered information on the wind.
     """
 
     run_title: str
@@ -52,6 +71,7 @@ class MissionConfig(TypedDict):
     skip_waypoint: bool
     skip_odlc_and_airdrop: bool
     simple_takeoff: bool
+    wind: WindConfig
 
 
 def get_mission_config() -> MissionConfig:
