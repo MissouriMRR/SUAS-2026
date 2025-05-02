@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import json
+import math
 
 from flight.extract_gps import extract_gps
 
@@ -204,6 +205,55 @@ async def attempt_drop(
     except KeyError:
         logging.warning("Drop location %s was not found. Skipping.", location_id)
         return False
+
+
+def calculate_airdrop_wind_offset(wind_speed: float, drop_altitude: float) -> float:
+    """
+    Calculates the wind offset for dropping the payload.
+
+    Parameters
+    ----------
+    wind_speed : float
+        The wind speed, in meters per second.
+    drop_altitude : float
+        The altitude of the drop, in meters.
+
+    Returns
+    -------
+    float
+        The offset in the direction of the wind to add to the drop location.
+    """
+    if wind_speed <= 0.0:
+        return 0.0
+
+    payload_mass: float = 0.155  # kg
+    gravity_acceleration: float = 9.81  # m/s^2
+    parachute_area: float = 0.25  # cross-sectional area in m^2
+    parachute_drag_coefficient: float = 1.4  # coefficient of drag
+    air_density: float = 1.225  # kg/m^3
+    parachute_closed_duration: float = 1.0  # seconds
+
+    vertical_velocity_parachute_open: float = math.sqrt(
+        2.0
+        * payload_mass
+        * gravity_acceleration
+        / (air_density * parachute_drag_coefficient * parachute_area)
+    )  # m/s
+
+    freefall_distance: float = 0.5 * gravity_acceleration * parachute_closed_duration**2  # meters
+
+    parachute_open_duration: float = (
+        drop_altitude - freefall_distance
+    ) / vertical_velocity_parachute_open  # seconds
+    drop_duration: float = parachute_closed_duration + parachute_open_duration  # seconds
+
+    offset: float = -wind_speed * (
+        drop_duration + 0.2 * (math.exp(-5.0 * drop_duration) - 1.0)
+    )  # meters
+
+    offset *= 0.9  # should improve accuracy slightly
+
+    return offset
 
 
 # Setting the run_callable attribute of the Airdrop class to the run function
