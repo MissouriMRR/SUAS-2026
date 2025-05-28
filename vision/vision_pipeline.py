@@ -52,7 +52,7 @@ async def flyover_pipeline(
     await queue.start_queue()
 
     # Wait for and process unfinished images until no more images are being taken
-    while not capture_status.is_set():
+    while not capture_status.is_set() or (set(image_parameters.keys()) - set(completed_images)):
         # Wait to check the file instead of spamming it
         await asyncio.sleep(1)
 

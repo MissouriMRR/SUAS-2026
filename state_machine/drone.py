@@ -5,6 +5,8 @@ import json
 import logging
 
 import dronekit
+from pymavlink import mavutil
+from pymavlink.dialects.v20.all import MAVLink_command_long_message
 
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.flight_settings import SimMode
@@ -39,14 +41,22 @@ class Drone:
     -------
     __init__(connection_string: str) -> None
         Initialize a new Drone object, but do not connect to a drone.
-    arm(self) -> Awaitable[none]
+    arm(self) -> Awaitable[None]
         Arm the drone.
-    close(self) -> Awaitable[none]
+    close(self) -> Awaitable[None]
         Close the owned DroneKit Vehicle object.
+    close_servo(self, servo_num: int) -> Awaitable[None]:
+        Close the servo with the given number.
     connect_drone(self) -> Awaitable[None]
         Connect to a drone.
     is_connected(self) -> bool
         Checks if a drone has been connected to.
+    open_servo(self, servo_num: int) -> Awaitable[None]:
+        Open the servo with the given number.
+    remove_arming_check(self) -> None
+        For use with airsim.
+    return_to_launch(self) -> Awaitable[none]
+        Method to move vehicle above home location, then descend vertically.
     takeoff(self, takeoff_alt: float) -> Awaitable[None]
         Takeoff vertically to the passed altitude.
     use_settings(self, sim_mode: SimMode) -> None
@@ -75,6 +85,33 @@ class Drone:
 
         with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
             json.dump({}, file)
+
+    async def _send_servo_msg(self, servo_num: int, pwm: int) -> None:
+        """Send a DO_SET_SERVO MAVLink message to the drone.
+
+        Parameters
+        ----------
+        servo_num : int
+            The number of the servo to control.
+            This should be the same value that is shown in MissionPlanner
+            and the parameters of the drone.
+        pwm : int
+            The PWM value to send to the servo.
+        """
+        msg: MAVLink_command_long_message = self.vehicle.message_factory.command_long_encode(
+            0,  # target_system, should always be 0
+            0,  # target_component, should always be 0
+            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
+            0,  # confirmation
+            servo_num,  # servo number
+            pwm,  # servo value
+            0,
+            0,
+            0,
+            0,
+            0,  # param3-7 unused
+        )
+        self.vehicle.send_mavlink(msg)
 
     @property
     def is_connected(self) -> bool:
@@ -133,9 +170,9 @@ class Drone:
 
         logging.info("Waiting for drone to connect...")
         self._vehicle = (
-            dronekit.connect(self.address, wait_ready=True)
+            dronekit.connect(self.address, wait_ready=True, timeout=90)
             if self.baud is None
-            else dronekit.connect(self.address, wait_ready=True, baud=self.baud)
+            else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
         )
         logging.info("Drone discovered!")
 
@@ -148,15 +185,13 @@ class Drone:
 
     def remove_arming_check(self) -> None:
         """
-
-        For use with airsim
-
+        For use with airsim.
         """
         self.vehicle.parameters["ARMING_CHECK"] = 0
 
     async def arm(self) -> None:
         """
-        Arm the drone
+        Arm the drone.
         """
 
         logging.info("Waiting for vehicle to intialize...")
@@ -174,7 +209,7 @@ class Drone:
 
     async def takeoff(self, takeoff_alt: float) -> None:
         """
-        Takeoff vertically to the passed altitude
+        Takeoff vertically to the passed altitude.
 
         Parameters
         ----------
@@ -191,7 +226,7 @@ class Drone:
 
     async def return_to_launch(self) -> None:
         """
-        Method to move vehicle above home location, then descend vertically
+        Method to move vehicle above home location, then descend vertically.
         """
         home_loc = dronekit.LocationGlobalRelative(
             self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23
@@ -217,6 +252,38 @@ class Drone:
         ):  # Ensure drone gets within 8in above ground
             await asyncio.sleep(0.5)
         logging.info("Reached ground.")
+
+    async def open_servo(self, servo_num: int) -> None:
+        """
+        Open the servo with the given number.
+
+        Parameters
+        ----------
+        servo_num : int
+            The number of the servo to open. This should
+            be from 1 to 4, and matches with the AUX port on
+            the carrier board that the servo is connected to.
+        """
+        if servo_num < 1 or servo_num > 4:
+            raise ValueError("Servo number must be between 1 and 4")
+        open_values: list[int] = [950, 1600, 1950, 1900]
+        await self._send_servo_msg(servo_num + 8, open_values[servo_num - 1])
+
+    async def close_servo(self, servo_num: int) -> None:
+        """
+        Close the servo with the given number.
+
+        Parameters
+        ----------
+        servo_num : int
+            The number of the servo to close. This should
+            be from 1 to 4, and matches with the AUX port on
+            the carrier board that the servo is connected to.
+        """
+        if servo_num < 1 or servo_num > 4:
+            raise ValueError("Servo number must be between 1 and 4")
+        closed_values: list[int] = [2000, 1100, 1100, 1100]
+        await self._send_servo_msg(servo_num + 8, closed_values[servo_num - 1])
 
     async def close(self) -> None:
         """Close the owned DroneKit Vehicle object."""
