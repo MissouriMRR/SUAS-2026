@@ -3,6 +3,9 @@
 import asyncio
 import logging
 import json
+import math
+
+import utm
 
 from flight.extract_gps import extract_gps
 from flight.waypoint.goto import move_to
@@ -85,6 +88,8 @@ async def run(self: Airdrop) -> State:
             attempted_locations,
             cylinder_num,
             self.flight_settings.mission_data_path,
+            self.flight_settings.mean_wind_speed,
+            self.flight_settings.mean_wind_direction,
         )
 
         with open("flight/data/bottles.json", "w", encoding="utf8") as output:
@@ -109,6 +114,7 @@ async def run(self: Airdrop) -> State:
         pass
 
 
+# pylint: disable=too-many-arguments,too-many-locals
 async def attempt_drop(
     drone: Drone,
     flight_settings: FlightSettings,
@@ -117,6 +123,8 @@ async def attempt_drop(
     attempted_locations: set[str],
     cylinder_num: str,
     path: str,
+    mean_wind_speed: float,
+    mean_wind_direction: float,
     retry_mode: bool = False,
 ) -> bool:
     """
@@ -138,7 +146,12 @@ async def attempt_drop(
         The cylinder number to use for the drop
     path : str
         the path to where our waypoint/flight locations are stored
-    retry_mode : bool
+    mean_wind_speed : float, default 0.0
+        The mean wind speed, in meters per second.
+    mean_wind_direction : float, default 0.0
+        The mean wind direction, in degrees.
+        A value of 0 represents north, and 90 represents west.
+    retry_mode : bool, default False
         Whether we're in retry mode (attempting previously visited locations)
 
     Returns
@@ -165,7 +178,24 @@ async def attempt_drop(
 
         airdrop_altitude: float = extract_gps(path)["airdrop_altitude"]
 
-        await move_to(drone.vehicle, drop_loc["latitude"], drop_loc["longitude"], airdrop_altitude)
+        wind_offset: float = calculate_airdrop_wind_offset(mean_wind_speed, airdrop_altitude)
+
+        easting: float
+        northing: float
+        zone_number: int
+        zone_letter: str
+        easting, northing, zone_number, zone_letter = utm.from_latlon(
+            drop_loc["latitude"], drop_loc["longitude"]
+        )
+
+        easting += wind_offset * -math.sin(math.radians(mean_wind_direction))
+        northing += wind_offset * math.cos(math.radians(mean_wind_direction))
+
+        drop_lat: float
+        drop_lon: float
+        drop_lat, drop_lon = utm.to_latlon(easting, northing, zone_number, zone_letter)
+
+        await move_to(drone.vehicle, drop_lat, drop_lon, airdrop_altitude)
 
         if retry_mode:
             logging.info(
@@ -195,6 +225,55 @@ async def attempt_drop(
     except KeyError:
         logging.warning("Drop location %s was not found. Skipping.", location_id)
         return False
+
+
+def calculate_airdrop_wind_offset(wind_speed: float, drop_altitude: float) -> float:
+    """
+    Calculates the wind offset for dropping the payload.
+
+    Parameters
+    ----------
+    wind_speed : float
+        The wind speed, in meters per second.
+    drop_altitude : float
+        The altitude of the drop, in meters.
+
+    Returns
+    -------
+    float
+        The offset in the direction of the wind to add to the drop location.
+    """
+    if wind_speed <= 0.0:
+        return 0.0
+
+    payload_mass: float = 0.155  # kg
+    gravity_acceleration: float = 9.81  # m/s^2
+    parachute_area: float = 0.25  # cross-sectional area in m^2
+    parachute_drag_coefficient: float = 1.4  # coefficient of drag
+    air_density: float = 1.225  # kg/m^3
+    parachute_closed_duration: float = 1.0  # seconds
+
+    vertical_velocity_parachute_open: float = math.sqrt(
+        2.0
+        * payload_mass
+        * gravity_acceleration
+        / (air_density * parachute_drag_coefficient * parachute_area)
+    )  # m/s
+
+    freefall_distance: float = 0.5 * gravity_acceleration * parachute_closed_duration**2  # meters
+
+    parachute_open_duration: float = (
+        drop_altitude - freefall_distance
+    ) / vertical_velocity_parachute_open  # seconds
+    drop_duration: float = parachute_closed_duration + parachute_open_duration  # seconds
+
+    offset: float = -wind_speed * (
+        drop_duration + 0.2 * (math.exp(-5.0 * drop_duration) - 1.0)
+    )  # meters
+
+    offset *= 0.9  # should improve accuracy slightly
+
+    return offset
 
 
 # Setting the run_callable attribute of the Airdrop class to the run function
