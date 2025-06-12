@@ -1,11 +1,11 @@
 """Functions that perform standard object detection, localization, and classification"""
 
-import heapq
 from typing import Iterable, TypeAlias
 
 import utm
 
 from flight.extract_gps import extract_gps, GPSData
+from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.geometry import Point
 
 from state_machine.flight_settings import FlightSettings
@@ -25,26 +25,6 @@ import vision.pipeline.pipeline_utils as pipe_utils
 from vision.yolo.model import ObjectDetection
 
 ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
-
-# We only care about the object classes that will actually appear in the competition
-# You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
-CLASS_PRIORITIES: dict[str, float] = {
-    "person": 0.5,
-    "car": 1.0,
-    "motorcycle": 1.0,
-    "airplane": 1.0,
-    "bus": 1.0,
-    "boat": 1.0,
-    "stop sign": 1.0,
-    "umbrella": 1.0,
-    "suitcase": 1.0,
-    "skis": 1.0,
-    "snowboard": 1.0,
-    "sports ball": 1.0,
-    "baseball bat": 1.0,
-    "tennis racket": 1.0,
-    "bed": 1.0,
-}
 
 
 def find_standard_objects(
@@ -185,53 +165,58 @@ def create_odlc_dict(
     return odlc_dict
 
 
-def filter_objects(
-    detections: dict[str, ObjectDetection],
-    expand_categories: bool = False,
-    buffer: float = 0.0,
-    output_count: int = 4,
-) -> dict[str, ObjectDetection]:
+def proximity_check(
+    detections: list[ObjectDetection],
+    parameters: dict[str, consts.CameraParameters],
+    min_distance: float = 15.0,
+) -> list[tuple[ObjectDetection, BoundingBox]]:
     """
-    Filters out objects to the best 4 detections.
-    Only needs to be called if there are more than 4 detections.
-    You can enable expand_categories to allow categories that are not in the competition
-    set, and use buffer to set a higher priority for categories that are.
-    The buffer will be added to the confidence value of the categories in the set.
+    Checks for detections that are too close to each other, and
+    removes the one with lower confidence.
+    The ruleset states that objects must be at least 50 feet apart.
 
     Parameters
     ----------
-    detections : dict[str, ObjectDetection]
-        The dictionary of detections to filter
-    expand_categories : bool, default False
-        Whether to include categories not in the competition set
-    buffer : float, default 0.0
-        The value to add to confidence values of categories in the competition set
-    output_count : int, default 4
-        The maximum number of detections to output
+    detections : list[ObjectDetection]
+        A list with all object detections.
+    parameters : dict[str, consts.CameraParameters]
+        A dictionary with the image parameters for every
+        captured image.
+    min_distance : float, optional
+        The minimum distance between objects in METERS, by default 15.0
 
     Returns
     -------
-    filtered_detections: dict[str, ObjectDetection]
-        The dictionary of filtered detections
+    filtered_detections : list[tuple[ObjectDetection, BoundingBox]]
+        All detections that are at least `min_distance` apart, along with
+        their bounding boxes.
     """
-    best_detections: list[tuple[float, str, ObjectDetection]] = []  # min heap
+    filtered_detections: list[tuple[ObjectDetection, BoundingBox]] = []
+    # If we sort the detections by confidence, we can stop as soon as we find a collision
+    detections.sort(key=lambda entry: -entry.confidence)
 
-    # Get the entries with the highest confidence
-    category: str
-    detection: ObjectDetection
-    for category, detection in detections.items():
-        confidence: float = detection.confidence
-        if category in CLASS_PRIORITIES:
-            confidence += buffer * CLASS_PRIORITIES[category]
-        elif not expand_categories:
-            continue
+    for detection in detections:
+        image_name: str = detection.image.split("/")[-1]
+        image_parameters: consts.CameraParameters = parameters[image_name]
+        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(detection, image_parameters)
+        latitude: float = bounding_box.get_attribute("latitude")
+        longitude: float = bounding_box.get_attribute("longitude")
 
-        heap_entry: tuple[float, str, ObjectDetection] = confidence, category, detection
-        if len(best_detections) == output_count:
-            heapq.heappushpop(best_detections, heap_entry)
-        else:
-            heapq.heappush(best_detections, heap_entry)
+        collided: bool = False
+        existing_bbox: BoundingBox
+        for _, existing_bbox in filtered_detections:
+            existing_latitude: float = existing_bbox.get_attribute("latitude")
+            existing_longitude: float = existing_bbox.get_attribute("longitude")
 
-    # Sort by confidence from highest to lowest (dicts maintain insertion order)
-    best_detections.sort(key=lambda entry: -entry[0])
-    return {entry[1]: entry[2] for entry in best_detections}
+            # We can use 0 altitude for calculation as the search area is pretty flat
+            distance: float = calculate_distance(
+                latitude, longitude, 0, existing_latitude, existing_longitude, 0
+            )
+            if distance < min_distance:
+                collided = True
+                break
+
+        if not collided:
+            filtered_detections.append((detection, bounding_box))
+
+    return filtered_detections

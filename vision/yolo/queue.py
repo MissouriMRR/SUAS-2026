@@ -189,7 +189,6 @@ class PhotoQueue:
                 else:
                     self.results[result.category] = result
             if self.show_results:
-                cv2.imshow(f"Runner {num} Results", await self._draw_results(image, results))
                 cv2.waitKey(1)
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
@@ -210,13 +209,13 @@ class PhotoQueue:
             runner = asyncio.create_task(self.photo_runner(i + 1))
             self.runners.append(runner)
 
-    async def end_queue(self) -> dict[str, ObjectDetection]:
+    async def end_queue(self) -> list[ObjectDetection]:
         """
         Ends the tasks of runners and returns the results.
 
         Returns
         -------
-        dict[str, ObjectDetection]
+        list[ObjectDetection]
             The results of the object detection
         """
         # Cancel the queue to stop runners once the queue is empty
@@ -226,4 +225,4 @@ class PhotoQueue:
 
         cv2.destroyAllWindows()
 
-        return self.results
+        return list(self.results.values())

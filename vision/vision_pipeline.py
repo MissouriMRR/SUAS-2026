@@ -71,22 +71,25 @@ async def flyover_pipeline(
                 await queue.add_photo(full_image_path)
 
     # End the queue, get results
-    detected_objects: dict[str, ObjectDetection] = await queue.end_queue()
+    detected_objects: list[ObjectDetection] = await queue.end_queue()
 
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)
 
-    detected_objects = std_obj.filter_objects(
-        detected_objects, True, 0.5, flight_settings.standard_object_count
-    )
+    # Adjust confidences based on class
+    pipe_utils.adjust_confidences(detected_objects, True, 0.5)
 
-    # Convert the final detections to BoundingBoxes
-    bounding_boxes: list[BoundingBox] = []
-    detection: ObjectDetection
-    for detection in detected_objects.values():
-        image_name: str = detection.image.split("/")[-1]
-        parameters: consts.CameraParameters = image_parameters[image_name]
-        bounding_boxes.append(pipe_utils.detection_to_bbox(detection, parameters))
+    # Check for boundary collisions between predictions
+    filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = std_obj.proximity_check(
+        detected_objects, image_parameters, 7
+    )
+    # From this point on we can assume that the predictions are sorted by confidence
+
+    bounding_boxes: list[BoundingBox] = [box for _, box in filtered_objects]
+
+    # Take the highest confidence predictions
+    if len(bounding_boxes) > flight_settings.standard_object_count:
+        bounding_boxes = bounding_boxes[: flight_settings.standard_object_count]
 
     odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(bounding_boxes, flight_settings)
     logging.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)
