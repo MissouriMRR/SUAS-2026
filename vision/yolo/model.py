@@ -554,7 +554,11 @@ class YOLO:
             trigger.results = results
             trigger.completed()
 
-        image: Image = cv2.imread(image_path).astype(np.uint8)
+        raw_image: cv2.typing.MatLike = cv2.imread(image_path)
+        if raw_image is None:
+            logging.error("%s is not an image, skipping", image_path)
+            return []
+        image: Image = raw_image.astype(np.uint8)
         logging.info("Processing image: %s", image_path)
         height: int
         width: int
