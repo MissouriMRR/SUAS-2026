@@ -10,6 +10,8 @@ from typing_extensions import TypedDict
 
 import utm
 
+from vision.common.constants import Location
+
 
 # Initialize namedtuples to store latitude/longitude/altitude data for provided points
 class Waypoint(NamedTuple):
@@ -126,6 +128,7 @@ GPSData = TypedDict(
         "altitude_limits": list[float],
         "odlc_altitude": float,
         "odlc_heading": float,
+        "default_airdrop_points": list[Location],
         "airdrop_altitude": float,
     },
 )
@@ -277,6 +280,13 @@ def extract_gps(path: str) -> GPSData:
             The altitude to fly at during the ODLC state, in meters.
         odlc_heading : float
             Currently unused.
+        default_airdrop_points : list[Location]
+            The coordinates to perform airdrops at if no objects are detected.
+            Location : Location[float, float]
+                latitude : float
+                    The latitude of the waypoint, in degrees.
+                longitude : float
+                    The longitude of the waypoint, in degrees.
         airdrop_altitude : float
             The altitude to fly at during the Airdrop state, in meters
 
@@ -371,6 +381,7 @@ def extract_gps(path: str) -> GPSData:
         ],
         "odlc_altitude": json_data["odlcAltitude"],
         "odlc_heading": json_data["odlcHeading"],
+        "default_airdrop_points": json_data["defaultAirdropPoints"],
         "airdrop_altitude": json_data["airdropAltitude"],
     }
     return waypoint_data
