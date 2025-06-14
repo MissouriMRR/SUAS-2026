@@ -1,7 +1,8 @@
 import unittest
 from vision.common.constants import CameraParameters
 from vision.common.bounding_box import BoundingBox, ObjectType
-from vision.deskew.camera_distances import get_coordinates, bounding_area, calculate_distance
+from vision.deskew.camera_distances import bounding_area, calculate_distance
+from vision.deskew.coordinate_lengths import get_coordinates
 
 
 class TestVisionFunctions(unittest.TestCase):

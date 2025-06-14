@@ -6,7 +6,7 @@ import vision.common.constants as consts
 
 from vision.common.bounding_box import BoundingBox
 
-from vision.deskew.camera_distances import get_coordinates
+from vision.deskew.coordinate_lengths import get_coordinates
 
 
 def read_parameter_json(json_path: str) -> dict[str, consts.CameraParameters]:

@@ -42,30 +42,32 @@ class Map:
         self.coord_max = None
     
     
-    def prepare_image(self, img, camera_parameters):
+    def prepare_image(self, img):
 
-        blank_channel = np.zeros((img.shape[0], img.shape[1]))
+        blank_channel = np.zeros((img["image_shape"]["height"], img["image_shape"]["width"]))
         blank_channel=blank_channel+1
+        img["distance"] = blank_channel
 
-        image_wdepth: consts.MapImage = np.dstack((img, blank_channel))
-
-        projected_image_wdepth, _ = deskew.deskew(
-            image_wdepth,
-            camera_parameters["rotation_deg"],
-            scale=self.pixels_per_foot * camera_parameters["altitude_f"] * consts.FEET_PER_METER
+        img["image"], img_corner_pixels = deskew.deskew(
+            img,
+            scale=self.pixels_per_foot * consts.FEET_PER_METER
         )
         
-        projected_image_wdepth = self.fill_distances(projected_image_wdepth, camera_parameters)
+        #projected_image_wdepth = self.fill_distances(projected_image_wdepth, img["camera_parameters"])
 
-        return projected_image_wdepth
+        return img["image"]
     
 
     def fill_distances(self, img: consts.Image , camera_parameters: consts.CameraParameters) -> consts.Image:
+
+        ##### won't work due to hte corners having the chance of it
+
+
         distance = lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
                 (x, y),
                 img.shape,
                 camera_parameters["rotation_deg"],
-                height=self.pixels_per_foot * camera_parameters["altitude_f"]
+                height=camera_parameters["altitude_f"]
             ))
         height: int = img.shape[0] -1
         width: int = img.shape[1] -1
@@ -105,17 +107,17 @@ class Map:
                 if pixel > center_height:
                     #percentages are close enough not perfect
                     img[pixel,column,3] = int(img[center_height,column,3]* (pixel-center_height)/(center_height) + img[height,column,3] * (1-(pixel-center_height)/(center_height)))
-        
         return img
         
 
     
-    def add_img(self, img, camera_parameters):
+    def add_img(self, img):
         
-        img_corner_coords = camera_distances.corner_coords(img.shape, camera_parameters)
+        img_corner_coords = camera_distances.corner_coords(img["image"].shape, img["camera_parameters"])
         
+        projected_image_wdepth = self.prepare_image(img)
+
         
-        projected_image_wdepth = self.prepare_image(img, camera_parameters)
 
 
         #projected_image_wdepth = np.delete(projected_image_wdepth, 3, 2)

@@ -1,7 +1,7 @@
 """Constant variables and common type aliases for Vision"""
 
-from typing import TypeAlias, TypedDict
-from nptyping import NDArray, Shape, UInt8, Float64, IntC, Bool8
+from typing import TypeAlias, TypedDict, Optional
+from nptyping import NDArray, Shape, UInt8, Float64, IntC, Bool8, UInt16
 
 # ordinary three channel image
 Image: TypeAlias = NDArray[Shape["*, *, 3"], UInt8]
@@ -81,3 +81,54 @@ class CameraParameters(TypedDict):
     altitude: float
 
 FEET_PER_METER: float = 3.28084
+
+class ImageShape(TypedDict):
+    """
+    Image shape details since image.shape gives it in hard to understand details this can make it easier to understand and use
+
+    Attributes
+    ----------
+    width: int
+        the width of the image in pixels
+    height: int
+        the height of the image in pixels
+    channels: Optional[int]
+        channels of color there are
+    color_channels: Optional[str]
+        what colors the channels are for example rgb or whatever
+    """
+    
+    width: int
+    height: int
+    channels: Optional[int]
+    color_channels: Optional[str]
+
+class ImageInfo(TypedDict):
+    """
+    Image details about a photo taken from the camera
+
+    Attributes
+    ----------
+    image_path: str
+        The path of the file where the image is stored
+    image: Image
+        The image that the image is in accordance to
+    camera_parameters: CameraParameters
+        The details on how and where a photo was taken from in accordance to the plane of reference
+    center_coords: Optional[tuple[float, float]]
+        the center coordinates in latitude and longitude where the center of the image is
+    corner_coords: Optional[Corners]
+        The corner of each part of the image
+    distance: Optional[NDArray[Shape["*, *"], UInt16]]
+        2d array of image shape size with the depths of each pixel. This is not kept in the 4th channel since warping the matrix messes with the corners of this
+    """
+
+    image_path: str
+    image: Image
+    image_shape: ImageShape
+    camera_parameters: CameraParameters
+    center_coords: Optional[tuple[float, float]]
+    corner_coords: Optional[Corners]
+    distance: Optional[NDArray[Shape["*, *"], UInt16]]
+
+

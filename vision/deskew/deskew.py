@@ -5,7 +5,8 @@ import PIL
 import cv2
 import numpy as np
 from vision.deskew.vector_utils import pixel_intersect
-from vision.common.constants import Image, Corners
+from vision.common.constants import Image, Corners, ImageInfo, Point
+from vision.deskew.coordinate_lengths import get_coordinates
 
 
 def get_corner_points(image_shape: tuple[int, int, int] | tuple[int, int]) -> Corners:
@@ -78,8 +79,7 @@ def get_relative_intersects(
 
 
 def perspective_matrix(
-    image_shape: tuple[int, int, int] | tuple[int, int],
-    rotation_deg: list[float],
+    image: ImageInfo,
     *,  # The following are keyword-only
     scale: float = 1,
 ) -> tuple[NDArray[Shape["3, 3"], Float64], Corners] | tuple[None, None]:
@@ -93,13 +93,10 @@ def perspective_matrix(
 
     Parameters
     ----------
-    image_shape: tuple[int, int, int] | tuple[int, int],
-        The shape of the image to deskew. Aspect ratio should match the camera sensor
-    rotation_deg: list[float]
-        The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
-        camera, stored in constants.py, will be applied first
+    image: ImageInfo
+        The image with all of its information attached
     scale: float | None
-        The scale of the projected image in pixels per foot
+        The scale of the projected image in unit of height
     interpolation: int | None
         The cv2 interpolation type to be used when deskewing.
 
@@ -122,8 +119,8 @@ def perspective_matrix(
             Returns None if no valid matrix could be generated.
     """
 
-    orig_height: int = image_shape[0]
-    orig_width: int = image_shape[1]
+    orig_height: int = image["image_shape"]["height"]
+    orig_width: int = image["image_shape"]["width"]
 
     # Generate points in the format
     # 1--2
@@ -135,7 +132,7 @@ def perspective_matrix(
 
     # Numpy converts `None` to NaN
     intersects: Corners = np.array(
-        [pixel_intersect(point, image_shape, rotation_deg, 1) for point in source_pts],
+        [pixel_intersect(point, [orig_height, orig_width], image["camera_parameters"]["rotation_deg"], image["camera_parameters"]["altitude"]) for point in source_pts],
         dtype=np.float32,
     )
 
@@ -143,25 +140,25 @@ def perspective_matrix(
     if np.any(np.isnan(intersects)):
         return None, None
 
-    # Flip the endpoints over the X axis (top left is 0,0 for images)
-    # intersects[:, 0] *= -1
-
     # Subtract the minimum on both axes so the minimum values on each axis are 0
     intersects -= np.min(intersects, axis=0)
+    new_intersects = np.zeros(shape=(4,2), dtype=np.float32)
+    for i in range(4):
+        for j in range(2):
+            new_intersects[i][j] = intersects[i][j]
 
-    # Scale the
-    dst_pts: Corners = intersects * scale
+    # Scale the corner points to pixels per unit of height
+    dst_pts: Corners = new_intersects * scale
 
     matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(
-        get_corner_points(image_shape), dst_pts
+        get_corner_points([orig_height, orig_width]), dst_pts
     )
 
     return matrix, dst_pts
 
 
 def deskew(
-    image: Image,
-    rotation_deg: list[float],
+    image: ImageInfo,
     *,  # The following are keyword-only
     scale: float = 1,
     interpolation: int = cv2.INTER_LINEAR,
@@ -178,10 +175,7 @@ def deskew(
     Parameters
     ----------
     image : Image
-        The input image to deskew. Aspect ratio should match the camera sensor
-    rotation_deg: list[float]
-        The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
-        camera, stored in constants.py, will be applied first
+        The input image to deskew along with all of its information. Aspect ratio should match the camera sensor
     scale: float | None
         Scales the resolution of the output. A value of 1 makes the area inside the camera view
         equal to the original image. Defaults to 1.
@@ -207,9 +201,11 @@ def deskew(
             Returns None if no valid image could be generated.
     """
 
+    image["center_coords"] = get_coordinates((image["image_shape"]["height"]//2,image["image_shape"]["height"]//2),(image["image_shape"]["height"],image["image_shape"]["height"]), image["camera_parameters"])
+
     matrix: NDArray[Shape["3, 3"], Float64]
     dst_pts: Corners
-    matrix, dst_pts = perspective_matrix(image.shape, rotation_deg, scale=scale)
+    matrix, dst_pts = perspective_matrix(image, scale=scale)
 
     if matrix is None or dst_pts is None:
         return None, None
@@ -218,7 +214,7 @@ def deskew(
     result_width: int = int(np.max(dst_pts[:, 0])) + 1
 
     deskewed_image: Image = cv2.warpPerspective(
-        image,
+        image["image"],
         matrix,
         (result_width, result_height),
         flags=interpolation,

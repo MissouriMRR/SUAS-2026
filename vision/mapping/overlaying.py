@@ -58,6 +58,33 @@ def distance_alpha(distance1, distance2, feather_width):
     # Sigmoid function
     return (np.tanh(4 * (distance1 - distance2) / feather_width) + 1) / 2
 
+def layering(new_img, padded_section):
+    """
+    print("images", new_img.shape, padded_section.shape)
+    
+    for x in range(new_img.shape[1]):
+        for y in range(new_img.shape[0]):
+            if new_img[y,x,3] is None or new_img[y,x,3] is 0:
+                new_img[y,x,:] = padded_section[y,x,:]
+            elif padded_section[y,x,3] is None or padded_section[y,x,3] is 0:
+                #have new_img[x,y,3] = new_img[x,y,3]
+                continue
+            else:
+                if padded_section[y,x,3] < new_img[y,x,3]:
+                    new_img[y,x,:] = padded_section[y,x,:]
+    """
+    for x in range(new_img.shape[1]):
+        for y in range(new_img.shape[0]):
+            if new_img[y,x,2] is None or new_img[y,x,2] is 0:
+                new_img[y,x,:] = padded_section[y,x,:]
+            elif padded_section[y,x,2] is None or padded_section[y,x,2] is 0:
+                #have new_img[x,y,3] = new_img[x,y,3]
+                continue
+            else:
+                new_img[y,x,:] = padded_section[y,x,:] * .5 + new_img[y,x,:] * .5
+    return new_img
+
+
 
 def offset_overlay(new_img, base_img, new_location, feather_width):
     padding = calculate_padding(new_img, base_img, new_location)
@@ -73,9 +100,12 @@ def offset_overlay(new_img, base_img, new_location, feather_width):
     # Get the section of the padded image where img1 will be overlayed
     padded_section = padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :]
     
-    alpha_channel = distance_alpha(new_img[:, :, 3], padded_section[:, :, 3], feather_width)
+    #alpha_channel = distance_alpha(new_img[:, :, 3], padded_section[:, :, 3], feather_width)
     
-    overlayed_section = alpha_over(new_img, padded_section, alpha_channel)
+    #overlayed_section = alpha_over(new_img, padded_section, alpha_channel)
+    cv2.imwrite("paddedtest.png", padded_section)
+    cv2.imwrite("new_imgtest.png", new_img)
+    overlayed_section = layering(new_img, padded_section)
     
     # Write the overlayed section back to the image
     padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :] = overlayed_section
