@@ -33,6 +33,7 @@ from state_machine.state_tracker import (
 )
 
 BOUNDARY_SHRINKAGE: Final[float] = 5.0  # in meters
+WAYPOINT_AIR_SPEED: Final[float] = 25.0  # in meters/second
 
 
 async def run(self: Waypoint) -> State:
@@ -163,9 +164,13 @@ async def waypoint_logic(self: Waypoint) -> None:
                 (waypoint.altitude - curr_altitude) / path_length
             ) * line_segment.length()
 
-            await move_to(self.drone.vehicle, lat_deg, lon_deg, curr_altitude)
+            await move_to(
+                self.drone.vehicle, lat_deg, lon_deg, curr_altitude, airspeed=WAYPOINT_AIR_SPEED
+            )
 
-        await move_to(self.drone.vehicle, lat_deg, lon_deg, waypoint.altitude)
+        await move_to(
+            self.drone.vehicle, lat_deg, lon_deg, waypoint.altitude, airspeed=WAYPOINT_AIR_SPEED
+        )
 
         logging.info("Reached waypoint %d", waypoint_num)
 
