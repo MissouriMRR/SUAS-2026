@@ -98,7 +98,6 @@ def plane_collision(ray_direction: Vector, height: float, cutoff_ratio: float = 
     # sets the z of the vector equal to height and scales the rest of the vector with it
     intersect: Point = height/intersect[2] * intersect
     intersect = np.round(intersect , decimals = 3)
-    print("intersect", intersect)
 
     return intersect
 

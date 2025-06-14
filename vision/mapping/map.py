@@ -89,20 +89,6 @@ class Map:
         img[center_height, 0] = distance(0, center_height)
         img[height, center_width,3] = distance(center_width, height)
         img[center_height, width,3] = distance(width, center_height)
-        print(vector_utils.pixel_intersect(
-                (center_width, center_height),
-                img.shape,
-                camera_parameters["rotation_deg"],
-                height= camera_parameters["altitude_f"]
-            ))
-        print("height", camera_parameters["altitude_f"])
-        print(center_height, center_width)
-        print(camera_parameters["rotation_deg"])
-        print("center", distance(center_width, center_height))
-        print("left edge",distance(0,center_height))
-        print("right edge",distance(width, center_height))
-        print("corner top left", distance(0,0))
-        print(img[center_height, center_width,3],img[0, center_width,3],img[center_height, 0,3],img[height, center_width,3],img[center_height, width,3])
 
         # start by filling top, bottom, and center
         for i in [0,center_height,height]:

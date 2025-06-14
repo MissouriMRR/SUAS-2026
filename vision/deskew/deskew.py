@@ -5,7 +5,8 @@ import PIL
 import cv2
 import numpy as np
 from vision.deskew.vector_utils import pixel_intersect
-from vision.common.constants import Image, Corners, ImageInfo
+from vision.common.constants import Image, Corners, ImageInfo, Point
+from vision.deskew.coordinate_lengths import get_coordinates
 
 
 def get_corner_points(image_shape: tuple[int, int, int] | tuple[int, int]) -> Corners:
@@ -141,12 +142,13 @@ def perspective_matrix(
 
     # Subtract the minimum on both axes so the minimum values on each axis are 0
     intersects -= np.min(intersects, axis=0)
-    intersects.resize(4,2)
-
-    print("intersects", intersects, "scale", scale)
+    new_intersects = np.zeros(shape=(4,2), dtype=np.float32)
+    for i in range(4):
+        for j in range(2):
+            new_intersects[i][j] = intersects[i][j]
 
     # Scale the corner points to pixels per unit of height
-    dst_pts: Corners = intersects * scale
+    dst_pts: Corners = new_intersects * scale
 
     matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(
         get_corner_points([orig_height, orig_width]), dst_pts
@@ -199,6 +201,8 @@ def deskew(
             Returns None if no valid image could be generated.
     """
 
+    image["center_coords"] = get_coordinates((image["image_shape"]["height"]//2,image["image_shape"]["height"]//2),(image["image_shape"]["height"],image["image_shape"]["height"]), image["camera_parameters"])
+
     matrix: NDArray[Shape["3, 3"], Float64]
     dst_pts: Corners
     matrix, dst_pts = perspective_matrix(image, scale=scale)
@@ -209,12 +213,6 @@ def deskew(
     result_height: int = int(np.max(dst_pts[:, 1])) + 1
     result_width: int = int(np.max(dst_pts[:, 0])) + 1
 
-    print(dst_pts, dst_pts.dtype, dst_pts.size)
-    print("dimensions", result_height, result_width)
-    print("matrix", matrix)
-    
-    cv2.imwrite("predeskewtest.png", image["image"])
-
     deskewed_image: Image = cv2.warpPerspective(
         image["image"],
         matrix,
@@ -223,7 +221,5 @@ def deskew(
         borderMode=cv2.BORDER_CONSTANT,
         borderValue=(0, 0, 0, 0),
     )
-
-    cv2.imwrite("postdeskewtest.png", deskewed_image)
 
     return deskewed_image, dst_pts.astype(np.int32)

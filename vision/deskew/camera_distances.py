@@ -14,10 +14,9 @@ from flight.waypoint.calculate_distance import calculate_distance as coordinate_
 def corner_coords(image_shape, camera_parameters) -> Corners:
 
     coordinate_list = [
-        get_coordinates(point, image_shape, camera_parameters)
+        coordinate_lengths.get_coordinates(point, image_shape, camera_parameters)
         for point in get_corner_points(image_shape)
     ]
-    print(coordinate_list)
     for coordinate in coordinate_list:
         if coordinate == None:
             raise ValueError(
@@ -29,73 +28,6 @@ def corner_coords(image_shape, camera_parameters) -> Corners:
     )
 
     return coords
-
-
-def get_coordinates(
-    pixel: tuple[int, int],
-    image_shape: tuple[int, int, int] | tuple[int, int],
-    camera_parameters: CameraParameters,
-) -> tuple[float, float] | None:
-    """
-    Calculates the coordinates of the given pixel.
-    Returns None if there is no valid intersect.
-
-    Parameters
-    ----------
-    pixel: tuple[int, int]
-        The coordinates of the pixel in [X, Y] form
-    image_shape : tuple[int, int, int] | tuple[int, int]
-        The shape of the image (returned by `image.shape` when image is a numpy image array)
-    camera_parameters: CameraParameters
-        The details on how and where the photo was taken
-        rotation_deg: list[float]
-            The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
-            camera, stored in constants.py, will be applied first
-        drone_coordinates: list[float]
-            The coordinates of the drone in degrees of (latitude, longitude)
-        altitude: float
-            The altitude of the drone in meters
-
-    Returns
-    -------
-    pixel_coordinates : tuple[float, float] | None
-        The (latitude, longitude) coordinates of the pixel in degrees.
-        Equal to None if there is no valid intersect.
-    """
-
-    # Calculate the latitude and longitude lengths (in feet)
-    latitude_length: float = coordinate_lengths.latitude_length(
-        camera_parameters["drone_coordinates"][0]
-    )
-    longitude_length: float = coordinate_lengths.longitude_length(
-        camera_parameters["drone_coordinates"][1]
-    )
-
-    altitude_m: float = camera_parameters["altitude"]
-
-    # Find the pixel's intersect with the ground to get the location relative to the drone
-    intersect: Point | None = vector_utils.pixel_intersect(
-        pixel,
-        image_shape,
-        camera_parameters["rotation_deg"],
-        altitude_m,
-    )
-
-    if intersect is None:
-        print(f"pixel {pixel}")
-        print(f"image_shape {image_shape}")
-        print(f"camera_parameters" + str(camera_parameters["rotation_deg"]))
-        print(f"altitude_m {altitude_m}")
-        return
-
-    # Invert the X axis so that the longitude is correct
-    intersect[1] *= -1
-
-    # Convert the location to latitude and longitude and add it to the drone's coordinates
-    pixel_lat: float = camera_parameters["drone_coordinates"][0] + intersect[0] / latitude_length
-    pixel_lon: float = camera_parameters["drone_coordinates"][1] + intersect[1] / longitude_length
-
-    return pixel_lat, pixel_lon
 
 
 def bounding_area(
