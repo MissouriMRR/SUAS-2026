@@ -10,14 +10,14 @@ import numpy as np
 
 from vision.yolo.model import YOLO, ObjectDetection
 
-T = TypeVar("T")
+QueueItem = TypeVar("QueueItem")
 
 
 class QueueCancelled(Exception):
     """Exception raised when the queue is cancelled."""
 
 
-class CancellableQueue(asyncio.Queue[T]):
+class CancellableQueue(asyncio.Queue[QueueItem]):
     """
     A subclass of the asyncio Queue that adds an event to cancel the queue.
 
@@ -37,17 +37,17 @@ class CancellableQueue(asyncio.Queue[T]):
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
         self._cancelled: bool = False
-        self._queue: collections.deque[T]
+        self._queue: collections.deque[QueueItem]
         self._getters: collections.deque[asyncio.Future[None]]
 
-    def _get(self) -> T:
+    def _get(self) -> QueueItem:
         """
         Get an item from the queue.
         Overrides the _get method of the asyncio.Queue class.
 
         Returns
         -------
-        T
+        QueueItem
             The next item from the queue
 
         Raises
@@ -144,6 +144,22 @@ class PhotoQueue:
             )
         return image
 
+    def _print_results(self) -> None:
+        """
+        Prints out all of the stored results, including bbox, confidence, and image path.
+        """
+        for result in self.results.values():
+            logging.info(
+                "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
+                result.category,
+                result.bbox[0],
+                result.bbox[1],
+                result.bbox[2],
+                result.bbox[3],
+                result.confidence,
+                result.image,
+            )
+
     async def add_photo(self, photo_path: str) -> None:
         """
         Add a photo to the queue for processing.
@@ -190,6 +206,7 @@ class PhotoQueue:
                     self.results[result.category] = result
             if self.show_results:
                 cv2.waitKey(1)
+            self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
 
