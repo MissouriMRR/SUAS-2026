@@ -17,6 +17,7 @@ def corner_coords(image_shape, camera_parameters) -> Corners:
         get_coordinates(point, image_shape, camera_parameters)
         for point in get_corner_points(image_shape)
     ]
+    print(coordinate_list)
     for coordinate in coordinate_list:
         if coordinate == None:
             raise ValueError(

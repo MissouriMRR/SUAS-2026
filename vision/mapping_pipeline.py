@@ -90,11 +90,13 @@ async def mapping_pipeline(
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
                 camera_parameters["altitude_f"] = camera_parameters["altitude"]
                 camera_parameters["focal_length"] = 4
+
+                new_image: consts.ImageInfo = {"image_path":image_path,"image": image,"image_shape":{"width": image.shape[1], "height": image.shape[0], "channels": image.shape[2]},"camera_parameters": camera_parameters}
                 
-                map.add_img(image, camera_parameters)
+                map.add_img(new_image)
 
     #map.img = np.delete(map.img, 3, 2)
    
-
+    map.img = map.img[:,:,:3]
     # Output final map
-    cv2.imwrite("map.png", map.img)
+    cv2.imwrite("map.png", map.img[:,:,:3])

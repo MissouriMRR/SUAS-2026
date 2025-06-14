@@ -3,16 +3,12 @@
 import json
 
 import numpy as np
+from nptyping import NDArray, Shape, Float64, UInt8
 from scipy.spatial.transform import Rotation
+import math
 
 from utils import type_utils
 from vision.common.constants import Point, Vector, CameraConfig
-
-
-# Vector pointing toward the +X axis, represents the camera's forward direction when the
-#   rotation on all axes is 0
-IHAT: Vector = np.array([1, 0, 0], dtype=np.float64)
-
 
 def pixel_intersect(
     pixel: tuple[int, int],
@@ -39,12 +35,12 @@ def pixel_intersect(
     Returns
     -------
     intersect : Point | None
-        The coordinates/distance [X,Y] where the pixel's vector intersects with the ground. Units
+        The coordinates/distance [X,Y,Z] where the pixel's vector intersects with the ground. Units
             are the same as the units of `height`
         Returns None if there is no intersect.
     """
 
-    # Create the normalized vector representing the direction of the given pixel
+    # Create the normalized unit vector representing the direction of the given pixel
     vector: Vector = pixel_vector(pixel, image_shape)
 
     # Apply the drone rotation
@@ -55,9 +51,10 @@ def pixel_intersect(
     return intersect
 
 
-def plane_collision(ray_direction: Vector, height: float) -> Point | None:
+def plane_collision(ray_direction: Vector, height: float, cutoff_ratio: float = 0) -> Point | None:
     """
-    Returns the point where a ray intersects the XY plane. North is +X
+    Returns the vector where where the vector intersects with the plane
+    The input vector is in XYZ and returns and XYZ vector with z equal to the height
     Returns None if there is no intersect.
 
     Parameters
@@ -66,27 +63,42 @@ def plane_collision(ray_direction: Vector, height: float) -> Point | None:
         XYZ coordinates that represent the direction a ray faces
     height : float
         The Z coordinate for the starting height of the ray; can be any units
+    cutoff_ratio: float = 0
+        basically the ratio of z in the xyyz vector where any vector less than it will get cutoff
+        Not essential is used to prevent warping and cutoff nearing no height of the image aka there are getting closer to infinity horizontal distance for the vertical
+        Ratio is roughly(not exact) if .1 then distance to the corner is 10 times as large as the distance to the camera and lower ratio means less quality of pixel
+        default is 0 to allow near infinite intersects with the plane
 
     Returns
     -------
     intersect : Point | None
-        The ray's intersection with the plane in [X,Y] format. Units are the same as
+        The ray's intersection with the plane in [X,Y,Z] format. Z is the height and Units are the same as
         `height`
         Returns None if there is no intersect.
     """
-    
-    
-    # Find the "time" at which the line intersects the plane.
-    # Line is defined as ray_direction * time + vertex. Vertex is the point at
-    #   X, Y, Z = (0, 0, height)
-    time: float = -height / ray_direction[2].item()
+
+    # negative Z is down towards the ground I think, so as long as Z is negative then the vector is valid
+    # however if the Z is so small that it is negligible is probably not the best due to warping and annoyance
+    # like a vector at 89 degrees from the plane will not give good results at all
+
+    # normalize cause this how that goes
+    intersect = ray_direction / np.linalg.norm(ray_direction)
+    intersect = np.round(intersect , decimals = 3)
 
     # Checks if the ray intersects with the plane - negative `time` means the intersection
     #   is behind the camera
-    if np.isinf(time) or np.isnan(time) or time < 0:
-        return None
 
-    intersect: Point = ray_direction[:2] * time
+    if intersect[2] > (cutoff_ratio * -1) or np.isnan(intersect[2]) or intersect[2] is None:
+        return None
+    
+    # if no height to the image the camera is in plane so instanetaneous intersecting
+    if intersect[2] == 0:
+        return np.array([0, 0, 0], dtype=np.float64)
+    
+    # sets the z of the vector equal to height and scales the rest of the vector with it
+    intersect: Point = height/intersect[2] * intersect
+    intersect = np.round(intersect , decimals = 3)
+    print("intersect", intersect)
 
     return intersect
 
@@ -144,7 +156,8 @@ def pixel_angle(fov: float, ratio: float) -> float:
     Returns
     -------
     angle : float
-        The pixel's angle from the center of the camera along a single axis
+        The pixel's angle from the center of the camera along a single axis.
+        The horizontal angle will be reversed
     """
     return np.arctan(np.tan(fov / 2) * (1 - 2 * ratio))
 
@@ -252,13 +265,14 @@ def camera_vector(h_angle: float, v_angle: float) -> Vector:
         The vector which represents a given location in an image
     """
 
-    # Calculate the vertical rotation needed for the final vector to have the desired direction
-    edge: float = edge_angle(v_angle, h_angle)
-
-    vector: Vector = rotate_radians(IHAT, [0, edge, -h_angle])
+    # unit vector pointing towards the point where the pixel lines up on the plane
+    # is in xyz unit vector
+    # assuming camera is facing straight forward on the x axis then rotation is applied later
+    vector: Vector = np.array([1, math.tan(-h_angle), math.tan(v_angle)], dtype=np.float64)
+    vector = vector / np.linalg.norm(vector)
+    vector = np.round(vector , decimals = 3)
 
     return vector
-
 
 def edge_angle(v_angle: float, h_angle: float) -> float:
     """
