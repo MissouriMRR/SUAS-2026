@@ -180,8 +180,10 @@ class PhotoQueue:
         num : int
             The id of the runner.
         """
+        window_title: str = f"Runner {num} Results"
         if self.show_results:
-            cv2.namedWindow(f"Runner {num} Results")
+            cv2.namedWindow(window_title, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(window_title, 1280, 720)
 
         while True:
             # We want to cancel the task if we are done capturing images,
@@ -205,10 +207,13 @@ class PhotoQueue:
                 else:
                     self.results[result.category] = result
             if self.show_results:
+                annotated_image = await self._draw_results(image, results)
+                cv2.imshow(window_title, annotated_image)
                 cv2.waitKey(1)
             self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
+            await asyncio.sleep(5)
 
         if self.show_results:
             cv2.destroyWindow(f"Runner {num} Results")
