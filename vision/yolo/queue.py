@@ -142,6 +142,15 @@ class PhotoQueue:
                 (0, 255, 0),
                 2,
             )
+            # Add caption with class
+            cv2.putText(
+                image,
+                detection.category,
+                (conv[0], conv[1] - 5),
+                cv2.FONT_HERSHEY_TRIPLEX,
+                (conv[2] - conv[0]) / 250,
+                (0, 255, 0),
+            )
         return image
 
     def _print_results(self) -> None:
