@@ -182,7 +182,7 @@ class PhotoQueue:
         """
         window_title: str = f"Runner {num} Results"
         if self.show_results:
-            cv2.namedWindow(window_title, cv2.WINDOW_NORMAL)
+            cv2.namedWindow(window_title, cv2.WINDOW_KEEPRATIO)
             cv2.resizeWindow(window_title, 1280, 720)
 
         while True:
@@ -213,7 +213,6 @@ class PhotoQueue:
             self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
-            await asyncio.sleep(5)
 
         if self.show_results:
             cv2.destroyWindow(f"Runner {num} Results")
