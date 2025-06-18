@@ -46,6 +46,9 @@ def pixel_intersect(
     # Apply the drone rotation
     vector = rotate_degrees(vector, rotation_deg)
 
+    #will returnf yxz instead of xyz if not rotated 90 degrees yaw
+    vector = rotate_degrees(vector, [0,0,90])
+
     intersect: Point | None = plane_collision(vector, height)
 
     return intersect
@@ -127,7 +130,7 @@ def pixel_vector(
     fov_h: float
     fov_v: float
     fov_h, fov_v = get_fov()
-    
+
     vector: Vector = camera_vector(
         pixel_angle(fov_h, pixel[0] / image_shape[1]),
         pixel_angle(fov_v, pixel[1] / image_shape[0]),
@@ -267,6 +270,7 @@ def camera_vector(h_angle: float, v_angle: float) -> Vector:
     # unit vector pointing towards the point where the pixel lines up on the plane
     # is in xyz unit vector
     # assuming camera is facing straight forward on the x axis then rotation is applied later
+
     vector: Vector = np.array([1, math.tan(-h_angle), math.tan(v_angle)], dtype=np.float64)
     vector = vector / np.linalg.norm(vector)
     vector = np.round(vector , decimals = 3)

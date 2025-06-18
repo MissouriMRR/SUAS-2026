@@ -101,13 +101,17 @@ def get_coordinates(
         Equal to None if there is no valid intersect.
     """
 
+    # both should be 0 due to latitude
+
     # Calculate the latitude and longitude lengths (in feet)
     latitude_length_lat: float = latitude_length(
         camera_parameters["drone_coordinates"][0]
     )
     longitude_length_long: float = longitude_length(
-        camera_parameters["drone_coordinates"][1]
+        camera_parameters["drone_coordinates"][0]
     )
+
+    print("coordinates", latitude_length_lat, longitude_length_long)
 
     altitude_m: float = camera_parameters["altitude"]
 
@@ -128,9 +132,10 @@ def get_coordinates(
 
     # Invert the X axis so that the longitude is correct
     intersect[1] *= -1
+    print("i need this", intersect)
 
     # Convert the location to latitude and longitude and add it to the drone's coordinates
-    pixel_lat: float = camera_parameters["drone_coordinates"][0] + intersect[0] / latitude_length_lat
-    pixel_lon: float = camera_parameters["drone_coordinates"][1] + intersect[1] / longitude_length_long
+    pixel_lat: float = camera_parameters["drone_coordinates"][0] + (intersect[0]*FEET_PER_METER) / latitude_length_lat
+    pixel_lon: float = camera_parameters["drone_coordinates"][1] + (intersect[1]*FEET_PER_METER) / longitude_length_long
 
     return pixel_lat, pixel_lon
