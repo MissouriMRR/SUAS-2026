@@ -35,14 +35,15 @@ class Map:
     def __init__(self, pixels_per_foot, feather_width = 10) -> None:
         self.pixels_per_foot: float = pixels_per_foot
         self.feather_width = feather_width
-        
+
+        self.map_distance = None
         self.img: consts.MapImage = None
         self.img_count = 0
         self.coord_min = None
         self.coord_max = None
     
     
-    def prepare_image(self, img):
+    def prepare_image(self, img: consts.ImageInfo):
 
         blank_channel = np.zeros((img["image_shape"]["height"], img["image_shape"]["width"]))
         blank_channel=blank_channel+1
@@ -53,67 +54,67 @@ class Map:
             scale=self.pixels_per_foot * consts.FEET_PER_METER
         )
         
-        #projected_image_wdepth = self.fill_distances(projected_image_wdepth, img["camera_parameters"])
+        img["image_shape"]["height"] = img["image"].shape[0]
+        img["image_shape"]["width"] = img["image"].shape[1]
+        self.fill_distances(img)
 
         return img["image"]
     
 
-    def fill_distances(self, img: consts.Image , camera_parameters: consts.CameraParameters) -> consts.Image:
-
-        ##### won't work due to hte corners having the chance of it
-
+    def fill_distances(self, img: consts.ImageInfo) -> None:
 
         distance = lambda x, y : np.linalg.norm(vector_utils.pixel_intersect(
                 (x, y),
-                img.shape,
-                camera_parameters["rotation_deg"],
-                height=camera_parameters["altitude_f"]
+                img["image"].shape,
+                img["camera_parameters"]["rotation_deg"],
+                height=img["camera_parameters"]["altitude_f"]
             ))
-        height: int = img.shape[0] -1
-        width: int = img.shape[1] -1
-        center_height: int = img.shape[0] //2
-        center_width: int = img.shape[1] //2
+        height: int = img["image"].shape[0] -1
+        width: int = img["image"].shape[1] -1
+        center_height: int = img["image"].shape[0] //2
+        center_width: int = img["image"].shape[1] //2
         # has the pixel coordinates of the start and end indexes of each fourth of the image
 
         #calculating distance for each pixel takes way too long, so it will be simplified by making the points up to the center on top,bottom, and center linearly scaled
         # then filling the rest linearly
 
         #initialize corners and center distances
-        img[0,0,3] = distance(0,0)
-        img[0,width,3] = distance(width,0)
-        img[height,width,3]= distance(width, height)
-        img[height, 0] = distance(0, width)
+        img["distance"] = np.zeros((img["image_shape"]["height"], img["image_shape"]["width"]))
+        img["distance"][0,0] = distance(0,0)
+        img["distance"][0,width] = distance(width,0)
+        img["distance"][height,width]= distance(width, height)
+        img["distance"][height, 0] = distance(0, height)
         
-        img[center_height, center_width,3] = distance(center_width, center_height)
-        img[0, center_width,3] = distance(center_width, 0)
-        img[center_height, 0] = distance(0, center_height)
-        img[height, center_width,3] = distance(center_width, height)
-        img[center_height, width,3] = distance(width, center_height)
+        img["distance"][center_height, center_width] = distance(center_width, center_height)
+        img["distance"][0, center_width] = distance(center_width, 0)
+        img["distance"][center_height, 0] = distance(0, center_height)
+        img["distance"][height, center_width] = distance(center_width, height)
+        img["distance"][center_height, width] = distance(width, center_height)
 
         # start by filling top, bottom, and center
         for i in [0,center_height,height]:
             for pixel in range(1, width):
                 if pixel < center_width:
-                    img[i,pixel,3] = int(img[i,0,3]* pixel/(center_width) + img[i,center_width,3] * (1-pixel/(center_width)))
+                    img["distance"][i,pixel] = int(img["distance"][i,0]* pixel/(center_width) + img["distance"][i,center_width] * (1-pixel/(center_width)))
                 if pixel > center_width:
                     #percentages are close enough not perfect
-                    img[i,pixel,3] = int(img[i,center_width,3]* (pixel-center_width)/(center_width) + img[i,width,3] * (1-(pixel-center_width)/(center_width)))
+                    img["distance"][i,pixel] = int(img["distance"][i,center_width]* (pixel-center_width)/(center_width) + img["distance"][i,width] * (1-(pixel-center_width)/(center_width)))
 
         # fill the rest
-        for column in range(0, img.shape[1]):
+        for column in range(0, img["image"].shape[1]):
             for pixel in range(1,height):
                 if pixel < center_height:
-                    img[pixel,column,3] = int(img[0,column,3]* pixel/(center_height) + img[center_height,column,3] * (1-pixel/(center_height)))
+                    img["distance"][pixel,column] = int(img["distance"][0,column]* pixel/(center_height) + img["distance"][center_height,column] * (1-pixel/(center_height)))
                 if pixel > center_height:
                     #percentages are close enough not perfect
-                    img[pixel,column,3] = int(img[center_height,column,3]* (pixel-center_height)/(center_height) + img[height,column,3] * (1-(pixel-center_height)/(center_height)))
-        return img
+                    img["distance"][pixel,column] = int(img["distance"][center_height,column]* (pixel-center_height)/(center_height) + img["distance"][height,column] * (1-(pixel-center_height)/(center_height)))
+        return
         
 
     
-    def add_img(self, img):
+    def add_img(self, img: consts.ImageInfo):
         
-        img_corner_coords = camera_distances.corner_coords(img["image"].shape, img["camera_parameters"])
+        img["corner_coords"] = camera_distances.corner_coords(img["image"].shape, img["camera_parameters"])
         
         projected_image_wdepth = self.prepare_image(img)
 
@@ -126,13 +127,14 @@ class Map:
 
         if self.img_count == 0:
             
-            img_min_coord = np.min(img_corner_coords, axis=0)
-            img_max_coord = np.max(img_corner_coords, axis=0)
+            img_min_coord = np.min(img["corner_coords"], axis=0)
+            img_max_coord = np.max(img["corner_coords"], axis=0)
             self.img = projected_image_wdepth
             self.coord_min = img_min_coord
             self.coord_max = img_max_coord
+            self.map_distance = img["distance"]
         else:
-            self.add_projected_image(projected_image_wdepth, img_corner_coords)
+            self.add_projected_image(img)
 
 
 
@@ -142,12 +144,12 @@ class Map:
         return
     
     
-    def add_projected_image(self, proj_img, img_corner_coords):
+    def add_projected_image(self, proj_img: consts.ImageInfo):
         # Calculate the "top left" and "bottom right" corners of the bounding box in GPS coordinate space
         # May not actually be top left and bottom right, but it doesn't really matter - we just care about the bounds
         
-        img_min_coord = np.min(img_corner_coords, axis=0)
-        img_max_coord = np.max(img_corner_coords, axis=0)
+        img_min_coord = np.min(proj_img["corner_coords"], axis=0)
+        img_max_coord = np.max(proj_img["corner_coords"], axis=0)
         
         # Calculate the center of the projected image
         center_coord = (img_min_coord + img_max_coord) / 2
@@ -171,7 +173,7 @@ class Map:
         
         pixel_offset = np.round(relative_coord_ft * self.pixels_per_foot)
         
-        updated_map_img = overlaying.offset_overlay(proj_img, self.img, pixel_offset, self.feather_width)
+        updated_map_img, self.map_distance = overlaying.offset_overlay(proj_img, self.img, self.map_distance, pixel_offset, self.feather_width)
         
         self.coord_min = np.minimum(self.coord_min, img_min_coord)
         self.coord_max = np.maximum(self.coord_min, img_min_coord)

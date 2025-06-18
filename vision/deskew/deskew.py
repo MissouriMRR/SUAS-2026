@@ -201,7 +201,7 @@ def deskew(
             Returns None if no valid image could be generated.
     """
 
-    image["center_coords"] = get_coordinates((image["image_shape"]["height"]//2,image["image_shape"]["height"]//2),(image["image_shape"]["height"],image["image_shape"]["height"]), image["camera_parameters"])
+    image["center_coords"] = get_coordinates((image["image_shape"]["height"]//2,image["image_shape"]["width"]//2),(image["image_shape"]["height"],image["image_shape"]["width"]), image["camera_parameters"])
 
     matrix: NDArray[Shape["3, 3"], Float64]
     dst_pts: Corners
