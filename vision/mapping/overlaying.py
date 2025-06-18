@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from vision.common.constants import ImageInfo, Image
 
 # Coordinate system:
 #  __ +y axis
@@ -27,8 +28,7 @@ def calculate_padding(img1, img2, r12):
     return img2_top_padding, img2_bottom_padding, img2_left_padding, img2_right_padding
 
 
-def pad_image(img, padding):
-    value = np.array([0, 0, 0, np.inf])  # Zero for color channels, inf for depth channel
+def pad_image(img, padding, value):
     padded = cv2.copyMakeBorder(img, int(padding[0]), int(padding[1]), int(padding[2]), int(padding[3]), cv2.BORDER_CONSTANT, value=value)
     
     return padded
@@ -58,59 +58,68 @@ def distance_alpha(distance1, distance2, feather_width):
     # Sigmoid function
     return (np.tanh(4 * (distance1 - distance2) / feather_width) + 1) / 2
 
-def layering(new_img, padded_section):
+def layering(new_img: ImageInfo, padded_section, padded_distance_section):
+    # this works but doesn't look the best
     """
-    print("images", new_img.shape, padded_section.shape)
-    
-    for x in range(new_img.shape[1]):
-        for y in range(new_img.shape[0]):
-            if new_img[y,x,3] is None or new_img[y,x,3] is 0:
-                new_img[y,x,:] = padded_section[y,x,:]
-            elif padded_section[y,x,3] is None or padded_section[y,x,3] is 0:
+    for x in range(new_img["image"].shape[1]):
+        for y in range(new_img["image"].shape[0]):
+            print(new_img["image"][y,x,:])
+            if new_img["image"][y,x,2] is None or new_img["image"][y,x,2] is 0:
+                new_img["image"][y,x,:] = padded_section[y,x,:]
+                new_img["distance"][y,x] = padded_distance_section[y,x]
+            elif padded_section[y,x,2] == None or padded_section[y,x,2] == 0:
                 #have new_img[x,y,3] = new_img[x,y,3]
                 continue
             else:
-                if padded_section[y,x,3] < new_img[y,x,3]:
-                    new_img[y,x,:] = padded_section[y,x,:]
+                # needs to be changed to use distances but whole map image will also need to be changed
+                if(new_img["distance"][y,x] > padded_distance_section[y,x] or new_img["distance"][y,x] == 0 or new_img["distance"][y,x] == None):
+                    new_img["distance"][y,x] = padded_distance_section[y,x]
+                    new_img["image"][y,x,:] = padded_section[y,x,:]
     """
-    for x in range(new_img.shape[1]):
-        for y in range(new_img.shape[0]):
-            if new_img[y,x,2] is None or new_img[y,x,2] is 0:
-                new_img[y,x,:] = padded_section[y,x,:]
-            elif padded_section[y,x,2] is None or padded_section[y,x,2] is 0:
+    # for some reason this just works better
+    for x in range(new_img["image"].shape[1]):
+        for y in range(new_img["image"].shape[0]):
+            if new_img["image"][y,x,2] == None or new_img["image"][y,x,2] == 0:
+                new_img["image"][y,x,:] = padded_section[y,x,:]
+                new_img["distance"][y,x] = padded_distance_section[y,x]
+            elif padded_section[y,x,2] == None or padded_section[y,x,2] == 0:
                 #have new_img[x,y,3] = new_img[x,y,3]
                 continue
             else:
-                new_img[y,x,:] = padded_section[y,x,:] * .5 + new_img[y,x,:] * .5
-    return new_img
+                new_img["image"][y,x,:] = padded_section[y,x,:] * .5 + new_img["image"][y,x,:] * .5
+                    
+    return new_img["image"], new_img["distance"]
 
 
 
-def offset_overlay(new_img, base_img, new_location, feather_width):
-    padding = calculate_padding(new_img, base_img, new_location)
+def offset_overlay(new_img: ImageInfo, base_img: Image, map_distance ,new_location, feather_width):
+    padding = calculate_padding(new_img["image"], base_img, new_location)
     
-    padded = pad_image(base_img, padding)
-    
+    padded = pad_image(base_img, padding, np.array([0, 0, 0, np.inf]))# Zero for color channels,
+    padded_distance = pad_image(map_distance, padding, 500)
+
     # New offset relative to the padded image
     new_offset = np.maximum(np.array([0, 0]), new_location)
     
     # calculate the bottom left corner of the region to overlay on
-    bottom_left = new_offset + np.array(new_img.shape[:2])
+    bottom_left = new_offset + np.array(new_img["image"].shape[:2])
     
     # Get the section of the padded image where img1 will be overlayed
     padded_section = padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :]
+    padded_distance_section = padded_distance[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1])]
     
     #alpha_channel = distance_alpha(new_img[:, :, 3], padded_section[:, :, 3], feather_width)
     
     #overlayed_section = alpha_over(new_img, padded_section, alpha_channel)
     cv2.imwrite("paddedtest.png", padded_section)
-    cv2.imwrite("new_imgtest.png", new_img)
-    overlayed_section = layering(new_img, padded_section)
+    cv2.imwrite("new_imgtest.png", new_img["image"])
+    overlayed_section, overlayed_distance_section = layering(new_img, padded_section, padded_distance_section)
     
     # Write the overlayed section back to the image
     padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :] = overlayed_section
-    
-    return padded
+    padded_distance[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1])] = overlayed_distance_section
+
+    return padded, padded_distance
 
 
 def main():

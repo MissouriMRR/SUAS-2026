@@ -149,6 +149,7 @@ def perspective_matrix(
 
     # Scale the corner points to pixels per unit of height
     dst_pts: Corners = new_intersects * scale
+    print("dst", dst_pts, "scale", scale, "new_intersects", new_intersects)
 
     matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(
         get_corner_points([orig_height, orig_width]), dst_pts
@@ -201,7 +202,7 @@ def deskew(
             Returns None if no valid image could be generated.
     """
 
-    image["center_coords"] = get_coordinates((image["image_shape"]["height"]//2,image["image_shape"]["height"]//2),(image["image_shape"]["height"],image["image_shape"]["height"]), image["camera_parameters"])
+    image["center_coords"] = get_coordinates((image["image_shape"]["height"]//2,image["image_shape"]["width"]//2),(image["image_shape"]["height"],image["image_shape"]["width"]), image["camera_parameters"])
 
     matrix: NDArray[Shape["3, 3"], Float64]
     dst_pts: Corners
@@ -212,6 +213,8 @@ def deskew(
 
     result_height: int = int(np.max(dst_pts[:, 1])) + 1
     result_width: int = int(np.max(dst_pts[:, 0])) + 1
+
+    print((result_width, result_height))
 
     deskewed_image: Image = cv2.warpPerspective(
         image["image"],
