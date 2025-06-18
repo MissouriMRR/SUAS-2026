@@ -20,7 +20,7 @@ from state_machine.state_tracker import (
     update_drone,
     update_flight_settings,
 )
-from state_machine.states.land import Land
+from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
 from vision.common import camera_config
@@ -35,11 +35,11 @@ async def run(self: Mapping) -> State:
     """
     Implements the run method for the Mapping state.
 
-    This method captures photos of the mapping area and then transitions to the ODLC state.
+    This method captures photos of the mapping area and then transitions to the Airdrop state.
 
     Returns
     -------
-    ODLC : State
+    Airdrop : State
         The next state after the drone has successfully landed.
     """
 
@@ -146,7 +146,13 @@ async def run(self: Mapping) -> State:
         logging.error("Mapping state canceled")
         raise ex
 
-    return Land(self.drone, self.flight_settings)
+    # Need to wait for YOLO processing to finish, or we may not have objects to drop at
+    if not self.flight_settings.yolo_status.is_set():
+        logging.info("Waiting for YOLO processing to finish...")
+        await self.flight_settings.yolo_status.wait()
+        logging.info("YOLO processing finished.")
+
+    return Airdrop(self.drone, self.flight_settings)
 
 
 # Setting the run_callable attribute of the Mapping class to the run function

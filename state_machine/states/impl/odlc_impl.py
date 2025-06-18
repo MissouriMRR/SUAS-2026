@@ -14,7 +14,6 @@ from state_machine.state_tracker import (
     update_drone,
     update_flight_settings,
 )
-from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
@@ -28,7 +27,7 @@ async def run(self: ODLC) -> State:
     Implements the run method for the ODLC state.
 
     This method initiates the ODLC scanning process of the drone, takes pictures and transfers
-    picture data to the vision code, and then transitions to the Airdrop state.
+    picture data to the vision code, and then transitions to the Mapping state.
 
     Parameters
     ----------
@@ -37,7 +36,7 @@ async def run(self: ODLC) -> State:
 
     Returns
     -------
-    Airdrop : State
+    Mapping : State
         The next state after the drone has successfully scanned the ODLC area.
 
     Raises
@@ -57,31 +56,25 @@ async def run(self: ODLC) -> State:
         update_flight_settings(self.flight_settings)
         logging.info("ODLC state running")
 
-        capture_status = asyncio.Event()
+        capture_status: asyncio.Event = asyncio.Event()
 
-        vision_task: asyncio.Task[None] = asyncio.ensure_future(
-            vision_odlc_logic(self, capture_status)
-        )
+        asyncio.ensure_future(vision_odlc_logic(self, capture_status))
 
         flight_task: asyncio.Task[None] = asyncio.ensure_future(find_odlcs(self, capture_status))
 
-        logging.info("Starting check for task completion")
-
-        while not vision_task.done():
-            await asyncio.sleep(0.25)
+        logging.info("Starting check for flight task completion")
 
         while not flight_task.done():
             await asyncio.sleep(0.25)
 
-        logging.info("ODLC scan complete. State completing...")
-        vision_task.cancel()
+        logging.info("ODLC flight scan complete. State completing...")
         flight_task.cancel()
     except asyncio.CancelledError as ex:
         logging.error("ODLC state canceled")
         traceback.print_exc()
         raise ex
 
-    return Airdrop(self.drone, self.flight_settings)
+    return Mapping(self.drone, self.flight_settings)
 
 
 async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
@@ -156,6 +149,7 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
                 point.latitude,
                 point.longitude,
                 gps_data["odlc_altitude"],
+                airspeed=5,
             )
 
     if camera:

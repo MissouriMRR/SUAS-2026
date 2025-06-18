@@ -20,7 +20,7 @@ from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings, SimMode
 
 from state_machine.states.airdrop import Airdrop
-from state_machine.states.mapping import Mapping
+from state_machine.states.land import Land
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
 
@@ -43,7 +43,7 @@ async def run(self: Airdrop) -> State:
     """
 
     if self.flight_settings.skip_odlc_and_airdrop:
-        return Mapping(self.drone, self.flight_settings)
+        return Land(self.drone, self.flight_settings)
 
     try:
         update_state("Airdrop")
@@ -78,7 +78,7 @@ async def run(self: Airdrop) -> State:
                 cylinder_num = cylinder
         else:
             logging.warning("No beacons are loaded?")
-            return Mapping(self.drone, self.flight_settings)
+            return Land(self.drone, self.flight_settings)
 
         dropped: bool = await attempt_drop(
             self.drone,
@@ -105,7 +105,7 @@ async def run(self: Airdrop) -> State:
 
         if continue_run:
             return Waypoint(self.drone, self.flight_settings)
-        return Mapping(self.drone, self.flight_settings)
+        return Land(self.drone, self.flight_settings)
 
     except asyncio.CancelledError as ex:
         logging.error("Airdrop state canceled")

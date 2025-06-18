@@ -1,5 +1,6 @@
 """Class to contain setters, getters & parameters for current flight"""
 
+from asyncio import Event
 from enum import Enum
 import logging
 import sys
@@ -23,6 +24,7 @@ class SimMode(Enum):
     AIRSIM = "airsim"
 
 
+# pylint: disable=too-many-instance-attributes
 class FlightSettings:
     """
     Class to contain basic information for a flight, as well as some flight parameters
@@ -52,6 +54,9 @@ class FlightSettings:
         Whether the drone is real, running in the ardupilot sim, or running in airsim
     __mission_data_path: str
         The path to the JSON file containing the boundary and waypoint data.
+    __yolo_status: Event
+        An asyncio Event tracking whether the YOLO model has
+        finished processing images.
 
     Methods
     -------
@@ -146,6 +151,7 @@ class FlightSettings:
         self.__standard_object_count: int = standard_object_count
         self.__sim_mode: SimMode = sim_mode
         self.__mission_data_path: str = mission_data_path
+        self.__yolo_status: Event = Event()
 
     @staticmethod
     def from_mission_config() -> "FlightSettings":
@@ -402,3 +408,15 @@ class FlightSettings:
         mission_data_path : str
             The path to the JSON file containing the boundary and waypoint data.
         """
+
+    @property
+    def yolo_status(self) -> Event:
+        """
+        Return the asyncio Event that tracks for completion of image processing.
+
+        Returns
+        -------
+        yolo_status : Event
+            The Event with status tracking the YOLO model.
+        """
+        return self.__yolo_status
