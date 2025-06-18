@@ -26,6 +26,11 @@ from state_machine.states.waypoint import Waypoint
 
 from vision.common.constants import Location, ODLCDict
 
+# The altitude to go up to while staying at the airdrop point
+# This could allow stuck beacons to wiggle out
+# 75 ft -> 23 m
+WIGGLE_ALTITUDE: float = 23.0
+
 
 async def run(self: Airdrop) -> State:
     """
@@ -225,7 +230,13 @@ async def attempt_drop(
         with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
             json.dump(list(attempted_locations), file)
 
-        await asyncio.sleep(15)
+        await asyncio.sleep(12)
+
+        # Attempt to wiggle out stuck beacons
+        logging.info("Moving up to 75 ft / 23 meters...")
+        await move_to(drone.vehicle, drop_lat, drop_lon, WIGGLE_ALTITUDE)
+        await asyncio.sleep(3)
+
         logging.info("-- Airdrop done!")
         return True
 
