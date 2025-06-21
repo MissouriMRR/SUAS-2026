@@ -74,7 +74,6 @@ class Camera(ABC):
     """
 
     def __init__(self) -> None:
-
         self.image_id: int = 0
         self.base_api_url: str | None = None
         self.camera: SIYISDK | None = None
@@ -270,6 +269,10 @@ class CameraIRL(Camera):
             logging.error("Failed to take photo")
             raise ValueError("Failed to take photo")
 
+        # Need to wait a bit after sending the capture command to allow the
+        # gimbal to process/save the photo, else we run into a race condition
+        await asyncio.sleep(0.5)
+
         # Retrieve the image from the gimbal SD card
         session: aiohttp.ClientSession
         async with aiohttp.ClientSession() as session:
@@ -440,29 +443,31 @@ class CameraIRL(Camera):
         """
         info: dict[str, CameraParameters] = {}
 
-        await move_to(
-            drone,
-            latitude,
-            longitude,
-            altitude,
-            airspeed=5.0,
-            tolerance=WAYPOINT_TOLERANCE,
+        goto_task: asyncio.Task[None] = asyncio.ensure_future(
+            move_to(
+                drone,
+                latitude,
+                longitude,
+                altitude,
+                airspeed=5.0,
+                tolerance=WAYPOINT_TOLERANCE,
+            )
         )
 
         if take_photos:
             # Point the gimbal straight down
             self.camera.requestSetAngles(0, -90)
 
-        await asyncio.sleep(2)
+        while not goto_task.done():
+            if not take_photos:
+                await asyncio.sleep(1)
+                continue
 
-        if not take_photos:
-            return
-
-        camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
-        file_path: str
-        _, file_path = await self.capture_photo()
-        point: dict[str, CameraParameters] = {file_path: camera_parameters}
-        info.update(point)
+            camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
+            file_path: str
+            _, file_path = await self.capture_photo()
+            point: dict[str, CameraParameters] = {file_path: camera_parameters}
+            info.update(point)
 
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/camera.json"):
@@ -476,10 +481,6 @@ class CameraIRL(Camera):
         camera: TextIO
         with open("flight/data/camera.json", "w", encoding="ascii") as camera:
             json.dump(current_photos | info, camera)
-
-            # tell machine to sleep to prevent constant polling, preventing battery drain
-            await asyncio.sleep(1)
-        return
 
     async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters:
         """
@@ -784,7 +785,6 @@ class CameraAirSim(Camera):
         roll_deg: float = math.degrees(attitude.roll)
         pitch_deg: float = math.degrees(attitude.pitch)
         yaw_deg: float = math.degrees(attitude.yaw)
-        horizontal_fov: float = self.client.simGetCameraInfo("bottom_center").fov
 
         return CameraParameters(
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],

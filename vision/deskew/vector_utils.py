@@ -10,6 +10,7 @@ import math
 from utils import type_utils
 from vision.common.constants import Point, Vector, CameraConfig
 
+
 def pixel_intersect(
     pixel: tuple[int, int],
     image_shape: tuple[int, int, int] | tuple[int, int],
@@ -46,8 +47,8 @@ def pixel_intersect(
     # Apply the drone rotation
     vector = rotate_degrees(vector, rotation_deg)
 
-    #will returnf yxz instead of xyz if not rotated 90 degrees yaw
-    vector = rotate_degrees(vector, [0,0,90])
+    # will returnf yxz instead of xyz if not rotated 90 degrees yaw
+    vector = rotate_degrees(vector, [0, 0, 90])
 
     intersect: Point | None = plane_collision(vector, height)
 
@@ -86,21 +87,21 @@ def plane_collision(ray_direction: Vector, height: float, cutoff_ratio: float = 
 
     # normalize cause this how that goes
     intersect = ray_direction / np.linalg.norm(ray_direction)
-    intersect = np.round(intersect , decimals = 3)
+    intersect = np.round(intersect, decimals=3)
 
     # Checks if the ray intersects with the plane - negative `time` means the intersection
     #   is behind the camera
 
     if intersect[2] > (cutoff_ratio * -1) or np.isnan(intersect[2]) or intersect[2] is None:
         return None
-    
+
     # if no height to the image the camera is in plane so instanetaneous intersecting
     if intersect[2] == 0:
         return np.array([0, 0, 0], dtype=np.float64)
-    
+
     # sets the z of the vector equal to height and scales the rest of the vector with it
-    intersect: Point = height/intersect[2] * intersect
-    intersect = np.round(intersect , decimals = 3)
+    intersect: Point = height / intersect[2] * intersect
+    intersect = np.round(intersect, decimals=3)
 
     return intersect
 
@@ -273,9 +274,10 @@ def camera_vector(h_angle: float, v_angle: float) -> Vector:
 
     vector: Vector = np.array([1, math.tan(-h_angle), math.tan(v_angle)], dtype=np.float64)
     vector = vector / np.linalg.norm(vector)
-    vector = np.round(vector , decimals = 3)
+    vector = np.round(vector, decimals=3)
 
     return vector
+
 
 def edge_angle(v_angle: float, h_angle: float) -> float:
     """
@@ -351,7 +353,7 @@ def rotate_radians(vector: Vector, rotation_rad: list[float]) -> Vector:
     # Reverse the Y and Z rotation to match MAVSDK convention
     rotation_rad[1] *= -1
     rotation_rad[2] *= -1
-    
+
     rotation = Rotation.from_euler("xyz", rotation_rad)
     result: Vector = rotation.apply(np.array(vector))
 

@@ -18,9 +18,9 @@ class SimMode(Enum):
     Distinguishes whether a drone is real, running in the sim, or running in airsim.
     """
 
-    REAL: str = "real"
-    SIM: str = "sim"
-    AIRSIM: str = "airsim"
+    REAL = "real"
+    SIM = "sim"
+    AIRSIM = "airsim"
 
 
 class FlightSettings:
@@ -38,6 +38,10 @@ class FlightSettings:
         The name for the current flight operation
     __run_description: str
         A small description for the current flight
+    __mean_wind_speed: float
+        The mean wind speed, in meters per second.
+    __mean_wind_direction: float
+        The mean wind direction, in degrees.
     __skip_waypoint: bool
         Whether to skip the waypoint state.
     __skip_odlc_and_airdrop: bool
@@ -67,6 +71,10 @@ class FlightSettings:
         Returns the number of standard objects to attempt to find.
     standard_object_count(count: int) -> None
         Setter for the number of standard objects to attempt to find.
+    mean_wind_speed() -> float
+        Returns the mean wind speed, in meters per second.
+    mean_wind_direction() -> float
+        Returns the mean wind speed, in degrees.
     run_title() -> str
         `Returns the flight title
     run_title(new_title: str) -> None
@@ -93,6 +101,8 @@ class FlightSettings:
         simple_takeoff: bool = False,
         title: str = DEFAULT_RUN_TITLE,
         description: str = DEFAULT_RUN_DESCRIPTION,
+        mean_wind_speed: float = 0.0,
+        mean_wind_direction: float = 0.0,
         skip_waypoint: bool = False,
         skip_odlc_and_airdrop: bool = False,
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
@@ -105,11 +115,16 @@ class FlightSettings:
         Parameters
         ----------
         simple_takeoff : bool, default False
-            Sets if flight will use a simple vertical takeoff
+            Sets if flight will use a simple vertical takeoff.
         title : str
-            The name for the flight execution
+            The name for the flight execution.
         description : str
-            Sets a descriptive explanation for the current flight execution
+            Sets a descriptive explanation for the current flight execution.
+        mean_wind_speed : float, default 0.0
+            The mean wind speed, in meters per second.
+        mean_wind_direction : float, default 0.0
+            The mean wind direction, in degrees.
+            A value of 0 represents north, and 90 represents west.
         skip_waypoint : bool
             Whether to skip the waypoint state.
         skip_odlc_and_airdrop : bool
@@ -124,6 +139,8 @@ class FlightSettings:
         self.__simple_takeoff: bool = simple_takeoff
         self.__run_title: str = title
         self.__run_description: str = description
+        self.__mean_wind_speed: float = mean_wind_speed
+        self.__mean_wind_direction: float = mean_wind_direction
         self.__skip_waypoint: bool = skip_waypoint
         self.__skip_odlc_and_airdrop: bool = skip_odlc_and_airdrop
         self.__standard_object_count: int = standard_object_count
@@ -165,6 +182,8 @@ class FlightSettings:
             config["simple_takeoff"],
             config["run_title"],
             config["run_description"],
+            config["wind"]["mean_wind_speed"],
+            config["wind"]["mean_wind_direction"],
             config["skip_waypoint"],
             config["skip_odlc_and_airdrop"],
             sim_mode_config["standard_object_count"],
@@ -271,6 +290,22 @@ class FlightSettings:
             The number of standard objects to attempt to find.
         """
         self.__standard_object_count = count
+
+    # ----- Wind Speed Settings ----- #
+    @property
+    def mean_wind_speed(self) -> float:
+        """
+        The mean wind speed, in meters per second.
+        """
+        return self.__mean_wind_speed
+
+    @property
+    def mean_wind_direction(self) -> float:
+        """
+        The mean wind direction, in degrees.
+        A value of 0 represents north, and 90 represents west.
+        """
+        return self.__mean_wind_direction
 
     # ----- Flight Initialization Settings ----- #
     @property

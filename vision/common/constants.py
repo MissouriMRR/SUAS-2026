@@ -30,6 +30,7 @@ Hierarchy: TypeAlias = NDArray[Shape["1, *, 4"], IntC]
 #     |  |
 #     4--3
 Corners: TypeAlias = NDArray[Shape["4, 2"], Float64]
+ImageShape: TypeAlias = tuple[int, int] | tuple[int, int, int]
 
 
 class Location(TypedDict):
