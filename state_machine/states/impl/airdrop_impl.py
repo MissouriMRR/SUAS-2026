@@ -33,8 +33,9 @@ async def run(self: Airdrop) -> State:
 
     Returns
     -------
-    Waypoint : State
-        The next state after the drone has successfully completed the Airdrop.
+    Waypoint | Land : State
+        Goes to the Waypoint state if there is another airdrop to complete,
+        or Land if there are no more airdrops to complete.
 
     Notes
     -----

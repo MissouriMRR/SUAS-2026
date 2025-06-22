@@ -36,6 +36,8 @@ async def run(self: Mapping) -> State:
     Implements the run method for the Mapping state.
 
     This method captures photos of the mapping area and then transitions to the Airdrop state.
+    If YOLO inference from the ODLC state is still running, the code will wait for it to finish
+    before transitioning to the Airdrop state.
 
     Returns
     -------
@@ -147,7 +149,10 @@ async def run(self: Mapping) -> State:
         raise ex
 
     # Need to wait for YOLO processing to finish, or we may not have objects to drop at
-    if not self.flight_settings.yolo_status.is_set():
+    if (
+        not self.flight_settings.yolo_status.is_set()
+        and not self.flight_settings.skip_odlc_and_airdrop
+    ):
         logging.info("Waiting for YOLO processing to finish...")
         await self.flight_settings.yolo_status.wait()
         logging.info("YOLO processing finished.")
