@@ -110,9 +110,9 @@ class CroppedImage:
     image : npt.NDArray[np.float32]
         The cropped image.
     x : int
-        The x-axis offset of the cropped image from the original image.
+        The x-axis offset of the cropped image from the left edge of the original image.
     y : int
-        The y-axis offset of the cropped image from the original image.
+        The y-axis offset of the cropped image from the top edge of the original image.
     """
 
     image: npt.NDArray[np.float32]
@@ -391,7 +391,10 @@ class YOLO:
     ) -> list[CroppedImage]:
         """
         Tiles the provided image into smaller images of the given width and height.
-        Makes sure that every pixel of the image is covered by at least one tile.
+        The tiles on the bottom and right edges have a chance of overlapping with
+        other tiles if the image size is not a multiple of the tile size.
+        This is done intentionally to ensure that every pixel of the image
+        is covered by at least one tile so that no objects are missed.
 
         Parameters
         ----------
@@ -408,14 +411,16 @@ class YOLO:
             A list of the cropped images.
         """
         images: list[CroppedImage] = []
+        image_height: int = image.shape[2]
+        image_width: int = image.shape[3]
         i: int
         j: int
-        for i in range(0, image.shape[2], height):
-            if i + height > image.shape[2]:
-                i = image.shape[2] - height
-            for j in range(0, image.shape[3], width):
-                if j + width > image.shape[3]:
-                    j = image.shape[3] - width
+        for i in range(0, image_height, height):
+            if i + height > image_height:
+                i = image_height - height
+            for j in range(0, image_width, width):
+                if j + width > image_width:
+                    j = image_width - width
                 cropped_image = image[:, :, i : i + height, j : j + width]
                 images.append(CroppedImage(cropped_image, j, i))
         return images
@@ -474,22 +479,20 @@ class YOLO:
         box: npt.NDArray[np.float32]
         for _, (box, _) in best_guesses.items():
             # Fix scaling
-            box[0] = box[0] / self.input_width * image_size[0]  # X
-            box[1] = box[1] / self.input_height * image_size[1]  # Y
-            box[2] = box[2] / self.input_width * image_size[0]  # W
-            box[3] = box[3] / self.input_height * image_size[1]  # H
-
-            # Convert to 2 (x, y) coordinates
-            box[0] -= box[2] / 2  # X1
-            box[1] -= box[3] / 2  # Y1
-            box[2] += box[0]  # X2
-            box[3] += box[1]  # Y2
+            x_mid: np.float32 = box[0] / self.input_width * image_size[0]  # X
+            y_mid: np.float32 = box[1] / self.input_height * image_size[1]  # Y
+            width: np.float32 = box[2] / self.input_width * image_size[0]
+            height: np.float32 = box[3] / self.input_height * image_size[1]
 
             # Apply offset
-            box[0] += offset[0]
-            box[1] += offset[1]
-            box[2] += offset[0]
-            box[3] += offset[1]
+            x_mid += offset[0]
+            y_mid += offset[1]
+
+            # Convert to 2 (x, y) coordinates
+            box[0] = x_mid - (width / 2)  # X1
+            box[1] = y_mid - (height / 2)  # Y1
+            box[2] = x_mid + (width / 2)  # X2
+            box[3] = y_mid + (height / 2)  # Y2
 
         # Log results if desired
         if self.log_results:
