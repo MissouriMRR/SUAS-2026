@@ -88,8 +88,7 @@ async def flyover_pipeline(
     bounding_boxes: list[BoundingBox] = [box for _, box in filtered_objects]
 
     # Take the highest confidence predictions
-    if len(bounding_boxes) > flight_settings.standard_object_count:
-        bounding_boxes = bounding_boxes[: flight_settings.standard_object_count]
+    bounding_boxes = bounding_boxes[: flight_settings.standard_object_count]
 
     odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(bounding_boxes, flight_settings)
     logging.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)

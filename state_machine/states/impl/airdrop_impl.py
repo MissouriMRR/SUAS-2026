@@ -63,8 +63,8 @@ async def run(self: Airdrop) -> State:
                 fallback_locations: list[Location] = extract_gps(
                     self.flight_settings.mission_data_path
                 )["default_airdrop_points"]
-                for i in range(len(fallback_locations)):
-                    drop_locations[f"fallback_{i}"] = fallback_locations[i]
+                for i, location in enumerate(fallback_locations):
+                    drop_locations[f"fallback_{i}"] = location
 
         with open("flight/data/bottles.json", encoding="utf8") as output:
             cylinders: dict[str, dict[str, int | bool]] = json.load(output)

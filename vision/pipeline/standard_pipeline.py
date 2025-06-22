@@ -168,7 +168,7 @@ def create_odlc_dict(
 def proximity_check(
     detections: list[ObjectDetection],
     parameters: dict[str, consts.CameraParameters],
-    min_distance: float = 15.0,
+    min_distance: float = 7.0,
 ) -> list[tuple[ObjectDetection, BoundingBox]]:
     """
     Checks for detections that are too close to each other, and
@@ -183,7 +183,7 @@ def proximity_check(
         A dictionary with the image parameters for every
         captured image.
     min_distance : float, optional
-        The minimum distance between objects in METERS, by default 15.0
+        The minimum distance between objects in METERS, by default 7.0
 
     Returns
     -------
@@ -193,7 +193,7 @@ def proximity_check(
     """
     filtered_detections: list[tuple[ObjectDetection, BoundingBox]] = []
     # If we sort the detections by confidence, we can stop as soon as we find a collision
-    detections.sort(key=lambda entry: -entry.confidence)
+    detections.sort(key=lambda entry: entry.confidence, reverse=True)
 
     for detection in detections:
         image_name: str = detection.image.split("/")[-1]
