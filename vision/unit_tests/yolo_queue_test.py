@@ -7,14 +7,13 @@ import os
 import sys
 from typing import Iterable
 
-from vision.pipeline.standard_pipeline import filter_objects
+from vision.common.bounding_box import BoundingBox
+from vision.pipeline import pipeline_utils, standard_pipeline
 from vision.yolo.model import ObjectDetection
 from vision.yolo.queue import PhotoQueue
 
 
-async def run_queue(
-    images: Iterable[str], test_early_stop: bool = False
-) -> dict[str, ObjectDetection]:
+async def run_queue(images: Iterable[str], test_early_stop: bool = False) -> list[ObjectDetection]:
     """
     Test the PhotoQueue class by adding images to the queue and running inference on them.
 
@@ -27,8 +26,8 @@ async def run_queue(
 
     Returns
     -------
-    dict[str, ObjectDetection]
-        A dictionary mapping image paths to their corresponding best ObjectDetection results.
+    list[ObjectDetection]
+        A list of ObjectDetection results.
     """
     initial_size: int = 0
     queue: PhotoQueue = PhotoQueue(True)
@@ -64,13 +63,28 @@ def get_all_images(path: str, limit: int = 10) -> list[str]:
     return list(itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit))
 
 
-async def test_queue() -> None:
-    """Runs the YOLO queue test. Prints each filtered detection."""
+async def test_queue(camera_data_path: str | None = None) -> None:
+    """Runs the YOLO queue test. Prints each filtered detection.
+
+    Parameters
+    ----------
+    camera_data_path : str | None, default=None
+        A file storing photo metadata, used for proximity detection.
+        If none the proximity check is skipped.
+    """
     directory: str = sys.argv[1]
-    all_images: list[str] = get_all_images(directory)
-    results: dict[str, ObjectDetection] = await run_queue(all_images)
-    filtered: dict[str, ObjectDetection] = filter_objects(results, True, 0.2)
-    for result in filtered.values():
+    all_images: list[str] = get_all_images(directory, 10)
+    results: list[ObjectDetection] = await run_queue(all_images)
+    pipeline_utils.adjust_confidences(results, True, 0.5)
+    if camera_data_path is not None:
+        image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
+        filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = (
+            standard_pipeline.proximity_check(results, image_parameters, 7)
+        )
+        results = [detection for detection, _ in filtered_objects]
+    if len(results) > 4:
+        results = results[:4]
+    for result in results:
         logging.info(
             "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
             result.category,
@@ -88,4 +102,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         logging.info("Need to provide a directory")
         sys.exit(1)
-    asyncio.run(test_queue())
+    asyncio.run(test_queue("flight/data/camera.json"))
