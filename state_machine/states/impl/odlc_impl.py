@@ -108,6 +108,8 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     # Initialize the camera
     if self.flight_settings.sim_mode is SimMode.REAL:
         camera: CameraIRL | CameraAirSim | None = CameraIRL()
+        # The gimbal takes some time to adjust its angle, wait for it to be ready
+        await asyncio.sleep(3)
     elif self.flight_settings.sim_mode is SimMode.AIRSIM:
         camera = CameraAirSim()
     else:

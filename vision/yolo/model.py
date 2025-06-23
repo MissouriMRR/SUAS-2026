@@ -265,6 +265,18 @@ class ObjectDetection:
         """
         return self._confidence
 
+    @confidence.setter
+    def confidence(self, value: float) -> None:
+        """
+        Sets the confidence of the object detection.
+
+        Parameters
+        ----------
+        value : float
+            The new confidence value.
+        """
+        self._confidence = value
+
     @property
     def image(self) -> str:
         """

@@ -10,14 +10,14 @@ import numpy as np
 
 from vision.yolo.model import YOLO, ObjectDetection
 
-T = TypeVar("T")
+QueueItem = TypeVar("QueueItem")
 
 
 class QueueCancelled(Exception):
     """Exception raised when the queue is cancelled."""
 
 
-class CancellableQueue(asyncio.Queue[T]):
+class CancellableQueue(asyncio.Queue[QueueItem]):
     """
     A subclass of the asyncio Queue that adds an event to cancel the queue.
 
@@ -37,17 +37,17 @@ class CancellableQueue(asyncio.Queue[T]):
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
         self._cancelled: bool = False
-        self._queue: collections.deque[T]
+        self._queue: collections.deque[QueueItem]
         self._getters: collections.deque[asyncio.Future[None]]
 
-    def _get(self) -> T:
+    def _get(self) -> QueueItem:
         """
         Get an item from the queue.
         Overrides the _get method of the asyncio.Queue class.
 
         Returns
         -------
-        T
+        QueueItem
             The next item from the queue
 
         Raises
@@ -142,7 +142,32 @@ class PhotoQueue:
                 (0, 255, 0),
                 2,
             )
+            # Add caption with class
+            cv2.putText(
+                image,
+                detection.category,
+                (conv[0], conv[1] - 5),
+                cv2.FONT_HERSHEY_TRIPLEX,
+                (conv[2] - conv[0]) / 250,
+                (0, 255, 0),
+            )
         return image
+
+    def _print_results(self) -> None:
+        """
+        Prints out all of the stored results, including bbox, confidence, and image path.
+        """
+        for result in self.results.values():
+            logging.info(
+                "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
+                result.category,
+                result.bbox[0],
+                result.bbox[1],
+                result.bbox[2],
+                result.bbox[3],
+                result.confidence,
+                result.image,
+            )
 
     async def add_photo(self, photo_path: str) -> None:
         """
@@ -164,8 +189,10 @@ class PhotoQueue:
         num : int
             The id of the runner.
         """
+        window_title: str = f"Runner {num} Results"
         if self.show_results:
-            cv2.namedWindow(f"Runner {num} Results")
+            cv2.namedWindow(window_title, cv2.WINDOW_KEEPRATIO)
+            cv2.resizeWindow(window_title, 1280, 720)
 
         while True:
             # We want to cancel the task if we are done capturing images,
@@ -189,8 +216,10 @@ class PhotoQueue:
                 else:
                     self.results[result.category] = result
             if self.show_results:
-                cv2.imshow(f"Runner {num} Results", await self._draw_results(image, results))
+                annotated_image = await self._draw_results(image, results)
+                cv2.imshow(window_title, annotated_image)
                 cv2.waitKey(1)
+            self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
 
@@ -210,13 +239,13 @@ class PhotoQueue:
             runner = asyncio.create_task(self.photo_runner(i + 1))
             self.runners.append(runner)
 
-    async def end_queue(self) -> dict[str, ObjectDetection]:
+    async def end_queue(self) -> list[ObjectDetection]:
         """
         Ends the tasks of runners and returns the results.
 
         Returns
         -------
-        dict[str, ObjectDetection]
+        list[ObjectDetection]
             The results of the object detection
         """
         # Cancel the queue to stop runners once the queue is empty
@@ -226,4 +255,4 @@ class PhotoQueue:
 
         cv2.destroyAllWindows()
 
-        return self.results
+        return list(self.results.values())
