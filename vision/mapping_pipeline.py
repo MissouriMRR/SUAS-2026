@@ -77,7 +77,7 @@ async def mapping_pipeline(
             # image_path = image_dir + image_path
 
             if image_path not in completed_images:
-
+                
                 logging.info("Processing image: %s", image_path)
 
                 # Save the image path as completed so it isn't processed again
@@ -88,9 +88,9 @@ async def mapping_pipeline(
 
                 # Get the camera parameters from the loaded parameter file
                 camera_parameters: consts.CameraParameters = image_parameters[image_path]
-                camera_parameters["altitude_f"] = camera_parameters["altitude"]
+                camera_parameters["altitude_f"] = camera_parameters["altitude"]*consts.FEET_PER_METER
                 camera_parameters["focal_length"] = 4
-
+                map.pixels_per_foot=pixel_per_foot(image.shape,camera_parameters)
                 new_image: consts.ImageInfo = {"image_path":image_path,"image": image,"image_shape":{"width": image.shape[1], "height": image.shape[0], "channels": image.shape[2]},"camera_parameters": camera_parameters}
                 
                 map.add_img(new_image)

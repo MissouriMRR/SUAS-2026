@@ -18,18 +18,18 @@ def calculate_padding(img1, img2, r12):
     
     # img2 top left padding:
     # Only pad top left if some axis of r12 is negative
-    img2_top_padding = max(0, -r12[0])
-    img2_left_padding = max(0, -r12[1])
+    img2_top_padding = max(0, (img1.shape[0] - img2.shape[0])/2-r12[1])
+    img2_left_padding = max(0, (img1.shape[1] - img2.shape[1])/2-r12[0])
     
     # Only pad bottom right if overlayed img1 will go beyond the bottom/right of img2
-    img2_bottom_padding = max(0, img1.shape[0] - img2.shape[0] + r12[0])
-    img2_right_padding = max(0, img1.shape[1] - img2.shape[1] + r12[1])
+    img2_bottom_padding = max(0, (img1.shape[0] - img2.shape[0])/2 + r12[1])
+    img2_right_padding = max(0, (img1.shape[1] - img2.shape[1])/2 + r12[0])
     
     return img2_top_padding, img2_bottom_padding, img2_left_padding, img2_right_padding
 
 
 def pad_image(img, padding, value):
-    padded = cv2.copyMakeBorder(img, int(padding[0]), int(padding[1]), int(padding[2]), int(padding[3]), cv2.BORDER_CONSTANT, value=value)
+    padded = cv2.copyMakeBorder(img, int(padding[0]+0.5), int(padding[1]+0.5), int(padding[2]+0.5), int(padding[3]+0.5), cv2.BORDER_CONSTANT, value=value)
     
     return padded
 
@@ -77,9 +77,12 @@ def layering(new_img: ImageInfo, padded_section, padded_distance_section):
                     new_img["image"][y,x,:] = padded_section[y,x,:]
     """
     # for some reason this just works better
+
+
     for x in range(new_img["image"].shape[1]):
         for y in range(new_img["image"].shape[0]):
             if new_img["image"][y,x,2] == None or new_img["image"][y,x,2] == 0:
+                
                 new_img["image"][y,x,:] = padded_section[y,x,:]
                 new_img["distance"][y,x] = padded_distance_section[y,x]
             elif padded_section[y,x,2] == None or padded_section[y,x,2] == 0:
@@ -87,26 +90,31 @@ def layering(new_img: ImageInfo, padded_section, padded_distance_section):
                 continue
             else:
                 new_img["image"][y,x,:] = padded_section[y,x,:] * .5 + new_img["image"][y,x,:] * .5
-                    
+
+
     return new_img["image"], new_img["distance"]
 
 
 
 def offset_overlay(new_img: ImageInfo, base_img: Image, map_distance ,new_location, feather_width):
-    padding = calculate_padding(new_img["image"], base_img, new_location)
-    
+   
+    padding = calculate_padding(new_img["image"], base_img, new_location) 
+
     padded = pad_image(base_img, padding, np.array([0, 0, 0, np.inf]))# Zero for color channels,
     padded_distance = pad_image(map_distance, padding, 500)
 
+    #img2_top_padding, img2_bottom_padding, img2_left_padding, img2_right_padding
     # New offset relative to the padded image
-    new_offset = np.maximum(np.array([0, 0]), new_location)
+    shifted_new_location = [new_location[0]-(padding[3]-padding[2])/2,new_location[1]-(padding[1]-padding[0])/2]
     
+    top_left=[int((padded.shape[0]/2+shifted_new_location[1])-new_img["image"].shape[0]/2),int((padded.shape[1]/2+shifted_new_location[0])-new_img["image"].shape[1]/2)]
+
     # calculate the bottom left corner of the region to overlay on
-    bottom_left = new_offset + np.array(new_img["image"].shape[:2])
-    
+    bottom_right = top_left + np.array(new_img["image"].shape[:2])
+
     # Get the section of the padded image where img1 will be overlayed
-    padded_section = padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :]
-    padded_distance_section = padded_distance[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1])]
+    padded_section = padded[int(top_left[0]):int(bottom_right[0]), int(top_left[1]):int(bottom_right[1]), :]
+    padded_distance_section = padded_distance[int(top_left[0]):int(bottom_right[0]), int(top_left[1]):int(bottom_right[1])]
     
     #alpha_channel = distance_alpha(new_img[:, :, 3], padded_section[:, :, 3], feather_width)
     
@@ -116,8 +124,8 @@ def offset_overlay(new_img: ImageInfo, base_img: Image, map_distance ,new_locati
     overlayed_section, overlayed_distance_section = layering(new_img, padded_section, padded_distance_section)
     
     # Write the overlayed section back to the image
-    padded[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1]), :] = overlayed_section
-    padded_distance[int(new_offset[0]):int(bottom_left[0]), int(new_offset[1]):int(bottom_left[1])] = overlayed_distance_section
+    padded[int(top_left[0]):int(bottom_right[0]), int(top_left[1]):int(bottom_right[1]), :] = overlayed_section
+    padded_distance[int(top_left[0]):int(bottom_right[0]), int(top_left[1]):int(bottom_right[1])] = overlayed_distance_section
 
     return padded, padded_distance
 

@@ -111,7 +111,7 @@ def get_coordinates(
         camera_parameters["drone_coordinates"][0]
     )
 
-    print("coordinates", latitude_length_lat, longitude_length_long)
+    #print("coordinates", latitude_length_lat, longitude_length_long)
 
     altitude_m: float = camera_parameters["altitude"]
 
@@ -132,7 +132,7 @@ def get_coordinates(
 
     # Invert the X axis so that the longitude is correct
     intersect[1] *= -1
-    print("i need this", intersect)
+    #print("i need this", intersect)
 
     # Convert the location to latitude and longitude and add it to the drone's coordinates
     pixel_lat: float = camera_parameters["drone_coordinates"][0] + (intersect[0]*FEET_PER_METER) / latitude_length_lat

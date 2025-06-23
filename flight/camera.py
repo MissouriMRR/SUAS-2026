@@ -783,7 +783,7 @@ class CameraAirSim(Camera):
 
         attitude: dronekit.Attitude = drone.attitude
         roll_deg: float = math.degrees(attitude.roll)
-        pitch_deg: float = math.degrees(attitude.pitch)
+        pitch_deg: float = math.degrees(attitude.pitch) - 90
         yaw_deg: float = math.degrees(attitude.yaw)
 
         return CameraParameters(

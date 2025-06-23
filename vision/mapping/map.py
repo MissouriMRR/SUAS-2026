@@ -48,7 +48,7 @@ class Map:
         blank_channel = np.zeros((img["image_shape"]["height"], img["image_shape"]["width"]))
         blank_channel=blank_channel+1
         img["distance"] = blank_channel
-        print("yes", self.pixels_per_foot, consts.FEET_PER_METER,img["camera_parameters"]["altitude"])
+        #print("yes", self.pixels_per_foot, consts.FEET_PER_METER,img["camera_parameters"]["altitude"])
 
         img["image"], img_corner_pixels = deskew.deskew(
             img,
@@ -138,7 +138,7 @@ class Map:
             self.add_projected_image(img)
 
 
-
+        cv2.imwrite("calcmap.png", self.img)
         self.img_count += 1
         
         
@@ -165,19 +165,37 @@ class Map:
             center_coord[0]
         )
         longitude_length: float = coordinate_lengths.longitude_length(
-            center_coord[1]
+            center_coord[0]
         )
+
         
         relative_coord_ft = np.array(
-            [coordinate_change[0] * latitude_length, coordinate_change[1] * longitude_length]
+            [coordinate_change[1] * longitude_length,coordinate_change[0] * latitude_length]
         )
-        
+    
+        print("PIXELS PER FOOT",self.pixels_per_foot)
         pixel_offset = np.round(relative_coord_ft * self.pixels_per_foot)
-        
+        pixel_offset[1]*=-1 #negative is up
         updated_map_img, self.map_distance = overlaying.offset_overlay(proj_img, self.img, self.map_distance, pixel_offset, self.feather_width)
+        """
+        input("1")
+        print("img min coord",img_min_coord)
+        print("img max coord",img_max_coord)
+        print("map min coord",self.coord_min)
+        print("map max coord",self.coord_max)
+
+        print("center coord ",center_coord)
+        print("map center",map_center)
+        print("coordinate change",coordinate_change)
+        print("latitude_length",latitude_length)
+        print("long_length",longitude_length)
+        print("pixel offset",pixel_offset)
+        input("2")
+        """
         
         self.coord_min = np.minimum(self.coord_min, img_min_coord)
-        self.coord_max = np.maximum(self.coord_min, img_min_coord)
+        self.coord_max = np.maximum(self.coord_max, img_max_coord)
+        print("min coord",self.coord_min)
         self.img = updated_map_img
         
         return
