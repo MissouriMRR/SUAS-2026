@@ -50,6 +50,10 @@ def pixel_intersect(
     # Apply the rotation of the drone to the vector
     vector = rotate_degrees(vector, gimbal_rotation)
 
+    # This needs to be applied as unlike the usual x and y axis, y is flipped
+    # This should only be applied in pixel_intersect and not get_coordinates!!!
+    vector[1] *= -1
+
     intersect: Point | None = plane_collision(vector, height)
 
     return intersect
