@@ -81,11 +81,14 @@ class CameraParameters(TypedDict):
     drone_coordinates: list[float]
     altitude: float
 
+
 FEET_PER_METER: float = 3.28084
 
-class ImageShape(TypedDict):
+
+class ImageShapeData(TypedDict):
     """
-    Image shape details since image.shape gives it in hard to understand details this can make it easier to understand and use
+    Image shape details since image.shape gives it in hard to understand
+    details this can make it easier to understand and use
 
     Attributes
     ----------
@@ -98,11 +101,12 @@ class ImageShape(TypedDict):
     color_channels: Optional[str]
         what colors the channels are for example rgb or whatever
     """
-    
+
     width: int
     height: int
     channels: Optional[int]
     color_channels: Optional[str]
+
 
 class ImageInfo(TypedDict):
     """
@@ -121,7 +125,9 @@ class ImageInfo(TypedDict):
     corner_coords: Optional[Corners]
         The corner of each part of the image
     distance: Optional[NDArray[Shape["*, *"], UInt16]]
-        2d array of image shape size with the depths of each pixel. This is not kept in the 4th channel since warping the matrix messes with the corners of this
+        2d array of image shape size with the depths of each pixel.
+        This is not kept in the 4th channel since warping the matrix
+        messes with the corners of this
     """
 
     image_path: str
@@ -131,5 +137,3 @@ class ImageInfo(TypedDict):
     center_coords: Optional[tuple[float, float]]
     corner_coords: Optional[Corners]
     distance: Optional[NDArray[Shape["*, *"], UInt16]]
-
-

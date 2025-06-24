@@ -1,7 +1,12 @@
 """Functions for calculating coordinate degree lengths"""
 
+import math
+import logging
+
+from geographiclib.constants import Constants
+from geographiclib.geodesic import Geodesic
 import numpy as np
-from vision.common.constants import FEET_PER_METER, Point, CameraParameters
+from vision.common.constants import FEET_PER_METER, CameraParameters, Vector
 from vision.deskew import vector_utils
 
 
@@ -69,6 +74,7 @@ def longitude_length(latitude_deg: float) -> float:
 
     return distance
 
+
 def get_coordinates(
     pixel: tuple[int, int],
     image_shape: tuple[int, int, int] | tuple[int, int],
@@ -87,8 +93,7 @@ def get_coordinates(
     camera_parameters: CameraParameters
         The details on how and where the photo was taken
         rotation_deg: list[float]
-            The rotation of the drone in degrees. The constant ROTATION_OFFSET of the
-            camera, stored in constants.py, will be applied first
+            The rotation of the drone in degrees.
         drone_coordinates: list[float]
             The coordinates of the drone in degrees of (latitude, longitude)
         altitude: float
@@ -100,42 +105,42 @@ def get_coordinates(
         The (latitude, longitude) coordinates of the pixel in degrees.
         Equal to None if there is no valid intersect.
     """
+    geod: Geodesic = Geodesic(Constants.WGS84_a, Constants.WGS84_f)
+    # Get the vector that points to the pixel
+    # This will have a negative z since it is pointing at the projected image on the xy plane
+    vector: Vector = vector_utils.pixel_vector(pixel, image_shape)
 
-    # both should be 0 due to latitude
+    # We want just the roll and pitch of the photo, without the pitch
+    # introduced from the gimbal pointing down
+    rotations: list[float] = [
+        camera_parameters["rotation_deg"][0],
+        camera_parameters["rotation_deg"][1] + 90,
+        0,
+    ]
 
-    # Calculate the latitude and longitude lengths (in feet)
-    latitude_length_lat: float = latitude_length(
-        camera_parameters["drone_coordinates"][0]
+    # Apply the rotation of the drone to the vector
+    vector = vector_utils.rotate_degrees(vector, rotations)
+
+    # Multiply the vector to make the z axis match the altitude of the drone
+    vector = abs(camera_parameters["altitude"] / vector[2]) * vector
+
+    hypotenuse: float = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+    angle: float = math.degrees(math.atan2(vector[0], vector[1]))
+    logging.debug("hypotenuse: %s", hypotenuse)
+    logging.debug("angle: %s", angle)
+
+    # Take into account both the yaw of the drone and the angle that the
+    # pixel is at from the center of the image
+    azimuth = camera_parameters["rotation_deg"][2] + angle  # in degrees
+    shift = hypotenuse  # in meters
+
+    logging.debug("azimuth: %s", azimuth)
+
+    geod_result = geod.Direct(
+        camera_parameters["drone_coordinates"][0],
+        camera_parameters["drone_coordinates"][1],
+        azimuth,
+        shift,
     )
-    longitude_length_long: float = longitude_length(
-        camera_parameters["drone_coordinates"][0]
-    )
 
-    #print("coordinates", latitude_length_lat, longitude_length_long)
-
-    altitude_m: float = camera_parameters["altitude"]
-
-    # Find the pixel's intersect with the ground to get the location relative to the drone
-    intersect: Point | None = vector_utils.pixel_intersect(
-        pixel,
-        image_shape,
-        camera_parameters["rotation_deg"],
-        altitude_m,
-    )
-
-    if intersect is None:
-        print(f"pixel {pixel}")
-        print(f"image_shape {image_shape}")
-        print(f"camera_parameters" + str(camera_parameters["rotation_deg"]))
-        print(f"altitude_m {altitude_m}")
-        return
-
-    # Invert the X axis so that the longitude is correct
-    intersect[1] *= -1
-    #print("i need this", intersect)
-
-    # Convert the location to latitude and longitude and add it to the drone's coordinates
-    pixel_lat: float = camera_parameters["drone_coordinates"][0] + (intersect[0]*FEET_PER_METER) / latitude_length_lat
-    pixel_lon: float = camera_parameters["drone_coordinates"][1] + (intersect[1]*FEET_PER_METER) / longitude_length_long
-
-    return pixel_lat, pixel_lon
+    return geod_result["lat2"], geod_result["lon2"]

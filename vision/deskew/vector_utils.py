@@ -1,11 +1,10 @@
 """Functions that use vectors to calculate camera intersections with the ground"""
 
+import math
 import json
 
 import numpy as np
-from nptyping import NDArray, Shape, Float64, UInt8
 from scipy.spatial.transform import Rotation
-import math
 
 from utils import type_utils
 from vision.common.constants import Point, Vector, CameraConfig
@@ -41,15 +40,15 @@ def pixel_intersect(
         Returns None if there is no intersect.
     """
 
-    # Create the normalized unit vector representing the direction of the given pixel
+    # Get the vector that points to the pixel
+    # This will have a negative z since it is pointing at the projected image on the xy plane
     vector: Vector = pixel_vector(pixel, image_shape)
 
-    # Apply the drone rotation
-    vector = rotate_degrees(vector, rotation_deg)
+    # Fix the pitch of the photo due to gimbal pointing down
+    gimbal_rotation: list[float] = [rotation_deg[0], rotation_deg[1] + 90, rotation_deg[2]]
 
-    # will returnf yxz instead of xyz if not rotated 90 degrees yaw
-    vector = rotate_degrees(vector, [0, 0, 90])
-    #vector[0],vector[1]=vector[1],vector[0]
+    # Apply the rotation of the drone to the vector
+    vector = rotate_degrees(vector, gimbal_rotation)
 
     intersect: Point | None = plane_collision(vector, height)
 
@@ -69,21 +68,25 @@ def plane_collision(ray_direction: Vector, height: float, cutoff_ratio: float = 
     height : float
         The Z coordinate for the starting height of the ray; can be any units
     cutoff_ratio: float = 0
-        basically the ratio of z in the xyyz vector where any vector less than it will get cutoff
-        Not essential is used to prevent warping and cutoff nearing no height of the image aka there are getting closer to infinity horizontal distance for the vertical
-        Ratio is roughly(not exact) if .1 then distance to the corner is 10 times as large as the distance to the camera and lower ratio means less quality of pixel
+        basically the ratio of z in the xyz vector where any vector less than it will get cutoff
+        Not essential, but is used to prevent warping and cutoff nearing no height of the image
+        aka they are getting closer to infinity horizontal distance for the vertical
+        Ratio is roughly(not exact) if .1 then distance to the corner is 10 times as
+        large as the distance to the camera and lower ratio means less quality of pixel
         default is 0 to allow near infinite intersects with the plane
 
     Returns
     -------
     intersect : Point | None
-        The ray's intersection with the plane in [X,Y,Z] format. Z is the height and Units are the same as
-        `height`
+        The ray's intersection with the plane in [X,Y,Z] format.
+        Z is the height and Units are the same as `height`
         Returns None if there is no intersect.
     """
 
-    # negative Z is down towards the ground I think, so as long as Z is negative then the vector is valid
-    # however if the Z is so small that it is negligible is probably not the best due to warping and annoyance
+    # negative Z is down towards the ground I think,
+    # so as long as Z is negative then the vector is valid
+    # however if the Z is so small that it is negligible is probably
+    # not the best due to warping and annoyance
     # like a vector at 89 degrees from the plane will not give good results at all
 
     # normalize cause this how that goes
@@ -100,8 +103,8 @@ def plane_collision(ray_direction: Vector, height: float, cutoff_ratio: float = 
     if intersect[2] == 0:
         return np.array([0, 0, 0], dtype=np.float64)
 
-    # sets the z of the vector equal to height and scales the rest of the vector with it
-    intersect: Point = height / intersect[2] * intersect
+    # sets the z of the vector equal to negative height and scales the rest of the vector with it
+    intersect = abs(height / intersect[2]) * intersect
     intersect = np.round(intersect, decimals=6)
 
     return intersect
@@ -133,7 +136,6 @@ def pixel_vector(
     fov_v: float
     fov_h, fov_v = get_fov()
 
-
     vector: Vector = camera_vector(
         pixel_angle(fov_h, pixel[0] / image_shape[1]),
         pixel_angle(fov_v, pixel[1] / image_shape[0]),
@@ -164,7 +166,7 @@ def pixel_angle(fov: float, ratio: float) -> float:
         The pixel's angle from the center of the camera along a single axis.
         The horizontal angle will be reversed
     """
-    
+
     return np.arctan(np.tan(fov / 2) * (1 - 2 * ratio))
 
 
@@ -270,12 +272,11 @@ def camera_vector(h_angle: float, v_angle: float) -> Vector:
     camera_vector : Vector
         The vector which represents a given location in an image
     """
+    # We know photos are being taken straight down, so the z axis is set to -1
+    # After that we can use the tangent of the angle of each axis to get the resulting
+    # vector pointing towards the pixel in the image
 
-    # unit vector pointing towards the point where the pixel lines up on the plane
-    # is in xyz unit vector
-    # assuming camera is facing straight forward on the x axis then rotation is applied later
-
-    vector: Vector = np.array([1, math.tan(-h_angle), math.tan(v_angle)], dtype=np.float64)
+    vector: Vector = np.array([math.tan(-h_angle), math.tan(v_angle), -1], dtype=np.float64)
     vector = vector / np.linalg.norm(vector)
 
     vector = np.round(vector, decimals=6)
@@ -355,9 +356,8 @@ def rotate_radians(vector: Vector, rotation_rad: list[float]) -> Vector:
     """
 
     # Reverse the Y and Z rotation to match MAVSDK convention
-    #rotation_rad[0]*=-1
-    rotation_rad[1]*=-1
-    #rotation_rad[2] *= -1
+    rotation_rad[0] *= -1
+    rotation_rad[2] *= -1
 
     rotation = Rotation.from_euler("xyz", rotation_rad)
     result: Vector = rotation.apply(np.array(vector))
