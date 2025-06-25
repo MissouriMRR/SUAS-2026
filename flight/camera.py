@@ -363,7 +363,7 @@ class CameraIRL(Camera):
                 latitude,
                 longitude,
                 altitude,
-                airspeed=5.0,
+                airspeed=10,
                 tolerance=WAYPOINT_TOLERANCE,
             )
         )
