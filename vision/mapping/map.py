@@ -172,7 +172,7 @@ class Map:
         longitude_length: float = coordinate_lengths.longitude_length(center_coord[0])
 
         relative_coord_ft = np.array(
-            [coordinate_change[1] * longitude_length, coordinate_change[0] * latitude_length]
+            [coordinate_change[0] * longitude_length, coordinate_change[1] * latitude_length]
         )
 
         print("PIXELS PER FOOT", self.pixels_per_foot)
