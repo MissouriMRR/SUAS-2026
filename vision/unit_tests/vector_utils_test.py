@@ -1,4 +1,5 @@
 from vision.deskew import vector_utils
+
 """pixel_intersect(
     pixel: tuple[int, int],
     image_shape: tuple[int, int, int] | tuple[int, int],
@@ -6,4 +7,4 @@ from vision.deskew import vector_utils
     height: float,
 ) -> Point | None:"""
 
-print(vector_utils.pixel_intersect((1920,1080),(1080,1920),[0,-90,0],100))
+print(vector_utils.pixel_intersect((1920, 1080), (1080, 1920), [0, -90, 0], 100))

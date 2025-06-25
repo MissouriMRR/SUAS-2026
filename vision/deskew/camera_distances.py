@@ -142,10 +142,19 @@ def pixel_per_foot(
     image_shape: tuple[int, int, int] | tuple[int, int], camera_parameters: CameraParameters
 ) -> float:
     Corner_list: Corners = corner_coords(image_shape, camera_parameters)
-    
+
     # using this calculate distance instead so it will use coordinates instead of having to parse the image data makes it a little faster
     # returning in feet pls change this at some point
     # uisng the top left and top right parts of the image
-    return image_shape[1]/((np.tan(vector_utils.get_fov()[0]/2))*FEET_PER_METER*camera_parameters["altitude"]*2)*0.4
-    #print(coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0))
-    #return (image_shape[1]/(FEET_PER_METER*coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0)))  
+    return (
+        image_shape[1]
+        / (
+            (np.tan(vector_utils.get_fov()[0] / 2))
+            * FEET_PER_METER
+            * camera_parameters["altitude"]
+            * 2
+        )
+        * 0.4
+    )
+    # print(coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0))
+    # return (image_shape[1]/(FEET_PER_METER*coordinate_calculate_distance(Corner_list[0][0], Corner_list[0][1], 0, Corner_list[1][0], Corner_list[1][1], 0)))
