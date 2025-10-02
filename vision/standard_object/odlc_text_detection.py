@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import pytesseract
 
-from vision.common.bounding_box import ObjectType, BoundingBox, tlwh_to_vertices
+from vision.common.bounding_box import BoundingBox, tlwh_to_vertices
 from vision.common.constants import Image
 
 
@@ -118,7 +118,7 @@ def text_detection(base_img: Image) -> BoundingBox:
 
     text_attributes: dict[str, str] = {"text": found_text}
     text_with_bounds: BoundingBox = BoundingBox(
-        vertices=text_bounds, attributes=text_attributes, obj_type=ObjectType.TEXT
+        vertices=text_bounds, attributes=text_attributes, obj_type="text"
     )
 
     return text_with_bounds
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     # Testing coordinates
     test_bounds: BoundingBox = BoundingBox(
-        ((740, 440), (820, 440), (820, 500), (740, 500)), ObjectType.STD_OBJECT
+        ((740, 440), (820, 440), (820, 500), (740, 500)), "object"
     )  # Coords for the A in the star of the 2022 image
 
     read_text: BoundingBox = get_odlc_text(img)

@@ -35,6 +35,7 @@ async def run(self: Land) -> None:
         logging.info("Land state running")
 
         # Instruct the drone to land
+        self.drone.vehicle.airspeed = 20
         await self.drone.return_to_launch()
 
         logging.info("Land state complete.")

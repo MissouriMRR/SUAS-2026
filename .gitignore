@@ -159,5 +159,10 @@ vision_videos/
 *.mkv
 *.flv
 
+# Vision Models
+vision/yolo/training/*.yaml
+*.pt
+*.onnx
+
 /state_machine/state.json
 compose.override.yml

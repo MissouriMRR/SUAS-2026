@@ -1,30 +1,24 @@
 """Implements the behavior of the ODLC state."""
 
 import asyncio
-from ctypes import c_bool
 import logging
-import json
-from multiprocessing import Value
-from multiprocessing.sharedctypes import SynchronizedBase
 from pathlib import Path
 import traceback
 
 from flight.camera import CameraIRL, CameraAirSim
-
-from flight.extract_gps import extract_gps, GPSData
+from flight.extract_gps import extract_gps, GPSData, OdlcWaypoint
 from flight.waypoint.goto import move_to
-from integration_tests.emg_obj_vision import emg_integration_pipeline
-from state_machine.flight_settings import FlightSettings, SimMode
+from state_machine.flight_settings import SimMode
 from state_machine.state_tracker import (
     update_state,
     update_drone,
     update_flight_settings,
 )
-from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
-from vision.flyover_vision_pipeline import flyover_pipeline
+
+from vision.vision_pipeline import flyover_pipeline
 from vision.common import camera_config
 
 
@@ -33,7 +27,7 @@ async def run(self: ODLC) -> State:
     Implements the run method for the ODLC state.
 
     This method initiates the ODLC scanning process of the drone, takes pictures and transfers
-    picture data to the vision code, and then transitions to the Airdrop state.
+    picture data to the vision code, and then transitions to the Mapping state.
 
     Parameters
     ----------
@@ -42,18 +36,13 @@ async def run(self: ODLC) -> State:
 
     Returns
     -------
-    Airdrop : State
+    Mapping : State
         The next state after the drone has successfully scanned the ODLC area.
 
     Raises
     ------
     asyncio.CancelledError
         If the execution of the ODLC state is canceled.
-
-    Notes
-    -----
-    The type hinting for the capture_status variable is broken, see
-    https://github.com/python/typeshed/issues/8799
     """
 
     camera_config.update_sim_mode(self.flight_settings.sim_mode)
@@ -67,37 +56,37 @@ async def run(self: ODLC) -> State:
         update_flight_settings(self.flight_settings)
         logging.info("ODLC state running")
 
-        # Syncronized type hint is broken, see https://github.com/python/typeshed/issues/8799
-        capture_status: SynchronizedBase[c_bool] = Value(c_bool, False)  # type: ignore
+        capture_status: asyncio.Event = asyncio.Event()
 
-        vision_task: asyncio.Task[None] = asyncio.ensure_future(
-            vision_odlc_logic(capture_status, self.flight_settings)
-        )
+        asyncio.ensure_future(vision_odlc_logic(self, capture_status))
 
         flight_task: asyncio.Task[None] = asyncio.ensure_future(find_odlcs(self, capture_status))
 
-        logging.info("Starting check for task completion")
-
-        while not vision_task.done():
-            await asyncio.sleep(0.25)
+        logging.info("Starting check for flight task completion")
 
         while not flight_task.done():
             await asyncio.sleep(0.25)
 
-        logging.info("ODLC scan complete. State completing...")
-        vision_task.cancel()
+        logging.info("ODLC flight scan complete. State completing...")
         flight_task.cancel()
     except asyncio.CancelledError as ex:
         logging.error("ODLC state canceled")
         traceback.print_exc()
         raise ex
 
-    return Airdrop(self.drone, self.flight_settings)
+    return Mapping(self.drone, self.flight_settings)
 
 
-async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> None:
+async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
     """
-    Implements the run method for the ODLC state.
+    Implements the flight logic fro the run method of the ODLC state.
+
+    Parameters
+    ----------
+    self : ODLC
+        The ODLC state object.
+    capture_status : asyncio.Event
+        An event that is set when the drone has successfully captured all images.
 
     Returns
     -------
@@ -112,6 +101,8 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
     # Initialize the camera
     if self.flight_settings.sim_mode is SimMode.REAL:
         camera: CameraIRL | CameraAirSim | None = CameraIRL()
+        # The gimbal takes some time to adjust its angle, wait for it to be ready
+        await asyncio.sleep(3)
     elif self.flight_settings.sim_mode is SimMode.AIRSIM:
         camera = CameraAirSim()
     else:
@@ -135,62 +126,51 @@ async def find_odlcs(self: ODLC, capture_status: "SynchronizedBase[c_bool]") -> 
 
     gps_data: GPSData = extract_gps(self.flight_settings.mission_data_path)
 
-    loops: int = 0  # Max amount of loops before giving up
-    while loops <= 0:
-        logging.info("Starting odlc zone flyover")
-        loops += 1
+    logging.info("Starting odlc zone flyover")
 
-        # traverses the 3 waypoints starting at the midpoint on left to midpoint on the right
-        # then to the top left corner at the rectangle
-        point: int
-        for point in range(len(gps_data["odlc_waypoints"])):
-            take_photos: bool = True
+    # traverses the 3 waypoints starting at the midpoint on left to midpoint on the right
+    # then to the top left corner at the rectangle
+    i: int
+    point: OdlcWaypoint
+    for i, point in enumerate(gps_data["odlc_waypoints"]):
+        take_photos: bool = True
 
-            logging.info("Moving to ODLC scan point %d", point)
+        logging.info("Moving to ODLC scan point %d", i)
 
-            if camera:
-                await camera.odlc_move_to(
-                    self.drone.vehicle,
-                    gps_data["odlc_waypoints"][point].latitude,
-                    gps_data["odlc_waypoints"][point].longitude,
-                    gps_data["odlc_altitude"],
-                    take_photos,
-                )
-            else:
-                await move_to(
-                    self.drone.vehicle,
-                    gps_data["odlc_waypoints"][point].latitude,
-                    gps_data["odlc_waypoints"][point].longitude,
-                    gps_data["odlc_altitude"],
-                )
-
-        if self.flight_settings.standard_object_count <= 0:
-            break
-
-        with open("flight/data/output.json", encoding="ascii") as output:
-            airdrop_dict = json.load(output)
-            airdrops: int = len(airdrop_dict)
-
-        if airdrops >= self.flight_settings.standard_object_count:
-            break
+        if camera is not None:
+            await camera.odlc_move_to(
+                self.drone.vehicle,
+                point.latitude,
+                point.longitude,
+                gps_data["odlc_altitude"],
+                take_photos,
+            )
+        else:
+            await move_to(
+                self.drone.vehicle,
+                point.latitude,
+                point.longitude,
+                gps_data["odlc_altitude"],
+                airspeed=5,
+            )
 
     if camera:
         camera.disconnect()
-    capture_status.value = c_bool(True)  # type: ignore
+    capture_status.set()
     self.drone.odlc_scan = False
     logging.info("ODLC scan complete")
 
 
-async def vision_odlc_logic(
-    capture_status: "SynchronizedBase[c_bool]", flight_settings: FlightSettings
-) -> None:
+async def vision_odlc_logic(self: ODLC, capture_status: asyncio.Event) -> None:
     """
-    Implements the run method for the ODLC state.
+    Implements the vision logic for the run method of the ODLC state.
 
     Parameters
     ----------
-    capture_status : SynchronizedBase[c_bool]
-        A text file containing True if all images have been taken and False otherwise
+    self : ODLC
+        The ODLC state object.
+    capture_status : asyncio.Event
+        An event that is set when the drone has successfully captured all images.
     flight_settings : FlightSettings
         Settings for this flight.
 
@@ -206,17 +186,18 @@ async def vision_odlc_logic(
     """
     camera_data_filename: str = "flight/data/camera.json"
 
-    pipeline = (
-        emg_integration_pipeline if flight_settings.standard_object_count == 0 else flyover_pipeline
-    )
-
     # Wait until camera.json exists
     logging.info("Waiting for %s to exist", camera_data_filename)
     while not Path(camera_data_filename).is_file():
         await asyncio.sleep(1)
     logging.info("Camera data file found.")
 
-    await pipeline("flight/data/camera.json", capture_status, "flight/data/output.json")
+    await flyover_pipeline(
+        self.flight_settings,
+        "flight/data/camera.json",
+        capture_status,
+        "flight/data/output.json",
+    )
 
 
 # Setting the run_callable attribute of the ODLC class to the run function

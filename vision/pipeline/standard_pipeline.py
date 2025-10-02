@@ -1,14 +1,18 @@
 """Functions that perform standard object detection, localization, and classification"""
 
-from typing import TypeAlias
+from typing import Iterable, TypeAlias
 
-import numpy as np
+import utm
 
-from nptyping import NDArray, Shape, UInt8, Float32
+from flight.extract_gps import extract_gps, GPSData
+from flight.waypoint.calculate_distance import calculate_distance
+from flight.waypoint.geometry import Point
+
+from state_machine.flight_settings import FlightSettings
+
 import vision.common.constants as consts
 
 from vision.common.crop import crop_image
-from vision.competition_inputs.bottle_reader import BottleData
 from vision.common.bounding_box import BoundingBox
 from vision.common.odlc_characteristics import ODLCColor
 
@@ -18,15 +22,15 @@ from vision.standard_object.odlc_text_detection import get_odlc_text
 from vision.standard_object.odlc_colors import find_colors
 
 import vision.pipeline.pipeline_utils as pipe_utils
+from vision.yolo.model import ObjectDetection
 
-ContourHeirarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
-
-# The various thresholds to run the image processing at
-PROCESSING_THRESHOLDS: list[tuple[int, int]] = [(0, 50), (25, 150), (50, 250), (75, 350)]
+ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 
 
 def find_standard_objects(
-    original_image: consts.Image, camera_parameters: consts.CameraParameters, image_path: str
+    original_image: consts.Image,
+    camera_parameters: consts.CameraParameters,
+    image_path: str,
 ) -> list[BoundingBox]:
     """
     Finds all bounding boxes of standard objects in an image
@@ -107,155 +111,112 @@ def set_shape_attributes(
     return True
 
 
-def sort_odlcs(
-    bottle_info: dict[str, BottleData], saved_odlcs: list[BoundingBox]
-) -> list[list[BoundingBox]]:
-    """
-    Sorts the standard objects in the given list by which bottle they match
-
-    Parameters
-    ----------
-    bottle_info: dict[str, BottleData]
-        The data describing the object matching each bottle
-    saved_odlcs: list[BoundingBox]
-        The list of all sightings of standard objects
-
-    Returns
-    -------
-    sorted_odlcs: list[list[BoundingBox]]
-        The list of sightings of each object, matched to bottles
-    """
-
-    # The first index represents the bottle index - that's why there's 5
-    sorted_odlcs: list[list[BoundingBox]] = [[], [], [], [], []]
-
-    shape: BoundingBox
-    for shape in saved_odlcs:
-        bottle_index: int = get_bottle_index(shape, bottle_info)
-
-        # Save the shape bounding box in its proper place
-        if bottle_index != -1:
-            sorted_odlcs[bottle_index].append(shape)
-
-    return sorted_odlcs
-
-
-def get_bottle_index(shape: BoundingBox, bottle_info: dict[str, BottleData]) -> int:
-    """
-    For the input ODLC BoundingBox, find the index of the bottle that it best matches.
-    Returns -1 if no good match is found
-
-    Parameters
-    ----------
-    shape: BoundingBox
-        The bounding box of the shape. Attributes "text", "shape", "shape_color", and
-        "text_color" must be set
-    bottle_info: list[BottleData]
-        The input info from bottle.json
-
-    Returns
-    -------
-    bottle_index: int
-        The index of the bottle from bottle.json that best matches the given ODLC
-        Returns -1 if no good match is found
-    """
-
-    # For each of the given bottle shapes, find the number of characteristics the
-    #   discovered ODLC shape has in common with it
-    all_matches: NDArray[Shape[5], UInt8] = np.zeros((5), dtype=UInt8)
-
-    index: str
-    info: BottleData
-    for index, info in bottle_info.items():
-        matches: int = 0
-
-        # if shape.get_attribute("text") == info["letter"]:
-        #    matches += 1
-
-        if shape.get_attribute("shape") == info["shape"]:
-            matches += 1
-
-        if shape.get_attribute("shape_color") == info["shape_color"]:
-            matches += 1
-
-        # if shape.get_attribute("text_color") == info["letter_color"]:
-        #    matches += 1
-
-        all_matches[int(index)] = matches
-
-    # This if statement ensures that bad matches are ignored, and standards can be lowered.
-    #   Still takes the best match, but if none are good enough they will be ignored.
-    if all_matches.max() > 0:
-        # Gets the index of the first bottle with the most matches.
-        # First [0] takes the first dimension, second [0] takes the first element
-        return np.where(all_matches == all_matches.max())[0][0]
-
-    return -1
-
-
-def add_emergent_object(
-    odlc_dict: consts.ODLCDict, bottle_info: dict[str, BottleData], emg_object: BoundingBox
+def create_odlc_dict(
+    bounding_boxes: Iterable[BoundingBox], flight_settings: FlightSettings
 ) -> consts.ODLCDict:
-    """Adds the emergent object location to the given
-    ODLC dictionary if one of the bottles is marked as
-    associated to a emergent object
+    """
+    Creates the ODLCDict dictionary from a list of shape bounding boxes.
+    Discards bounding boxes whose center is not inside the airdrop boundary.
 
     Parameters
     ----------
+    bounding_boxes : Iterable[BoundingBox]
+        An iterable of the sightings of each object.
+    flight_settings : FlightSettings
+        The flight settings.
+        Used to get the airdrop boundary.
+
+    Returns
+    -------
     odlc_dict : consts.ODLCDict
-        The dictionary of ODLCs matching the output format
-    bottle_info : dict[str, BottleData]
-        The data describing the object matching each bottle
-    emg_object : BoundingBox
-        The bounding box of the emergent object. Attributes "latitude" and "longitude"
-        must be set
-
-    Returns
-    -------
-    consts.ODLCDict
-        The updated ODLC dictionary
+        The dictionary of ODLCs matching the output format.
     """
-    bottle: tuple[str, BottleData]
-    for bottle in bottle_info.items():
-        if bottle[1]["shape"] == "Emergent":
-            odlc_dict[bottle[0]] = {
-                "latitude": emg_object.get_attribute("latitude"),
-                "longitude": emg_object.get_attribute("longitude"),
-            }
-    return odlc_dict
 
-
-def create_odlc_dict(sorted_odlcs: list[list[BoundingBox]]) -> consts.ODLCDict:
-    """
-    Creates the ODLC_Dict dictionary from a list of shape bounding boxes
-
-    Parameters
-    ----------
-    sorted_odlcs: list[list[BoundingBox]]
-        The list of sightings of each object, matched to bottles
-
-    Returns
-    -------
-    odlc_dict: consts.ODLC_Dict
-        The dictionary of ODLCs matching the output format
-    """
+    # Get ODLC boundary
+    gps_data: GPSData = extract_gps(flight_settings.mission_data_path)
+    odlc_boundary: list[Point] = [
+        Point(odlc_boundary_point.easting, odlc_boundary_point.northing)
+        for odlc_boundary_point in gps_data["odlc_boundary_utm"]
+    ]
+    zone_number: int = gps_data["odlc_boundary_utm"][0].zone_number
+    zone_letter: str = gps_data["odlc_boundary_utm"][0].zone_letter
 
     odlc_dict: consts.ODLCDict = {}
 
-    i: int
-    bottle: list[BoundingBox]
-    for i, bottle in enumerate(sorted_odlcs):
-        coords_list: list[tuple[int, int]] = []
+    bbox: BoundingBox
+    for bbox in bounding_boxes:
+        # Check if in bounds
+        easting: float
+        northing: float
+        easting, northing, _, _ = utm.from_latlon(
+            bbox.get_attribute("latitude"),
+            bbox.get_attribute("longitude"),
+            force_zone_number=zone_number,
+            force_zone_letter=zone_letter,
+        )
+        if not Point(easting, northing).is_inside_shape(odlc_boundary):
+            continue
 
-        shape: BoundingBox
-        for shape in bottle:
-            coords_list.append((shape.get_attribute("latitude"), shape.get_attribute("longitude")))
-
-        if len(bottle) > 0:
-            coords_array: NDArray[Shape["*, 2"], Float32] = np.array(coords_list)
-
-            average_coord: NDArray[Shape["2"], Float32] = np.average(coords_array, axis=0)
-
-            odlc_dict[str(i)] = {"latitude": average_coord[0], "longitude": average_coord[1]}
+        odlc_dict[bbox.obj_type] = {
+            "latitude": bbox.get_attribute("latitude"),
+            "longitude": bbox.get_attribute("longitude"),
+        }
 
     return odlc_dict
+
+
+def proximity_check(
+    detections: list[ObjectDetection],
+    parameters: dict[str, consts.CameraParameters],
+    min_distance: float = 7.0,
+) -> list[tuple[ObjectDetection, BoundingBox]]:
+    """
+    Checks for detections that are too close to each other, and
+    removes the one with lower confidence.
+    The ruleset states that objects must be at least 50 feet apart.
+
+    Parameters
+    ----------
+    detections : list[ObjectDetection]
+        A list with all object detections.
+    parameters : dict[str, consts.CameraParameters]
+        A dictionary with the image parameters for every
+        captured image.
+    min_distance : float, optional
+        The minimum distance between objects in METERS, by default 7.0
+
+    Returns
+    -------
+    filtered_detections : list[tuple[ObjectDetection, BoundingBox]]
+        All detections that are at least `min_distance` apart, along with
+        their bounding boxes.
+    """
+    filtered_detections: list[tuple[ObjectDetection, BoundingBox]] = []
+    # If we sort the detections by confidence, we can stop as soon as we find a collision
+    detections.sort(key=lambda entry: entry.confidence, reverse=True)
+
+    for detection in detections:
+        image_name: str = detection.image.split("/")[-1]
+        image_parameters: consts.CameraParameters = parameters[image_name]
+        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(detection, image_parameters)
+        latitude: float = bounding_box.get_attribute("latitude")
+        longitude: float = bounding_box.get_attribute("longitude")
+
+        collided: bool = False
+        existing_bbox: BoundingBox
+        for _, existing_bbox in filtered_detections:
+            existing_latitude: float = existing_bbox.get_attribute("latitude")
+            existing_longitude: float = existing_bbox.get_attribute("longitude")
+
+            # We can use 0 altitude for calculation as the search area is pretty flat
+            distance: float = calculate_distance(
+                latitude, longitude, 0, existing_latitude, existing_longitude, 0
+            )
+            if distance < min_distance:
+                collided = True
+                break
+
+        if not collided:
+            filtered_detections.append((detection, bounding_box))
+
+    return filtered_detections

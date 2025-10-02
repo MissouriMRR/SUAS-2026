@@ -28,6 +28,24 @@
         "longitude": -91.7845482
       }
     ],
+    "odlcBoundary": [
+      {
+        "latitude": 37.9487052,
+        "longitude": -91.7841678
+      },
+      {
+        "latitude": 37.9482632,
+        "longitude": -91.783211
+      },
+      {
+        "latitude": 37.9479054,
+        "longitude": -91.7835614
+      },
+      {
+        "latitude": 37.9483448,
+        "longitude": -91.7844481
+      }
+    ],
     "mappingBoundary": [
       {
         "latitude": 37.9487052,
@@ -99,5 +117,23 @@
       "longitude": -91.7833991
     }
   ],
-  "airdropAltitude": 24
+  "defaultAirdropPoints": [
+    {
+      "latitude": 37.94855,
+      "longitude": -91.78399
+    },
+    {
+      "latitude": 37.94839,
+      "longitude": -91.78425
+    },
+    {
+      "latitude": 37.94836,
+      "longitude": -91.78352
+    },
+    {
+      "latitude": 37.94813,
+      "longitude": -91.78372
+    }
+  ],
+  "airdropAltitude": 16.0
 }

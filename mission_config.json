@@ -15,5 +15,9 @@
     },
     "skip_waypoint": false,
     "skip_odlc_and_airdrop": false,
-    "simple_takeoff": false
+    "simple_takeoff": false,
+    "wind": {
+        "mean_wind_speed": 0.0,
+        "mean_wind_direction": 0.0
+    }
 }
