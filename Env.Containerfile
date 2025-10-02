@@ -6,8 +6,8 @@ FROM python:${PYTHON_VERSION}
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
-RUN apt update && apt install -y software-properties-common
-RUN apt-get install python3-wxgtk4.0 -y --no-install-recommends
+# RUN apt update && apt install -y software-properties-common
+# RUN apt-get install python3-wxgtk4.0 -y --no-install-recommends
 
 # Ensure pip is up to date
 RUN python -m pip install --upgrade pip
