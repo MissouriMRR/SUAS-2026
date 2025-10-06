@@ -30,9 +30,14 @@ COPY ./pyproject.toml ./
 # install stuff to global python environment instead of creating a virtualenv
 # the container is our virtual environment
 ENV POETRY_VIRTUALENVS_CREATE=false
+
+# this command takes approximately 10 years to run
 RUN poetry install --no-interaction --no-ansi
 
+# essential dependencies
+RUN apt-get update && apt-get install -y libgl1-mesa-glx
+
 # additional, non-essential packages/libraries
-RUN apt-get update && apt-get install -y tmux iproute2
+RUN apt-get install -y tmux iproute2
 
 RUN pip install pre-commit
