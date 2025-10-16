@@ -47,7 +47,8 @@ class Map:
 
     def prepare_image(self, img: consts.ImageInfo):
 
-        blank_channel = np.ones((img["image_shape"]["height"], img["image_shape"]["width"]))
+        blank_channel = np.zeros((img["image_shape"]["height"], img["image_shape"]["width"]))
+        blank_channel = blank_channel + 1
         img["distance"] = blank_channel
         # print("yes", self.pixels_per_foot, consts.FEET_PER_METER,img["camera_parameters"]["altitude"])
 
