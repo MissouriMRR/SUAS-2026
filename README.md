@@ -1,17 +1,19 @@
-# SUAS-2025
+# SUAS-2026
 
-Missouri S&amp;T Multirotor Drone Design Team's code for the Association for Unmanned Vehicle Systems International's 2025 Student Unmanned Aerial Systems Competition (AUVSI SUAS 2025) hosted by Robonation
+Missouri S&amp;T Multirotor Design Team's code for the Association for Unmanned Vehicle Systems International's 2026 Student Unmanned Aerial Systems Competition (AUVSI SUAS 2026) hosted by RoboNation
 
 ## Table of contents
 
 - [Installations](#installations)
     - [Git](#git)
     - [GitHub Credential Manager](#github-credential-manager)
-    - [Python and Pip](#python-and-pip)
+    - [uv](#uv)
+    - [Python](#python)
     - [Getting the Repo](#getting-the-repo)
+    - [Installing Dependencies](#installing-dependencies)
     - [Pre-commit](#pre-commit)
-    - [Poetry](#poetry)
 - [Development](#development)
+    - [Running Code](#running-code)
     - [Branches](#branches)
     - [Commits and Contributing](#commits-and-contributing)
     - [Pull Requests](#pull-requests)
@@ -45,40 +47,54 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 
 Run the command `gh auth login` and follow the prompts. For options, choose `GitHub.com`, `HTTPS`, `Yes`, `Login with a web browser`. Authorize the session in the web browser and your GitHub credentials will be saved.
 
-### Python and Pip
+### uv
+We use [uv](https://docs.astral.sh/uv/) to manage Python versions and our dependencies. You can install it with these commands:
 
-Ubuntu 22 should come preinstalled with Python 3.10.4 . Check with `python3 --version`.
+Windows: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
 
-You will need to install pip with `sudo apt-get install python3-pip`. Pip is used for managing Python packages.
+macOS and Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+### Python
+
+This repository uses Python 3.12. You can install it easily through uv with the command `uv python install 3.12`.
 
 ### Getting the Repo
 
-Go to your documents folder and clone the repo with `git clone https://github.com/MissouriMRR/SUAS-2025.git`
+Go to your Documents folder and clone the repo with `git clone https://github.com/MissouriMRR/SUAS-2026.git`
+
+### Installing Dependencies
+
+Once you have the correct Python version installed, you can install all the required dependencies with the command `uv sync`. This will create a virtual environment in the `.venv` folder.
+
+Every time the dependency list changes, you should run `uv sync` to update your virtual environment.
 
 ### Pre-commit
 
 Pre-commit is a git hook that will check your code to make sure it is up to our standards before you make a commit. It is required that your code passes our pre-commit checks to be merged into the develop branch. That being said, when working on your own branch, you can add the `--no-verify` flag to your git commit command in order to bypass pre-commit. Just make sure you successfully run pre-commit before you submit a pull request.
 
-To install it, run the command `pip3 install pre-commit`. You will need to restart your system for this to take effect.
+uv will install pre-commit for you once you run `uv sync`.
 
-Once you have restarted, open a terminal and navigate to the repo.
+Run the command `pre-commit install` to install the pre-commit hooks we use to check code.
 
-Run the command `pre-commit install`.
-
-You can test that this worked by running `pre-commit run`.
-
-### Poetry
-
-Poetry is a virtual shell that allows use to ensure you have all packages and tools set up for the repo correctly.
-
-To install, run `pip3 install poetry`.
-
-Open a terminal and navigate to the repo. Run the command `poetry install`. This will install all dependencies needed.
-
-Run `poetry shell` to open a virtual shell environment.
-
+You can test that this worked by running `pre-commit run`. This will run all of your code changes against the pre-commit hooks.
 
 ## Development
+
+### Running Code
+
+uv creates a virtual environment in the `.venv` folder that stores the correct Python versions and libraries for the codebase, but by default, it will not be used when running `python` commands.
+
+You can run python files inside of the virtual environment using `uv run <filename>`.
+
+You can also activate the virtual environment, allowing you to run `python` commands like normal, by running these commands:
+
+Windows: `.venv\Scripts\activate`
+
+Linux/MacOS: `source .venv/bin/activate`
+
+There are other activation files for different shells, such as `source .venv/bin/activate.fish` for [Fish shell](https://fishshell.com/).
+
+If you try to run a python file that is nested inside of other folders, you may run into issues with imports not resolving correctly. You can fix this by add the `-m` flag to your `uv run` or `python` commands, and replacing the file name with the import path to the file. For example: `uv run -m flight.test_files.connection_test` or `python -m flight.test_files.connection_test`.
 
 ### Branches
 
@@ -89,7 +105,7 @@ For each issue that you work on, you should create a new branch.
 
 ### Commits and Contributing
 
-***Note: Never directly commit to the `develop` branch! Make sure you are on a seperate branch.***
+***Note: Never directly commit to the `develop` branch! Make sure you are on a separate branch.***
 
 1. Once you are on a new branch, you can start writing new code.
 2. Add files to your next commit using `git add <filename>`.

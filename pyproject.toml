@@ -1,59 +1,32 @@
-[tool.poetry]
-name = "suas-2025"
-version = "0.1.0"
-description = ""
-authors = []
-license = "MIT"
-package-mode = false
+[project]
+name = "suas-2026"
+version = "1.0.0"
+description = "Student Unmanned Aerial Systems 2026 Competition code"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "aiohttp>=3.13.1",
+    "airsim",
+    "dronekit",
+    "opencv-python>=4.12.0.88",
+    "pymavlink>=2.4.49",
+    "shapely>=2.1.2",
+    "siyi-sdk>=0.2.12",
+    "torch>=2.9.0",
+    "torchvision>=0.24.0",
+    "utm>=0.8.1",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pip = "^22.0.4"
-numpy = "^1.21.2"
-opencv-python = "^4.8.0.76"
-pytesseract = "^0.3.9"
-colorlog = "^6.6.0"
-pyproj = "^3.3.0"
-pyusb = "^1.2.1"
-matplotlib = "^3.5.1"
-utm = "^0.7.0"
-Shapely = "^1.8.1"
-nptyping = "^2.3.1"
-scipy = "^1.9.3"
-ticlib = "^0.2.2"
-pandas = "^1.5.3"
-psutil = "^5.9.4"
-pyyaml = "^6.0"
-seaborn = "^0.12.2"
-gitpython = "^3.1.31"
-setuptools = "^67.4.0"
-geopy = "^2.3.0"
-pyserial = "^3.5"
-pathfinding = "^1.0.1"
-siyi-sdk = "^0.2.12"
-ffmpeg-python = "^0.2.0"
-aiohttp = "^3.11.11"
-aiofiles = "^24.1.0"
-onnxruntime = "^1.20.1"
-dronekit = {url = "https://github.com/MissouriMRR/docs/raw/refs/heads/main/subteams/flight/installation_guide/dronekit-2.9.2-py310-none-any.whl"}
-torch = {version = "^2.6.0", source = "pytorch"}
-airsim = {git = "https://github.com/heitmeih/AirSim-fixed-pyinstall", rev = "main", subdirectory = "PythonClient"}
+[tool.uv.sources]
+dronekit = { url = "https://github.com/MissouriMRR/docs/raw/refs/heads/main/subteams/flight/installation_guide/dronekit-2.9.2-py310-none-any.whl" }
+airsim = { git = "https://github.com/heitmeih/AirSim-fixed-pyinstall.git", subdirectory = "PythonClient" }
 
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^0.931"
-black = "^21.12b0"
-pylint = "^2.12.2"
-types-aiofiles = "^24.1.0"
-
-
-[[tool.poetry.source]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cu118"
-priority = "explicit"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "black>=25.9.0",
+    "mypy>=1.18.2",
+    "pre-commit>=4.3.0",
+    "pylint>=4.0.2",
+    "types-aiofiles>=25.1.0.20251011",
+]

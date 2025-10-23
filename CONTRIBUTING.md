@@ -1,4 +1,4 @@
-# Contributing to SUAS-2023
+# Contributing to SUAS-2026
 
 - In order to contribute, you must be a member of the Multirotor Design Team.
 - New changes should be added to a branch named `feature/<feature_name>`.
