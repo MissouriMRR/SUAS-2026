@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 from flight.camera import CameraIRL
-from vision.yolo.model import ObjectDetection, YOLO
+from vision.yolo.model import YOLO, ObjectDetection
 
 
 async def test_capture_and_test() -> None:
@@ -29,7 +29,10 @@ async def test_capture_and_test() -> None:
     os.makedirs(path, mode=0o777, exist_ok=True)
     image_path, _ = await camera.capture_photo()
     await asyncio.sleep(1)
-    image: cv2.typing.MatLike = cv2.imread(image_path)
+    image: cv2.typing.MatLike | None = cv2.imread(image_path)
+    if image is None:
+        logging.error("%s is not an image", image_path)
+        return
     cv2.imshow("Captured Image", image)
 
     # Run YOLO inference on the image

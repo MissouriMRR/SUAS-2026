@@ -1,7 +1,6 @@
 """This file contains the class that implements and runs the YOLO model on images we capture."""
 
 import asyncio
-from dataclasses import dataclass
 import logging
 import os
 
@@ -100,26 +99,6 @@ ALL_COCO_CLASSES: dict[int, str] = {
 }
 
 
-@dataclass
-class CroppedImage:
-    """
-    A class representing a cropped image.
-
-    Attributes
-    ----------
-    image : npt.NDArray[np.float32]
-        The cropped image.
-    x : int
-        The x-axis offset of the cropped image from the left edge of the original image.
-    y : int
-        The y-axis offset of the cropped image from the top edge of the original image.
-    """
-
-    image: npt.NDArray[np.float32]
-    x: int
-    y: int
-
-
 class ImageTrigger:
     """
     A class used for ONNX async running to let the
@@ -212,6 +191,7 @@ class ObjectDetection:
         Returns the shape of the image of the object detection.
     """
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         image_path: str,
@@ -391,57 +371,16 @@ class YOLO:
         """
         # Convert the cv2 image to RGB and resize it to the input size of the model
         image_rgb: cv2.typing.MatLike = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        resized: cv2.typing.MatLike = cv2.resize(image_rgb, (self.input_width, self.input_height))
 
         # Scale input pixel value to 0 to 1
-        input_image: npt.NDArray[np.float32] = image_rgb / 255.0
+        input_image: npt.NDArray[np.float32] = resized / 255.0
         input_image = input_image.transpose(2, 0, 1)
         input_tensor: npt.NDArray[np.float32] = input_image[np.newaxis, :, :, :].astype(np.float32)
         return input_tensor
 
-    def _tile_image(
-        self, image: npt.NDArray[np.float32], width: int, height: int
-    ) -> list[CroppedImage]:
-        """
-        Tiles the provided image into smaller images of the given width and height.
-        The tiles on the bottom and right edges have a chance of overlapping with
-        other tiles if the image size is not a multiple of the tile size.
-        This is done intentionally to ensure that every pixel of the image
-        is covered by at least one tile so that no objects are missed.
-
-        Parameters
-        ----------
-        image : npt.NDArray[np.float32]
-            The image to be tiled.
-        width : int
-            The width of each tile.
-        height : int
-            The height of each tile.
-
-        Returns
-        -------
-        list[CroppedImage]
-            A list of the cropped images.
-        """
-        images: list[CroppedImage] = []
-        image_height: int = image.shape[2]
-        image_width: int = image.shape[3]
-        i: int
-        j: int
-        for i in range(0, image_height, height):
-            if i + height > image_height:
-                i = image_height - height
-            for j in range(0, image_width, width):
-                if j + width > image_width:
-                    j = image_width - width
-                cropped_image = image[:, :, i : i + height, j : j + width]
-                images.append(CroppedImage(cropped_image, j, i))
-        return images
-
     def _filter_output(
-        self,
-        output: list[npt.NDArray[np.float32]],
-        image_size: tuple[int, int],
-        offset: tuple[int, int],
+        self, output: list[npt.NDArray[np.float32]], image_size: tuple[int, int]
     ) -> dict[int, tuple[npt.NDArray[np.float32], float]]:
         """
         Converts the output array of the model to a dictionary of the best predictions.
@@ -452,8 +391,6 @@ class YOLO:
             The output array from the model.
         image_size : tuple[int, int]
             The pixel size of the input image. (W, H)
-        offset : tuple[int, int]
-            The offset of the cropped image from the original image.
 
         Returns
         -------
@@ -495,10 +432,6 @@ class YOLO:
             y_mid: np.float32 = box[1] / self.input_height * image_size[1]  # Y
             width: np.float32 = box[2] / self.input_width * image_size[0]
             height: np.float32 = box[3] / self.input_height * image_size[1]
-
-            # Apply offset
-            x_mid += offset[0]
-            y_mid += offset[1]
 
             # Convert to 2 (x, y) coordinates
             box[0] = x_mid - (width / 2)  # X1
@@ -569,7 +502,7 @@ class YOLO:
             trigger.results = results
             trigger.completed()
 
-        raw_image: cv2.typing.MatLike = cv2.imread(image_path)
+        raw_image: cv2.typing.MatLike | None = cv2.imread(image_path)
         if raw_image is None:
             logging.error("%s is not an image, skipping", image_path)
             return []
@@ -580,35 +513,22 @@ class YOLO:
         height, width = image.shape[:2]
         processed_image: npt.NDArray[np.float32] = self._convert_image(image)
 
-        # Tile images into input shape size
-        tiles: list[CroppedImage] = self._tile_image(
-            processed_image, self.input_width, self.input_height
+        trigger: ImageTrigger = ImageTrigger(image_path)
+        self.onnx_session.run_async(
+            self.output_names,
+            {"images": processed_image},
+            _onnx_callback,
+            trigger,
         )
+        while not trigger.trigger:
+            await asyncio.sleep(0.1)
 
-        total_results: dict[int, tuple[npt.NDArray[np.float32], float]] = {}
-        for tile in tiles:
-            trigger: ImageTrigger = ImageTrigger(image_path)
-            self.onnx_session.run_async(
-                self.output_names,
-                {"images": tile.image},
-                _onnx_callback,
-                trigger,
-            )
-            while not trigger.trigger:
-                await asyncio.sleep(0.1)
+        if not trigger.results:
+            raise ValueError("No results found")
 
-            if not trigger.results:
-                raise ValueError("No results found")
-
-            # Consolidate results to best predictions
-            # Also convert to x,y coords in the original image
-            results = self._filter_output(
-                trigger.results, (self.input_width, self.input_height), (tile.x, tile.y)
-            )
-
-            for category, (box, confidence) in results.items():
-                if category not in total_results or confidence > total_results[category][1]:
-                    total_results[category] = (box, confidence)
+        # Consolidate results to best predictions
+        # Also convert to x,y coords in the original image
+        results = self._filter_output(trigger.results, (width, height))
 
         detections: list[ObjectDetection] = [
             ObjectDetection(
@@ -618,7 +538,7 @@ class YOLO:
                 confidence,
                 (height, width),
             )
-            for (category, (box, confidence)) in total_results.items()
+            for (category, (box, confidence)) in results.items()
         ]
 
         return detections
