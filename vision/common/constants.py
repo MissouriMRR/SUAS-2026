@@ -1,13 +1,14 @@
 """Constant variables and common type aliases for Vision"""
 
 from typing import TypeAlias, TypedDict
-from nptyping import NDArray, Shape, UInt8, Float64, IntC, Bool8
+
+from nptyping import Bool, Float64, IntC, NDArray, Shape, UInt8
 
 Image: TypeAlias = NDArray[Shape["*, *, 3"], UInt8]
 # single channel image type
 ScImage: TypeAlias = NDArray[Shape["*, *"], UInt8]
 # single channel image of booleans
-Mask: TypeAlias = NDArray[Shape["*, *"], Bool8]
+Mask: TypeAlias = NDArray[Shape["*, *"], Bool]
 
 Point: TypeAlias = NDArray[Shape["2"], Float64]
 Vector: TypeAlias = NDArray[Shape["3"], Float64]
