@@ -7,7 +7,7 @@ import json
 
 # Process camera.json meta data to create geo.txt
 
-
+startTime = time.time()
 IMAGE_DIR = Path("vision/mapping/datasets/ODLC-Flight-2")
 JSON_PATH = Path("vision/mapping/datasets/camera.json")
 GEO_PATH = IMAGE_DIR / "geo.txt"
@@ -46,15 +46,20 @@ task = n.create_task(
 )
 print("Task UUID:", task.uuid)
 
-for _ in range(12):
-    info = task.info()
-    print("status:", info.status)
-    try:
-        print("last 10 lines:", task.output(-10))
-    except Exception as e:
-        print("could not read output:", e)
-    time.sleep(5)
+# for _ in range(12):
+#     info = task.info()
+#     print("status:", info.status)
+#     try:
+#         print("last 10 lines:", task.output(-10))
+#     except Exception as e:
+#         print("could not read output:", e)
+#     time.sleep(5)
 
 _ = task.wait_for_completion()
-out = os.listdir(task.download_assets("vision/mapping/results"))
+try:
+    out = os.listdir(task.download_assets("vision/mapping/results"))
+except Exception as e:
+    print(e)
+    out = ""
 print(out)
+print(f"Time to run: {time.time() - startTime}")
