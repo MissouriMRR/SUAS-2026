@@ -146,6 +146,8 @@ vision_videos/
 *.bag
 *.tiff
 *.bmp
+vision/mapping/datasets/*
+vision/mapping/results/*
 
 # Videos
 *.avi
