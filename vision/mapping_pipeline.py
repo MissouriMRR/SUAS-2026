@@ -31,13 +31,15 @@ async def mapping_pipeline(
     """
 
     # Wait for and process unfinished images until no more images are being taken
-    all_images_taken: c_bool = c_bool(True) # TODO may need to modify to false
+    all_images_taken: c_bool = c_bool(True)  # TODO may need to modify to false
     first_check = True
-    images_needed_filler_value = 20 # TODO modify this. We need to find a way to determine when all images have been taken. 
+    images_needed_filler_value = (
+        20  # TODO modify this. We need to find a way to determine when all images have been taken.
+    )
 
     while not all_images_taken:
         image_count = sum(1 for entry in os.scandir(image_dir) if entry.is_file())
-        if(image_count == images_needed_filler_value):
+        if image_count == images_needed_filler_value:
             all_images_taken = True
         # Wait to check the file instead of spamming it
         if not first_check:
@@ -54,7 +56,7 @@ async def mapping_pipeline(
     # )
 
     # Read in the camera JSON data file and write formatted data to the geo.txt (needed for ODM)
-    geo_path : Path = Path(image_dir) / "geo.txt" # TODO verify this
+    geo_path: Path = Path(image_dir) / "geo.txt"  # TODO verify this
 
     with open(camera_data_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
@@ -77,9 +79,7 @@ async def mapping_pipeline(
 
     print("Node info:", n.info())
     geo_file = Path(image_dir) / "geo.txt"
-    image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [
-        str(geo_file)
-    ]
+    image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [str(geo_file)]
 
     task = n.create_task(
         image_files,
