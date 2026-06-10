@@ -42,7 +42,9 @@ def calculate_distance(
     northing_2: float
     zone_num_2: int
     zone_letter_2: str
-    easting_2, northing_2, zone_num_2, zone_letter_2 = utm.from_latlon(lat_deg_2, lon_deg_2)
+    easting_2, northing_2, zone_num_2, zone_letter_2 = utm.from_latlon(
+        lat_deg_2, lon_deg_2
+    )
     easting_1: float
     northing_1: float
     easting_1, northing_1, _, _ = utm.from_latlon(

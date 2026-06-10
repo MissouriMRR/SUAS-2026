@@ -52,7 +52,9 @@ def _shrink_line_segment(line_segment: LineSegment) -> LineSegment:
     """
     direction: Point = line_segment.p_2 - line_segment.p_1
     direction /= direction.distance_from_origin()
-    return LineSegment(line_segment.p_1 + 1e-3 * direction, line_segment.p_2 - 1e-3 * direction)
+    return LineSegment(
+        line_segment.p_1 + 1e-3 * direction, line_segment.p_2 - 1e-3 * direction
+    )
 
 
 def _visitors(start_node: Node, goal_node: Node) -> Iterable[Point]:
@@ -165,7 +167,9 @@ def _search(
     return False
 
 
-def shortest_path_between(src: Point, dst: Point, boundary: Iterable[Node]) -> Iterable[Point]:
+def shortest_path_between(
+    src: Point, dst: Point, boundary: Iterable[Node]
+) -> Iterable[Point]:
     """
     Find the shortest path between two points given a graph with all possible
     paths between boundary points.
@@ -242,7 +246,9 @@ def shortest_path_between(src: Point, dst: Point, boundary: Iterable[Node]) -> I
         raise RuntimeError("no path was found to the destination")
 
 
-def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) -> list[Node]:
+def create_pathfinding_graph(
+    boundary: Iterable[Point], safety_margin: float
+) -> list[Node]:
     """
     Create a graph suitable to be used as the boundary graph when pathfinding.
 
@@ -286,7 +292,9 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
             inward_diff *= -1.0
 
         # The length of inward_diff in the direction of perp_vec_1
-        length_divisor: float = abs(inward_diff.dot(perp_vec_1) / perp_vec_1.distance_from_origin())
+        length_divisor: float = abs(
+            inward_diff.dot(perp_vec_1) / perp_vec_1.distance_from_origin()
+        )
         inward_diff /= length_divisor
 
         inward_diff *= safety_margin
@@ -310,7 +318,8 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
             direction: Point = straight_path.p_2 - straight_path.p_1
             direction /= direction.distance_from_origin()
             shrunk_straight_path: LineSegment = LineSegment(
-                straight_path.p_1 + 1e-3 * direction, straight_path.p_2 - 1e-3 * direction
+                straight_path.p_1 + 1e-3 * direction,
+                straight_path.p_2 - 1e-3 * direction,
             )
 
             if straight_path in boundary_line_segments or (

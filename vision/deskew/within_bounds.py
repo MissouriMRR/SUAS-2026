@@ -51,13 +51,17 @@ def contains_airdrop_boundary(
         # For every point in airdrop_boundary
         for num_point in range(len(airdrop_boundary)):
             airdrop_point1: list[float] = airdrop_boundary[num_point]
-            airdrop_point2: list[float] = airdrop_boundary[(num_point + 1) % len(airdrop_boundary)]
+            airdrop_point2: list[float] = airdrop_boundary[
+                (num_point + 1) % len(airdrop_boundary)
+            ]
             airdrop_line: list[list[float]] = [airdrop_point1, airdrop_point2]
 
             # For every point in image_corners
             for corner_point in range(len(image_corners)):
                 image_point1: list[float] = image_corners[corner_point]
-                image_point2: list[float] = image_corners[(corner_point + 1) % len(image_corners)]
+                image_point2: list[float] = image_corners[
+                    (corner_point + 1) % len(image_corners)
+                ]
                 image_line: list[list[float]] = [image_point1, image_point2]
 
                 # Checks if lines intersect
@@ -67,7 +71,9 @@ def contains_airdrop_boundary(
     return is_in_bounds
 
 
-def inside_bounds(boundary_list: list[list[float]], location_point: list[float]) -> bool:
+def inside_bounds(
+    boundary_list: list[list[float]], location_point: list[float]
+) -> bool:
     """
     Returns True if the location_point is within the bounds of the shape
     created by boundary. Returns False otherwise.
@@ -156,7 +162,9 @@ def lines_intersect(line1: list[list[float]], line2: list[list[float]]) -> bool:
     return intersects
 
 
-def find_orientation(point1: list[float], point2: list[float], point3: list[float]) -> int:
+def find_orientation(
+    point1: list[float], point2: list[float], point3: list[float]
+) -> int:
     """
     Finds the orientation of the three points. Returns int representing
     the orientation.
@@ -203,7 +211,9 @@ def find_orientation(point1: list[float], point2: list[float], point3: list[floa
     return orientation
 
 
-def on_line(line_start: list[float], test_point: list[float], line_end: list[float]) -> bool:
+def on_line(
+    line_start: list[float], test_point: list[float], line_end: list[float]
+) -> bool:
     """
     Takes three points and returns True if point2 is on the line
     segment created by point1 and point3. Returns False otherwise.

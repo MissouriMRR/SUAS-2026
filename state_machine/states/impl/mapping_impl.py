@@ -128,7 +128,9 @@ async def run(self: Mapping) -> State:
             )
             await move_to(self.drone.vehicle, lat, lon, MAPPING_ALTITUDE)
 
-            lat, lon = utm.to_latlon(end_easting, end_northing, utm_zone_number, utm_zone_letter)
+            lat, lon = utm.to_latlon(
+                end_easting, end_northing, utm_zone_number, utm_zone_letter
+            )
 
             if camera is not None:
                 await camera.mapping_move_to(

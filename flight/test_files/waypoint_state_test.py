@@ -79,7 +79,8 @@ def in_bounds(
         long_j: float = boundary[j][1]
 
         if ((long_i > longitude) != (long_j > longitude)) and (
-            latitude < (lat_j - lat_i) * (longitude - long_i) / (long_j - long_i) + lat_i
+            latitude
+            < (lat_j - lat_i) * (longitude - long_i) / (long_j - long_i) + lat_i
         ):
             inside = not inside
 
@@ -120,7 +121,9 @@ async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
     previous_log_time: float = time.perf_counter()  # time.perf_counter() is monotonic
     for waypoint_num, waypoint in enumerate(waypoints):
         while True:
-            location: dronekit.LocationGlobalRelative = drone.vehicle.location.global_relative_frame
+            location: dronekit.LocationGlobalRelative = (
+                drone.vehicle.location.global_relative_frame
+            )
 
             # continuously checks current latitude, longitude and altitude of the drone
             drone_lat: float = location.lat
@@ -128,7 +131,9 @@ async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
             drone_alt: float = location.alt
 
             # checks if drone's location is within boundary
-            if not in_bounds(boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude):
+            if not in_bounds(
+                boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude
+            ):
                 if not previously_out_of_bounds:
                     logging.info("(Waypoint State Test) Out of bounds!")
                     previously_out_of_bounds = True
@@ -147,7 +152,9 @@ async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
 
             curr_time: float = time.perf_counter()
             if curr_time - previous_log_time >= 1.0:
-                logging.info("(Waypoint State Test) %f m to waypoint", distance_to_waypoint)
+                logging.info(
+                    "(Waypoint State Test) %f m to waypoint", distance_to_waypoint
+                )
                 previous_log_time = curr_time
 
             await asyncio.sleep(0.1)

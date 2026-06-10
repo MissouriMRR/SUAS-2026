@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-""" Record data from Ouster OS-1-32-U LiDAR sensor to pcap file."""
+"""Record data from Ouster OS-1-32-U LiDAR sensor to pcap file."""
 
 import os
 import sys
@@ -12,7 +12,9 @@ from more_itertools import time_limited
 from ouster import client, pcap
 
 ## Sensor identification and network configuration constants
-HOSTNAME: str = "os-122229001687.local"  # sensor hostname, set as os-<serial number>.local
+HOSTNAME: str = (
+    "os-122229001687.local"  # sensor hostname, set as os-<serial number>.local
+)
 LIDAR_PORT: int = 7502  # UDP port to listen on for lidar data
 IMU_PORT: int = 7503  # UDP port to listen on for imu data
 
@@ -62,7 +64,9 @@ def record_pcap(
         print(f"Saving sensor metadata to: {out_fname_base}.json")
         source.write_metadata(f"{out_fname_base}.json")
 
-        print(f"Writing to: {out_fname_base}.pcap for {n_seconds} seconds (Ctrl-C to stop early)")
+        print(
+            f"Writing to: {out_fname_base}.pcap for {n_seconds} seconds (Ctrl-C to stop early)"
+        )
         source_it: time_limited[client.Packet] = time_limited(n_seconds, source)
         n_packets: int = pcap.record(source_it, f"{out_fname_base}.pcap")
 
@@ -111,10 +115,12 @@ def main() -> None:
 
     if args.precount:
         for i in range(args.precount):
-            print(f"Recording data in {args.precount-i} seconds...")
+            print(f"Recording data in {args.precount - i} seconds...")
             time.sleep(1)
 
-    record_pcap(HOSTNAME, LIDAR_PORT, IMU_PORT, fname_base=output_dir, n_seconds=record_time)
+    record_pcap(
+        HOSTNAME, LIDAR_PORT, IMU_PORT, fname_base=output_dir, n_seconds=record_time
+    )
 
 
 if __name__ == "__main__":

@@ -35,7 +35,9 @@ class StateMachine:
         Cancel the currently running state loop.
     """
 
-    def __init__(self, initial_state: State, drone: Drone, flight_settings: FlightSettings):
+    def __init__(
+        self, initial_state: State, drone: Drone, flight_settings: FlightSettings
+    ):
         """
         Initialize a new state machine object.
 

@@ -9,7 +9,9 @@ import numpy as np
 
 # A set of 4 coordinates that distinguish a region of an image.
 # The order of the coordinates is (top-left, top-right, bottom-right, bottom-left).
-Vertices: TypeAlias = tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]
+Vertices: TypeAlias = tuple[
+    tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]
+]
 
 
 def tlwh_to_vertices(tl_x: int, tl_y: int, width: int, height: int) -> Vertices:

@@ -281,7 +281,11 @@ def main() -> None:
     # Prints json data to be pasted in ../data/waypoint_data.json
     print(
         generate_random_waypoints(
-            boundary_vertices, force_zone_number, force_zone_letter, min_altitude, max_altitude
+            boundary_vertices,
+            force_zone_number,
+            force_zone_letter,
+            min_altitude,
+            max_altitude,
         )
     )
 

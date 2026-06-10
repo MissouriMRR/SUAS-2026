@@ -13,7 +13,9 @@ from vision.yolo.model import ObjectDetection
 from vision.yolo.queue import PhotoQueue
 
 
-async def run_queue(images: Iterable[str], test_early_stop: bool = False) -> list[ObjectDetection]:
+async def run_queue(
+    images: Iterable[str], test_early_stop: bool = False
+) -> list[ObjectDetection]:
     """
     Test the PhotoQueue class by adding images to the queue and running inference on them.
 
@@ -60,7 +62,9 @@ def get_all_images(path: str, limit: int = 10) -> list[str]:
     list[str]
         A list of image paths.
     """
-    return list(itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit))
+    return list(
+        itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit)
+    )
 
 
 async def test_queue(camera_data_path: str | None = None) -> None:

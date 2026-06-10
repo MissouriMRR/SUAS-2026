@@ -24,7 +24,9 @@ from vision.standard_object.odlc_colors import find_colors
 import vision.pipeline.pipeline_utils as pipe_utils
 from vision.yolo.model import ObjectDetection
 
-ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
+ContourHierarchyList: TypeAlias = list[
+    tuple[tuple[consts.Contour, ...], consts.Hierarchy]
+]
 
 
 def find_standard_objects(
@@ -51,12 +53,16 @@ def find_standard_objects(
     """
 
     found_odlcs: list[BoundingBox] = []
-    contours: list[consts.Contour] = fetch_shape_contours(original_image, True, "contours.jpg")
+    contours: list[consts.Contour] = fetch_shape_contours(
+        original_image, True, "contours.jpg"
+    )
     shapes: list[BoundingBox] = process_shapes(contours)
     shape: BoundingBox
     for shape in shapes:
         # Set the shape attributes by reference. If successful, keep the shape
-        if set_shape_attributes(shape, original_image) and pipe_utils.set_generic_attributes(
+        if set_shape_attributes(
+            shape, original_image
+        ) and pipe_utils.set_generic_attributes(
             shape, image_path, original_image.shape, camera_parameters
         ):
             found_odlcs.append(shape)
@@ -198,7 +204,9 @@ def proximity_check(
     for detection in detections:
         image_name: str = detection.image.split("/")[-1]
         image_parameters: consts.CameraParameters = parameters[image_name]
-        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(detection, image_parameters)
+        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(
+            detection, image_parameters
+        )
         latitude: float = bounding_box.get_attribute("latitude")
         longitude: float = bounding_box.get_attribute("longitude")
 

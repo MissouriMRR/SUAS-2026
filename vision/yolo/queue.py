@@ -251,7 +251,9 @@ class PhotoQueue:
         # Cancel the queue to stop runners once the queue is empty
         await self.queue.cancel()
         if self.runners:
-            await asyncio.wait(self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15)
+            await asyncio.wait(
+                self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15
+            )
 
         cv2.destroyAllWindows()
 

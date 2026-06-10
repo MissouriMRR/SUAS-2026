@@ -98,18 +98,20 @@ class Drone:
         pwm : int
             The PWM value to send to the servo.
         """
-        msg: MAVLink_command_long_message = self.vehicle.message_factory.command_long_encode(
-            0,  # target_system, should always be 0
-            0,  # target_component, should always be 0
-            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
-            0,  # confirmation
-            servo_num,  # servo number
-            pwm,  # servo value
-            0,
-            0,
-            0,
-            0,
-            0,  # param3-7 unused
+        msg: MAVLink_command_long_message = (
+            self.vehicle.message_factory.command_long_encode(
+                0,  # target_system, should always be 0
+                0,  # target_component, should always be 0
+                mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
+                0,  # confirmation
+                servo_num,  # servo number
+                pwm,  # servo value
+                0,
+                0,
+                0,
+                0,
+                0,  # param3-7 unused
+            )
         )
         self.vehicle.send_mavlink(msg)
 
@@ -172,7 +174,9 @@ class Drone:
         self._vehicle = (
             dronekit.connect(self.address, wait_ready=True, timeout=90)
             if self.baud is None
-            else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
+            else dronekit.connect(
+                self.address, wait_ready=True, baud=self.baud, timeout=90
+            )
         )
         logging.info("Drone discovered!")
 
@@ -181,7 +185,7 @@ class Drone:
 
         message_1: str = "Waiting for user input to continue... "
         message_2: str = "(press enter when ready) "
-        input(f"\x1b[38;2;255;255;0m{message_1}" f"\x1b[3m{message_2}" "\x1b[0m")
+        input(f"\x1b[38;2;255;255;0m{message_1}\x1b[3m{message_2}\x1b[0m")
 
     def remove_arming_check(self) -> None:
         """

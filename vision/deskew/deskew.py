@@ -63,7 +63,8 @@ def perspective_matrix(
     # |  |
     # 4--3
     source_pts: Corners = np.array(
-        [[0, 0], [orig_width, 0], [orig_width, orig_height], [0, orig_height]], dtype=np.float32
+        [[0, 0], [orig_width, 0], [orig_width, orig_height], [0, orig_height]],
+        dtype=np.float32,
     )
 
     # Numpy converts `None` to NaN
@@ -90,7 +91,9 @@ def perspective_matrix(
     intersect_scale: np.float64 = np.float64(np.sqrt(target_area / area))
     dst_pts: Corners = intersects * intersect_scale
 
-    matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(source_pts, dst_pts)
+    matrix: NDArray[Shape["3, 3"], Float64] = cv2.getPerspectiveTransform(
+        source_pts, dst_pts
+    )
 
     return matrix, dst_pts
 

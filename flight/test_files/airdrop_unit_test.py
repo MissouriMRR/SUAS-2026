@@ -42,7 +42,9 @@ async def run(flight_settings: FlightSettings) -> None:
 
         logging.info("Done!")
     except KeyboardInterrupt:
-        logging.critical("Keyboard interrupt detected. Killing state machine and landing drone.")
+        logging.critical(
+            "Keyboard interrupt detected. Killing state machine and landing drone."
+        )
     finally:
         print("Done")
 

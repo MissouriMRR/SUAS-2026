@@ -56,7 +56,6 @@ class FlightManager:
         await self.drone.connect_drone()
 
         if flight_settings.sim_mode.AIRSIM:
-
             self.drone.remove_arming_check()
 
         logging.info("Starting processes")

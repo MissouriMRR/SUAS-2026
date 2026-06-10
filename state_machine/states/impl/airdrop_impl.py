@@ -191,7 +191,9 @@ async def attempt_drop(
 
         airdrop_altitude: float = extract_gps(path)["airdrop_altitude"]
 
-        wind_offset: float = calculate_airdrop_wind_offset(mean_wind_speed, airdrop_altitude)
+        wind_offset: float = calculate_airdrop_wind_offset(
+            mean_wind_speed, airdrop_altitude
+        )
 
         easting: float
         northing: float
@@ -279,12 +281,16 @@ def calculate_airdrop_wind_offset(wind_speed: float, drop_altitude: float) -> fl
         / (air_density * parachute_drag_coefficient * parachute_area)
     )  # m/s
 
-    freefall_distance: float = 0.5 * gravity_acceleration * parachute_closed_duration**2  # meters
+    freefall_distance: float = (
+        0.5 * gravity_acceleration * parachute_closed_duration**2
+    )  # meters
 
     parachute_open_duration: float = (
         drop_altitude - freefall_distance
     ) / vertical_velocity_parachute_open  # seconds
-    drop_duration: float = parachute_closed_duration + parachute_open_duration  # seconds
+    drop_duration: float = (
+        parachute_closed_duration + parachute_open_duration
+    )  # seconds
 
     offset: float = -wind_speed * (
         drop_duration + 0.2 * (math.exp(-5.0 * drop_duration) - 1.0)

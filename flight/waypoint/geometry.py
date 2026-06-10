@@ -223,8 +223,12 @@ class LineSegment:
             return False
 
         diff: Point = self.p_2 - self.p_1
-        val1: float = diff.x * (other.p_1.y - self.p_1.y) - diff.y * (other.p_1.x - self.p_1.x)
-        val2: float = diff.x * (other.p_2.y - self.p_1.y) - diff.y * (other.p_2.x - self.p_1.x)
+        val1: float = diff.x * (other.p_1.y - self.p_1.y) - diff.y * (
+            other.p_1.x - self.p_1.x
+        )
+        val2: float = diff.x * (other.p_2.y - self.p_1.y) - diff.y * (
+            other.p_2.x - self.p_1.x
+        )
 
         if val1 * val2 > 0:
             # The two endpoints of the other line segment are on the same side
@@ -238,9 +242,9 @@ class LineSegment:
             lerp(other.p_1.y, other.p_2.y, t_1),
         )
         # How far the intersection point would be along this line segment
-        t_2: float = (diff.x * (point.x - self.p_1.x) + diff.y * (point.y - self.p_1.y)) / (
-            diff.x * diff.x + diff.y * diff.y
-        )
+        t_2: float = (
+            diff.x * (point.x - self.p_1.x) + diff.y * (point.y - self.p_1.y)
+        ) / (diff.x * diff.x + diff.y * diff.y)
 
         return 0 <= t_2 <= 1
 

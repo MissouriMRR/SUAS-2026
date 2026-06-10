@@ -330,7 +330,9 @@ class YOLO:
         self, model_path: str = "yolov9-m-converted.onnx", log_results: bool = False
     ) -> None:
         # All models should be put in the models folder.
-        full_model_path: str = os.path.join(os.path.dirname(__file__), "models", model_path)
+        full_model_path: str = os.path.join(
+            os.path.dirname(__file__), "models", model_path
+        )
         if not os.path.exists(full_model_path):
             raise FileNotFoundError(
                 f"Model file {full_model_path} not found. Check the documentation \
@@ -339,7 +341,9 @@ class YOLO:
             )
 
         opt_session = onnxruntime.SessionOptions()
-        opt_session.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+        opt_session.graph_optimization_level = (
+            onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+        )
         providers: list[str] = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
         self.onnx_session: onnxruntime.InferenceSession = onnxruntime.InferenceSession(
@@ -371,12 +375,16 @@ class YOLO:
         """
         # Convert the cv2 image to RGB and resize it to the input size of the model
         image_rgb: cv2.typing.MatLike = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        resized: cv2.typing.MatLike = cv2.resize(image_rgb, (self.input_width, self.input_height))
+        resized: cv2.typing.MatLike = cv2.resize(
+            image_rgb, (self.input_width, self.input_height)
+        )
 
         # Scale input pixel value to 0 to 1
         input_image: npt.NDArray[np.float32] = resized / 255.0
         input_image = input_image.transpose(2, 0, 1)
-        input_tensor: npt.NDArray[np.float32] = input_image[np.newaxis, :, :, :].astype(np.float32)
+        input_tensor: npt.NDArray[np.float32] = input_image[np.newaxis, :, :, :].astype(
+            np.float32
+        )
         return input_tensor
 
     def _filter_output(
@@ -406,8 +414,12 @@ class YOLO:
         confidences: npt.NDArray[np.float32] = np.max(squeezed[4:, :], axis=0)
 
         # Filter out the detections with low confidence
-        inferences: npt.NDArray[np.float32] = squeezed[:, confidences > CONFIDENCE_THRESHOLD]
-        scores: npt.NDArray[np.float32] = confidences[confidences > CONFIDENCE_THRESHOLD]
+        inferences: npt.NDArray[np.float32] = squeezed[
+            :, confidences > CONFIDENCE_THRESHOLD
+        ]
+        scores: npt.NDArray[np.float32] = confidences[
+            confidences > CONFIDENCE_THRESHOLD
+        ]
 
         # Get the column index of the best confidence score
         classes: npt.NDArray[np.float32] = np.argmax(inferences[4:, :], axis=0)

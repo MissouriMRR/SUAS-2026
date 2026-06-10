@@ -60,7 +60,9 @@ async def run(self: ODLC) -> State:
 
         asyncio.ensure_future(vision_odlc_logic(self, capture_status))
 
-        flight_task: asyncio.Task[None] = asyncio.ensure_future(find_odlcs(self, capture_status))
+        flight_task: asyncio.Task[None] = asyncio.ensure_future(
+            find_odlcs(self, capture_status)
+        )
 
         logging.info("Starting check for flight task completion")
 

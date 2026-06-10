@@ -44,15 +44,17 @@ async def flyover_pipeline(
     completed_images: list[str] = []
 
     # Dictionary storing all of the photo metadata (location, altitude, etc.)
-    image_parameters: dict[str, consts.CameraParameters] = pipe_utils.read_parameter_json(
-        camera_data_path
+    image_parameters: dict[str, consts.CameraParameters] = (
+        pipe_utils.read_parameter_json(camera_data_path)
     )
 
     # Start the queue runner
     await queue.start_queue()
 
     # Wait for and process unfinished images until no more images are being taken
-    while not capture_status.is_set() or (set(image_parameters.keys()) - set(completed_images)):
+    while not capture_status.is_set() or (
+        set(image_parameters.keys()) - set(completed_images)
+    ):
         # Wait to check the file instead of spamming it
         await asyncio.sleep(1)
 
@@ -80,8 +82,8 @@ async def flyover_pipeline(
     pipe_utils.adjust_confidences(detected_objects, True, 0.5)
 
     # Check for boundary collisions between predictions
-    filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = std_obj.proximity_check(
-        detected_objects, image_parameters, 7
+    filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = (
+        std_obj.proximity_check(detected_objects, image_parameters, 7)
     )
     # From this point on we can assume that the predictions are sorted by confidence
 
@@ -90,7 +92,9 @@ async def flyover_pipeline(
     # Take the highest confidence predictions
     bounding_boxes = bounding_boxes[: flight_settings.standard_object_count]
 
-    odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(bounding_boxes, flight_settings)
+    odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(
+        bounding_boxes, flight_settings
+    )
     logging.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)
     pipe_utils.output_odlc_json(output_path, odlc_dict)
     flight_settings.yolo_status.set()

@@ -162,7 +162,9 @@ def detection_to_bbox(
 
 
 def adjust_confidences(
-    detections: list[ObjectDetection], expand_categories: bool = False, buffer: float = 0.0
+    detections: list[ObjectDetection],
+    expand_categories: bool = False,
+    buffer: float = 0.0,
 ) -> None:
     """
     Adjusts the confidence of ObjectDetections based on whether

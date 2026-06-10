@@ -66,8 +66,12 @@ def get_coordinates(
     intersect[1] *= -1
 
     # Convert the location to latitude and longitude and add it to the drone's coordinates
-    pixel_lat: float = camera_parameters["drone_coordinates"][0] + intersect[0] / latitude_length
-    pixel_lon: float = camera_parameters["drone_coordinates"][1] + intersect[1] / longitude_length
+    pixel_lat: float = (
+        camera_parameters["drone_coordinates"][0] + intersect[0] / latitude_length
+    )
+    pixel_lon: float = (
+        camera_parameters["drone_coordinates"][1] + intersect[1] / longitude_length
+    )
 
     return pixel_lat, pixel_lon
 

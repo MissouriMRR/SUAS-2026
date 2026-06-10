@@ -93,10 +93,14 @@ class TestVisionFunctions(unittest.TestCase):
         """
         pixel1 = (100, 100)
         pixel2 = (200, 200)  # Valid pixel coordinates
-        result = calculate_distance(pixel1, pixel2, self.image_shape, self.camera_params)
+        result = calculate_distance(
+            pixel1, pixel2, self.image_shape, self.camera_params
+        )
 
         # Ensure result is not None before asserting
-        self.assertIsNotNone(result, "Result should not be None for valid pixel coordinates")
+        self.assertIsNotNone(
+            result, "Result should not be None for valid pixel coordinates"
+        )
 
 
 if __name__ == "__main__":

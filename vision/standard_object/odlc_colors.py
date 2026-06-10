@@ -85,7 +85,9 @@ def run_kmeans(cropped_img: Image) -> Image:
     idxs: NDArray[Shape["*, 2"], UInt8] = np.array(
         [idx for idx, _ in np.ndenumerate(np.mean(dilated_img, axis=2))]
     )
-    vectorized: NDArray[Shape["*, 5"], UInt8] = np.hstack((flattened, idxs))  # RGBXY vector
+    vectorized: NDArray[Shape["*, 5"], UInt8] = np.hstack(
+        (flattened, idxs)
+    )  # RGBXY vector
 
     # run kmeans with K=2
     term_crit: tuple[int, int, float] = (
@@ -106,7 +108,9 @@ def run_kmeans(cropped_img: Image) -> Image:
         flags=0,
     )
 
-    center_int: NDArray[Shape["2, 3"], UInt8] = center.astype(np.uint8)[:, :3]  # xy removed
+    center_int: NDArray[Shape["2, 3"], UInt8] = center.astype(np.uint8)[
+        :, :3
+    ]  # xy removed
 
     # Convert back to BGR
     kmeans_flat: NDArray[Shape["*, 3"], UInt8] = center_int[label.flatten()]
@@ -155,12 +159,14 @@ def get_color_vals(
     color_1_mat: NDArray[Shape["*, *"], UInt8] = np.bitwise_and(
         color_1_r, color_1_g, color_1_b
     ).astype(np.uint8)
-    color_1_adj_mat: NDArray[Shape["*, *"], UInt8] = np.where(color_1_mat == 1, 255, 128).astype(
-        np.uint8
-    )
+    color_1_adj_mat: NDArray[Shape["*, *"], UInt8] = np.where(
+        color_1_mat == 1, 255, 128
+    ).astype(np.uint8)
 
     # Mask of Color 2
-    color_2_mat: NDArray[Shape["*, *"], UInt8] = np.where(color_1_mat == 1, 0, 1).astype(np.uint8)
+    color_2_mat: NDArray[Shape["*, *"], UInt8] = np.where(
+        color_1_mat == 1, 0, 1
+    ).astype(np.uint8)
 
     # Set middle pixel of adj mat to 0
     dimensions: tuple[int, int] = color_1_adj_mat.shape
@@ -183,7 +189,9 @@ def get_color_vals(
         text_color_val = color_vals[0]
         shape_color_val = color_vals[0]
     else:
-        text_color_val = color_vals[0] if min(dist_1, dist_2) == dist_1 else color_vals[1]
+        text_color_val = (
+            color_vals[0] if min(dist_1, dist_2) == dist_1 else color_vals[1]
+        )
         shape_color_val = (
             color_vals[0] if np.all(text_color_val == color_vals[1]) else color_vals[1]
         )
@@ -209,7 +217,9 @@ def parse_color(color_val: NDArray[Shape["3"], UInt8]) -> ODLCColor:
     frame: NDArray[Shape["1, 1, 3"], UInt8] = np.reshape(
         color_val, (1, 1, 3)
     )  # store as single-pixel image
-    hsv_color_val: NDArray[Shape["3"], UInt8] = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV_FULL)
+    hsv_color_val: NDArray[Shape["3"], UInt8] = cv2.cvtColor(
+        frame, cv2.COLOR_BGR2HSV_FULL
+    )
 
     # Determine which ranges color value falls in
     matched: list[ODLCColor] = []  # colors matched to the value
@@ -267,7 +277,9 @@ def best_color_range(
                     np.mean(col_range[:, 2]),
                 ]
             )  # midpoint of range
-            dist = np.sum(np.abs(color_val - mid)).astype(float)  # dist of color to range mid
+            dist = np.sum(np.abs(color_val - mid)).astype(
+                float
+            )  # dist of color to range mid
 
             if dist < best_dist:  # color with min distance is the color chosen
                 best_dist = dist

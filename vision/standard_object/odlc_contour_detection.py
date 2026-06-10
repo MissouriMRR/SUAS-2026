@@ -53,7 +53,9 @@ def fetch_shape_contours(
             an array of all points that make up the contour
     """
 
-    hls_img: Image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)  # converts image to HLS color format
+    hls_img: Image = cv2.cvtColor(
+        image, cv2.COLOR_RGB2HLS
+    )  # converts image to HLS color format
 
     # Blur is added to the image to reduce noise and to make the image/grass more uniform
     hls_blurred: Image = cv2.GaussianBlur(
@@ -63,8 +65,12 @@ def fetch_shape_contours(
     blurred_brightness: ScImage
     blurred_saturation: ScImage
 
-    blurred_brightness = np.array(hls_blurred[:, :, 1])  # reads lightness of image as 2D array
-    blurred_saturation = np.array(hls_blurred[:, :, 2])  # reads saturation of image as 2D array
+    blurred_brightness = np.array(
+        hls_blurred[:, :, 1]
+    )  # reads lightness of image as 2D array
+    blurred_saturation = np.array(
+        hls_blurred[:, :, 2]
+    )  # reads saturation of image as 2D array
 
     # slightly blends blurred and unblurred images of same type, prioritizing blurred images
     blurred_brightness = cv2.addWeighted(
@@ -78,7 +84,9 @@ def fetch_shape_contours(
 
     # Use higher saturation value if image is bright, lower if dark
     saturation_value: int = (
-        MIN_SATURATION_VALUE if avg_brt > BRIGHTNESS_THRESH else MIN_DARK_SATURATION_VALUE
+        MIN_SATURATION_VALUE
+        if avg_brt > BRIGHTNESS_THRESH
+        else MIN_DARK_SATURATION_VALUE
     )
 
     # White threshold is used to find the brightest parts of the image
@@ -88,8 +96,12 @@ def fetch_shape_contours(
     black_thresh: Mask
     saturation_thresh: Mask
 
-    _, white_thresh = cv2.threshold(blurred_brightness, MIN_WHITE_VALUE, 255, cv2.THRESH_BINARY)
-    _, black_thresh = cv2.threshold(blurred_brightness, MAX_BLACK_VALUE, 255, cv2.THRESH_BINARY_INV)
+    _, white_thresh = cv2.threshold(
+        blurred_brightness, MIN_WHITE_VALUE, 255, cv2.THRESH_BINARY
+    )
+    _, black_thresh = cv2.threshold(
+        blurred_brightness, MAX_BLACK_VALUE, 255, cv2.THRESH_BINARY_INV
+    )
     _, saturation_thresh = cv2.threshold(
         blurred_saturation, saturation_value, 255, cv2.THRESH_BINARY
     )
@@ -144,7 +156,9 @@ def fetch_shape_contours(
         cv2.imwrite("thresh_white.jpg", white_thresh)
         cv2.imwrite("thresh_black.jpg", black_thresh)
         cv2.imwrite("thresh_saturation.jpg", saturation_thresh)
-        cv2.imwrite("thresh_combined.jpg", white_thresh + black_thresh + saturation_thresh)
+        cv2.imwrite(
+            "thresh_combined.jpg", white_thresh + black_thresh + saturation_thresh
+        )
 
     # returns a filtered list of contours
     return all_contours

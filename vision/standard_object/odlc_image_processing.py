@@ -10,7 +10,9 @@ from nptyping import NDArray, Shape, UInt8
 from vision.common.constants import Image, ScImage
 
 
-def preprocess_std_odlc(image: Image, thresh_min: int = 50, thresh_max: int = 100) -> ScImage:
+def preprocess_std_odlc(
+    image: Image, thresh_min: int = 50, thresh_max: int = 100
+) -> ScImage:
     """
     Preprocesses image for use in detecting the contours of standard objects.
 
@@ -29,11 +31,17 @@ def preprocess_std_odlc(image: Image, thresh_min: int = 50, thresh_max: int = 10
         the single channel image after preprocessing for use in contour detection/processing
     """
 
-    grayscaled: ScImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
+    grayscaled: ScImage = cv2.cvtColor(
+        image, cv2.COLOR_BGR2GRAY
+    )  # Convert to grayscale
 
-    blurred: ScImage = cv2.GaussianBlur(grayscaled, ksize=(3, 3), sigmaX=1.5)  # Blur the image
+    blurred: ScImage = cv2.GaussianBlur(
+        grayscaled, ksize=(3, 3), sigmaX=1.5
+    )  # Blur the image
 
-    edges: ScImage = cv2.Canny(image=blurred, threshold1=thresh_min, threshold2=thresh_max)
+    edges: ScImage = cv2.Canny(
+        image=blurred, threshold1=thresh_min, threshold2=thresh_max
+    )
 
     # Create the kernel for the dilation
     kernel: NDArray[Shape["3, 3"], UInt8] = np.ones((3, 3), np.uint8)
@@ -50,7 +58,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print("Error: Incorrect number of parameters. Please specify an image file path.")
+        print(
+            "Error: Incorrect number of parameters. Please specify an image file path."
+        )
         sys.exit()
 
     # read in image

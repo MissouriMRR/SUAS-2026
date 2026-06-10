@@ -138,9 +138,12 @@ def test_self_intersect(approx: consts.Contour) -> bool:
     Opencv code documentation notes that a contour has self intersections if the list of indicies
     created with cv2.convexHull() is not monotonic. (See opencv github)
     """
-    convex_hull: NDArray[Shape["*"], IntC] = np.squeeze(cv2.convexHull(approx, returnPoints=False))
+    convex_hull: NDArray[Shape["*"], IntC] = np.squeeze(
+        cv2.convexHull(approx, returnPoints=False)
+    )
     return bool(
-        np.all(convex_hull[1:] >= convex_hull[:-1]) or np.all(convex_hull[0:-1] >= convex_hull[1:])
+        np.all(convex_hull[1:] >= convex_hull[:-1])
+        or np.all(convex_hull[0:-1] >= convex_hull[1:])
     )
 
 
@@ -161,7 +164,9 @@ def test_min_area_box(contour: consts.Contour, ratio_range: float) -> bool:
     acceptable_ratio : bool
         Returns true if the aspect ratio of the min area box is inbetween the min and max
     """
-    min_area_box: NDArray[Shape["4, 2"], Float32] = cv2.boxPoints(cv2.minAreaRect(contour))
+    min_area_box: NDArray[Shape["4, 2"], Float32] = cv2.boxPoints(
+        cv2.minAreaRect(contour)
+    )
     # either length/width or width/length, does not matter
     aspect_ratio: float = (cv2.norm(min_area_box[0] - min_area_box[1])) / (
         cv2.norm(min_area_box[1] - min_area_box[2])
@@ -361,7 +366,9 @@ def test_roughness(contour: consts.Contour, approx: consts.Contour) -> bool:
     non_overlap_img: consts.ScImage = non_overlap_mask.astype(UInt8)
     # detects all of the new shapes made by the xor operation
     non_overlap_cnts: tuple[consts.Contour]
-    non_overlap_cnts, _ = cv2.findContours(non_overlap_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    non_overlap_cnts, _ = cv2.findContours(
+        non_overlap_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+    )
 
     # sums the area of all of the non-overlapping portions of the shapes
     non_overlap_area_sum: float = 0
@@ -454,7 +461,9 @@ if __name__ == "__main__":
     # a variable length tuple is not good practice, but that is what opencv does here
     cnts_tmp: tuple[consts.Contour, ...]
     hier_tmp: consts.Hierarchy
-    cnts_tmp, hier_tmp = cv2.findContours(test_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts_tmp, hier_tmp = cv2.findContours(
+        test_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+    )
     print("contours1:", type(cnts_tmp), len(cnts_tmp), cnts_tmp)
     print("hierarchy1:", type(hier_tmp), hier_tmp.shape, hier_tmp)
     img2: consts.Image = np.dstack((test_image, test_image, test_image))
@@ -489,7 +498,9 @@ if __name__ == "__main__":
         )
         cntr_msk: consts.Mask = generate_mask(cntr, cntr_bbox)
         cntr_sc_img: consts.ScImage = np.where(cntr_msk, 255, 0).astype(np.uint8)
-        cv2.imshow(f"cntr{ind}_sc_img", np.dstack((cntr_sc_img, cntr_sc_img, cntr_sc_img)))
+        cv2.imshow(
+            f"cntr{ind}_sc_img", np.dstack((cntr_sc_img, cntr_sc_img, cntr_sc_img))
+        )
         cv2.waitKey(0)
         print(type(cntr_sc_img), type(cntr_sc_img[0]), type(cntr_sc_img[0, 0]))
         # actually running each test individually and printing results for testing/debugging

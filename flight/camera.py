@@ -80,7 +80,9 @@ class Camera(ABC):
         self.session_id: int = 0
 
     @abstractmethod
-    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str] | None:
+    async def capture_photo(
+        self, path: str = f"{os.getcwd()}/images/"
+    ) -> tuple[str, str] | None:
         """
         Capture a photo and save it to the specified path.
 
@@ -153,7 +155,9 @@ class Camera(ABC):
         return None
 
     @abstractmethod
-    async def _get_camera_parameters(self, drone: dronekit.Vehicle) -> CameraParameters | None:
+    async def _get_camera_parameters(
+        self, drone: dronekit.Vehicle
+    ) -> CameraParameters | None:
         """
         Gets the current camera information based on a drone's position_pitch.
 
@@ -246,7 +250,9 @@ class CameraIRL(Camera):
 
         logging.info("IRL Camera initialized")
 
-    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
+    async def capture_photo(
+        self, path: str = f"{os.getcwd()}/images/"
+    ) -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -284,7 +290,9 @@ class CameraIRL(Camera):
             ) as response:
                 json_data = await response.json()
                 if response.status != 200:
-                    logging.error("Failed to get media count. Response data: %s", json_data)
+                    logging.error(
+                        "Failed to get media count. Response data: %s", json_data
+                    )
                     raise ValueError("Failed to get media count")
                 media_count: int = json_data["data"]["count"]
 
@@ -295,12 +303,16 @@ class CameraIRL(Camera):
             ) as response:
                 json_data = await response.json()
                 if response.status != 200:
-                    logging.error("Failed to get media list. Response data: %s", json_data)
+                    logging.error(
+                        "Failed to get media list. Response data: %s", json_data
+                    )
                     raise ValueError("Failed to get media list")
                 try:
                     media_path: str = json_data["data"]["list"][-1]["url"]
                 except IndexError as exc:
-                    logging.error("Failed to get media path. Response data: %s", json_data)
+                    logging.error(
+                        "Failed to get media path. Response data: %s", json_data
+                    )
                     raise ValueError("Failed to get media path") from exc
 
             async with session.get(media_path) as response:
@@ -308,16 +320,16 @@ class CameraIRL(Camera):
                 if response.status != 200:
                     logging.error("Failed to get media. Response data: %s", binary_data)
                     raise ValueError("Failed to get media")
-                photo_name: str = (
-                    f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
-                )
+                photo_name: str = f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
                 target_name: str = f"{path}{photo_name}"
 
                 file: aiofiles.base.AiofilesContextManager
                 async with aiofiles.open(target_name, "wb") as file:
                     await file.write(binary_data)
 
-                logging.info("Image #%d is being saved to %s", self.image_id, target_name)
+                logging.info(
+                    "Image #%d is being saved to %s", self.image_id, target_name
+                )
                 self.image_id += 1
                 return target_name, photo_name
 
@@ -368,7 +380,9 @@ class CameraIRL(Camera):
             )
         )
 
-        start_pos: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+        start_pos: dronekit.LocationGlobalRelative = (
+            drone.location.global_relative_frame
+        )
 
         start_lat: float = start_pos.lat
         start_lon: float = start_pos.lon
@@ -376,7 +390,9 @@ class CameraIRL(Camera):
 
         next_interval_count: int = 1
         while not goto_task.done():
-            position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+            position: dronekit.LocationGlobalRelative = (
+                drone.location.global_relative_frame
+            )
 
             drone_lat: float = position.lat
             drone_long: float = position.lon
@@ -389,7 +405,9 @@ class CameraIRL(Camera):
             if distance >= next_interval_count * interval:
                 next_interval_count += 1
                 camera_parameters = await self._get_camera_parameters(drone)
-                _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
+                _, file_path = await self.capture_photo(
+                    f"{os.getcwd()}/mapping_images/"
+                )
                 point = {file_path: camera_parameters}
                 info.update(point)
 
@@ -404,7 +422,9 @@ class CameraIRL(Camera):
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
             current_data: TextIO
-            with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
+            with open(
+                "flight/data/mapping_photos.json", "r", encoding="utf8"
+            ) as current_data:
                 try:
                     current_photos = json.load(current_data)
                 except json.JSONDecodeError:
@@ -463,7 +483,9 @@ class CameraIRL(Camera):
                 await asyncio.sleep(1)
                 continue
 
-            camera_parameters: CameraParameters = await self._get_camera_parameters(drone)
+            camera_parameters: CameraParameters = await self._get_camera_parameters(
+                drone
+            )
             file_path: str
             _, file_path = await self.capture_photo()
             point: dict[str, CameraParameters] = {file_path: camera_parameters}
@@ -580,7 +602,9 @@ class CameraAirSim(Camera):
 
         logging.info("Airsim Camera initialized")
 
-    async def capture_photo(self, path: str = f"{os.getcwd()}/images/") -> tuple[str, str]:
+    async def capture_photo(
+        self, path: str = f"{os.getcwd()}/images/"
+    ) -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -597,9 +621,7 @@ class CameraAirSim(Camera):
         """
         os.makedirs(path, mode=0o777, exist_ok=True)
         cam_file = self.client.simGetImage("bottom_center", airsim.ImageType.Scene)
-        photo_name: str = (
-            f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
-        )
+        photo_name: str = f"{datetime.now().strftime('%Y%m%d')}_{self.session_id}_{self.image_id:04d}.jpg"
         target_name: str = f"{path}{photo_name}"
         async with aiofiles.open(target_name, mode="wb") as file:
             await file.write(cam_file)
@@ -653,7 +675,9 @@ class CameraAirSim(Camera):
             )
         )
 
-        start_pos: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+        start_pos: dronekit.LocationGlobalRelative = (
+            drone.location.global_relative_frame
+        )
 
         start_lat: float = start_pos.lat
         start_lon: float = start_pos.lon
@@ -661,7 +685,9 @@ class CameraAirSim(Camera):
 
         next_interval_count: int = 1
         while not goto_task.done():
-            position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+            position: dronekit.LocationGlobalRelative = (
+                drone.location.global_relative_frame
+            )
 
             drone_lat: float = position.lat
             drone_long: float = position.lon
@@ -674,7 +700,9 @@ class CameraAirSim(Camera):
             if distance >= next_interval_count * interval:
                 next_interval_count += 1
                 camera_parameters = await self._get_camera_parameters(drone)
-                _, file_path = await self.capture_photo(f"{os.getcwd()}/mapping_images/")
+                _, file_path = await self.capture_photo(
+                    f"{os.getcwd()}/mapping_images/"
+                )
                 point = {file_path: camera_parameters}
                 info.update(point)
 
@@ -689,7 +717,9 @@ class CameraAirSim(Camera):
         current_photos: dict[str, CameraParameters] = {}
         if os.path.exists("flight/data/mapping_photos.json"):
             current_data: TextIO
-            with open("flight/data/mapping_photos.json", "r", encoding="utf8") as current_data:
+            with open(
+                "flight/data/mapping_photos.json", "r", encoding="utf8"
+            ) as current_data:
                 try:
                     current_photos = json.load(current_data)
                 except json.JSONDecodeError:

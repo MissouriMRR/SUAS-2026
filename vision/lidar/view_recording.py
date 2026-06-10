@@ -46,7 +46,9 @@ def view_recording(
             "nearir": Near infrared visualization
             "pointcloud": 3D point cloud visualization of first frame
     """
-    viz_frame_delay: int = 50  # ms, modify this if the visualization video is too fast or too slow
+    viz_frame_delay: int = (
+        50  # ms, modify this if the visualization video is too fast or too slow
+    )
 
     metadata: client.SensorInfo | None = None
     with open(meta_file, mode="r", encoding="UTF-8") as json_file:
@@ -55,7 +57,9 @@ def view_recording(
     source: pcap.Pcap = pcap.Pcap(pcap_path=pcap_file, info=metadata)
 
     if viz_flags.get("pointcloud"):
-        pcap_3d_one_scan(source, metadata, num=0)  # view 3d point cloud of first frame of recording
+        pcap_3d_one_scan(
+            source, metadata, num=0
+        )  # view 3d point cloud of first frame of recording
 
     scan: client.core.Scans
     for scan in client.Scans(source):
@@ -65,9 +69,15 @@ def view_recording(
             # Range visualization
             range_field: NDArray[Shape["32, 1024"], UInt32]
             range_field = scan.field(client.ChanField.RANGE)
-            range_img: NDArray[Shape["32, 1024"], UInt8] = client.destagger(metadata, range_field)
-            range_img = (range_img / np.max(range_img) * 255).astype(np.uint8)  # normalize image
-            range_img = np.clip(range_img * 1.8, 0, 255).astype(np.uint8)  # increase brightness
+            range_img: NDArray[Shape["32, 1024"], UInt8] = client.destagger(
+                metadata, range_field
+            )
+            range_img = (range_img / np.max(range_img) * 255).astype(
+                np.uint8
+            )  # normalize image
+            range_img = np.clip(range_img * 1.8, 0, 255).astype(
+                np.uint8
+            )  # increase brightness
 
             cv2.imshow(
                 f"Range, (Upscale: {hscale}x width, {vscale}x height)",
@@ -82,7 +92,9 @@ def view_recording(
             # Reflectivity visualization
             refl_field: NDArray[Shape["32, 1024"], UInt32]
             refl_field = scan.field(client.ChanField.REFLECTIVITY)
-            refl: NDArray[Shape["32, 1024"], UInt8] = client.destagger(metadata, refl_field)
+            refl: NDArray[Shape["32, 1024"], UInt8] = client.destagger(
+                metadata, refl_field
+            )
             refl = (refl / np.max(refl) * 255).astype(np.uint8)  # normalize image
             refl = np.clip(refl * 2.2, 0, 255).astype(np.uint8)  # increase brightness
             cv2.imshow(
@@ -96,10 +108,16 @@ def view_recording(
 
         if viz_flags.get("signal"):
             # Signal visualization
-            signal_field: NDArray[Shape["32, 1024"], UInt32] = scan.field(client.ChanField.SIGNAL)
-            signal: NDArray[Shape["32, 1024"], UInt8] = client.destagger(metadata, signal_field)
+            signal_field: NDArray[Shape["32, 1024"], UInt32] = scan.field(
+                client.ChanField.SIGNAL
+            )
+            signal: NDArray[Shape["32, 1024"], UInt8] = client.destagger(
+                metadata, signal_field
+            )
             signal = (signal / np.max(signal) * 255).astype(np.uint8)  # normalize image
-            signal = np.clip(signal * 2.2, 0, 255).astype(np.uint8)  # increase brightness
+            signal = np.clip(signal * 2.2, 0, 255).astype(
+                np.uint8
+            )  # increase brightness
             cv2.imshow(
                 f"Signal, (Upscale: {hscale}x width, {vscale}x height)",
                 cv2.resize(
@@ -111,10 +129,16 @@ def view_recording(
 
         if viz_flags.get("nearir"):
             # Near infrared visualization
-            nearir_field: NDArray[Shape["32, 1024"], UInt32] = scan.field(client.ChanField.NEAR_IR)
-            nearir: NDArray[Shape["32, 1024"], UInt8] = client.destagger(metadata, nearir_field)
+            nearir_field: NDArray[Shape["32, 1024"], UInt32] = scan.field(
+                client.ChanField.NEAR_IR
+            )
+            nearir: NDArray[Shape["32, 1024"], UInt8] = client.destagger(
+                metadata, nearir_field
+            )
             nearir = (nearir / np.max(nearir) * 255).astype(np.uint8)  # normalize image
-            nearir = np.clip(nearir * 1.5, 0, 255).astype(np.uint8)  # increase brightness
+            nearir = np.clip(nearir * 1.5, 0, 255).astype(
+                np.uint8
+            )  # increase brightness
             cv2.imshow(
                 f"Near-IR, (Upscale: {hscale}x width, {vscale}x height)",
                 cv2.resize(
@@ -204,12 +228,16 @@ def main() -> None:
             sys.exit(1)
 
         basename: str = os.path.splitext(args.input)[0]
-        if any((args.range, args.reflectivity, args.signal, args.nearir, args.pointcloud)):
+        if any(
+            (args.range, args.reflectivity, args.signal, args.nearir, args.pointcloud)
+        ):
             view_recording(f"{basename}.pcap", f"{basename}.json", **vars(args))
         else:
             view_recording(f"{basename}.pcap", f"{basename}.json", range=True)
     else:
-        print("No input file specified. Please specify an input file with the -i or --input flags.")
+        print(
+            "No input file specified. Please specify an input file with the -i or --input flags."
+        )
         print("Use -h or --help for more information.")
         sys.exit(1)
 

@@ -194,7 +194,9 @@ if __name__ == "__main__":
     )
 
     # Generate search path
-    BUFFER_DISTANCE: int = -40  # use height/2 of camera image area on ground as buffer distance
+    BUFFER_DISTANCE: int = (
+        -40
+    )  # use height/2 of camera image area on ground as buffer distance
     search_paths: list[tuple[float, float]] = generate_search_paths(
         data_search_area_boundary_utm, BUFFER_DISTANCE
     )

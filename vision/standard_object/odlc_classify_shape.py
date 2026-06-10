@@ -354,9 +354,15 @@ def cartesian_array_to_polar(
     """
     cartesian_array_x: NDArray[Shape["*, 2"], Float64] = cartesian_array[:, 0, 1]
     cartesian_array_y: NDArray[Shape["*, 2"], Float64] = cartesian_array[:, 0, 0]
-    rho_array: NDArray[Shape["*, 2"], Float64] = np.hypot(cartesian_array_x, cartesian_array_y)
-    phi_array: NDArray[Shape["*, 2"], Float64] = np.arctan2(cartesian_array_y, cartesian_array_x)
-    polar_array: NDArray[Shape["2, *"], Float64] = np.stack((rho_array, phi_array), axis=1)
+    rho_array: NDArray[Shape["*, 2"], Float64] = np.hypot(
+        cartesian_array_x, cartesian_array_y
+    )
+    phi_array: NDArray[Shape["*, 2"], Float64] = np.arctan2(
+        cartesian_array_y, cartesian_array_x
+    )
+    polar_array: NDArray[Shape["2, *"], Float64] = np.stack(
+        (rho_array, phi_array), axis=1
+    )
     return polar_array
 
 
