@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 from flight.camera import CameraIRL
-from vision.yolo.model import YOLO, ObjectDetection
+from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
 
 
 async def test_capture_and_test() -> None:
@@ -35,8 +35,8 @@ async def test_capture_and_test() -> None:
         return
     cv2.imshow("Captured Image", image)
 
-    # Run YOLO inference on the image
-    yolo: YOLO = YOLO()
+    # Run inference on the image
+    yolo: ObjectDetectionModel = ObjectDetectionModel()
     logging.info(yolo.model_output[0])
     results: list[ObjectDetection] = await yolo.process_image(image_path)
 
@@ -59,7 +59,7 @@ async def test_capture_and_test() -> None:
             2,
         )
     image = cv2.resize(image, (1280, 720))
-    cv2.imshow("YOLO Detection", image)
+    cv2.imshow("Object Detection", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     camera.camera.disconnect()
