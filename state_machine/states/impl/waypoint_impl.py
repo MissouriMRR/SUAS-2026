@@ -8,32 +8,32 @@ import traceback
 from typing import Final
 
 import dronekit
-
 import utm
 
-from flight.extract_gps import extract_gps, GPSData
 from flight.extract_gps import (
-    WaypointUtm as WaylistUtm,
     BoundaryPointUtm as BoundarylistUtm,
 )
-
+from flight.extract_gps import GPSData, extract_gps
+from flight.extract_gps import (
+    WaypointUtm as WaylistUtm,
+)
+from flight.waypoint import pathfinding
 from flight.waypoint.geometry import LineSegment, Point
 from flight.waypoint.goto import move_to
 from flight.waypoint.graph import GraphNode
-from flight.waypoint import pathfinding
-
+from state_machine.state_tracker import (
+    update_drone,
+    update_flight_settings,
+    update_state,
+)
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
-from state_machine.state_tracker import (
-    update_state,
-    update_drone,
-    update_flight_settings,
-)
 
 BOUNDARY_SHRINKAGE: Final[float] = 5.0  # in meters
 WAYPOINT_AIR_SPEED: Final[float] = 25.0  # in meters/second
+WAYPOINT_MAX_LAPS: Final[int] = 10  # Taken from SUAS Rule 3.2.2
 
 
 async def run(self: Waypoint) -> State:
@@ -62,7 +62,22 @@ async def run(self: Waypoint) -> State:
     try:
         if not self.flight_settings.skip_waypoint:
             await waypoint_logic(self)
-            logging.info("Waypoint state completed")
+            self.flight_settings.waypoint_laps_run += 1
+            logging.info(
+                "Waypoint lap completed (lap %d). Currently at a flight time of %d:%05.2f",
+                self.flight_settings.waypoint_laps_run,
+                int(self.drone.flight_time // 60),
+                self.drone.flight_time % 60,
+            )
+            if self.flight_settings.waypoint_laps_run < WAYPOINT_MAX_LAPS:
+                logging.info("Continue with next lap? (y/n)")
+                while True:
+                    choice = input().lower()
+                    if choice == "y":
+                        return Waypoint(self.drone, self.flight_settings)
+                    if choice == "n":
+                        break
+                    logging.info("Invalid choice. Please enter 'y' or 'n'.")
 
         return (ODLC if self.drone.odlc_scan else Airdrop)(self.drone, self.flight_settings)
 
@@ -165,11 +180,19 @@ async def waypoint_logic(self: Waypoint) -> None:
             ) * line_segment.length()
 
             await move_to(
-                self.drone.vehicle, lat_deg, lon_deg, curr_altitude, airspeed=WAYPOINT_AIR_SPEED
+                self.drone.vehicle,
+                lat_deg,
+                lon_deg,
+                curr_altitude,
+                airspeed=WAYPOINT_AIR_SPEED,
             )
 
         await move_to(
-            self.drone.vehicle, lat_deg, lon_deg, waypoint.altitude, airspeed=WAYPOINT_AIR_SPEED
+            self.drone.vehicle,
+            lat_deg,
+            lon_deg,
+            waypoint.altitude,
+            airspeed=WAYPOINT_AIR_SPEED,
         )
 
         logging.info("Reached waypoint %d", waypoint_num)
