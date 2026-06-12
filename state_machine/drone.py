@@ -356,14 +356,14 @@ class Drone:
             self.flight_start_time = None
 
     @property
-    def flight_time(self) -> float | None:
+    def flight_time(self) -> float:
         """
         Returns the elapsed flight time in seconds.
 
         Returns
         -------
-        float | None
-            The elapsed flight time in seconds, or None if the drone is not currently armed.
+        float
+            The elapsed flight time in seconds.
         """
         if self.flight_start_time is None:
             return 0.0
