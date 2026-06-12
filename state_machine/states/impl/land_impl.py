@@ -4,9 +4,9 @@ import asyncio
 import logging
 
 from state_machine.state_tracker import (
-    update_state,
     update_drone,
     update_flight_settings,
+    update_state,
 )
 from state_machine.states.land import Land
 
@@ -37,6 +37,10 @@ async def run(self: Land) -> None:
         # Instruct the drone to land
         self.drone.vehicle.airspeed = 20
         await self.drone.return_to_launch()
+
+        # Wait for the drone to disarm
+        while self.drone.vehicle.armed:
+            await asyncio.sleep(0.1)
 
         logging.info("Land state complete.")
         return
