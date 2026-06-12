@@ -61,6 +61,8 @@ class MissionConfig(TypedDict):
         Sets if flight will use a simple vertical takeoff.
     wind : WindConfig
         Manually entered information on the wind.
+    waypoint_laps_run : int
+        The number of laps the drone has run through the waypoint state.
     """
 
     run_title: str
@@ -72,6 +74,7 @@ class MissionConfig(TypedDict):
     skip_odlc_and_airdrop: bool
     simple_takeoff: bool
     wind: WindConfig
+    waypoint_laps_run: int
 
 
 def get_mission_config() -> MissionConfig:
