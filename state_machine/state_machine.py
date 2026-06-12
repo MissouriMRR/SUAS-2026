@@ -1,8 +1,8 @@
 """Defines the StateMachine class."""
 
 import asyncio
-from asyncio import Task
 import logging
+from asyncio import Task
 
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
@@ -75,7 +75,11 @@ class StateMachine:
         await run_task
         if self.run_task is not None:
             self.run_task = None
-            logging.info("State Machine complete")
+            logging.info(
+                "State Machine complete. Final flight time: %d:%05.2f",
+                int(self.drone.last_flight_time // 60),
+                self.drone.last_flight_time % 60,
+            )
 
     async def _run(self) -> None:
         """Runs the flight code specific to each state until completion."""
