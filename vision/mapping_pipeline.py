@@ -1,22 +1,65 @@
 """Runs the necessary code for the Mapping component of the competition"""
 
-import json
-from pyodm import Node
-import os
-import logging
-from ctypes import c_bool
-from multiprocessing.sharedctypes import SynchronizedBase  # pylint: disable=unused-import
-
 import asyncio
+import logging
 from pathlib import Path
-import time
+
+from pyodm import Node, Task
+from pyodm.exceptions import NodeConnectionError
+from pyodm.types import TaskInfo, TaskStatus
+
+import vision.pipeline.pipeline_utils as pipe_utils
+from vision.common.constants import CameraParameters
+
+logger = logging.getLogger(__name__)
+
+
+async def wait_for_task_completion(
+    task: Task, interval: int = 3, max_retries: int = 5, retry_timeout: int = 5
+) -> None:
+    """
+    An async implementation of Task.wait_for_completion(), as the original one
+    will block the event loop. Will return when the TaskStatus is COMPLETED, CANCELED or FAILED.
+
+    Parameters
+    ----------
+    task: Task
+        The task to wait for completion
+    interval: int, optional
+        The interval to wait between retries (default is 3 seconds)
+    max_retries: int, optional
+        The maximum number of retries (default is 5)
+    retry_timeout: int, optional
+        The timeout between retries (default is 5 seconds)
+    """
+    retry: int = 0
+    while True:
+        try:
+            info: TaskInfo = task.info()
+        except NodeConnectionError as e:
+            if retry < max_retries:
+                retry += 1
+                await asyncio.sleep(retry * retry_timeout)
+                continue
+            raise e
+
+        if info.status in [
+            TaskStatus.COMPLETED,
+            TaskStatus.CANCELED,
+            TaskStatus.FAILED,
+        ]:
+            break
+
+        await asyncio.sleep(interval)
+
+    if info.status in [TaskStatus.FAILED, TaskStatus.CANCELED]:
+        raise ConnectionError(f"Task failed or was canceled: {info.status}")
 
 
 async def mapping_pipeline(
     camera_data_path: str,
     image_dir: str,
     capture_status: asyncio.Event,
-    state_path: str,
     output_path: str = "vision/mapping/results",
 ) -> None:
     """
@@ -29,9 +72,8 @@ async def mapping_pipeline(
     image_dir: str
         The path with all the images
     capture_status: asyncio.Event
-        Once all the images are taken, capture status is set to true (used to determine when to generate the map)
-    state_path: str
-        A text file containing True if all images have been taken and False otherwise
+        Once all the images are taken, capture status is set
+        to true (used to determine when to generate the map)
     output_path: str
         The json file name and path to save the data in
     """
@@ -40,11 +82,12 @@ async def mapping_pipeline(
     while not capture_status.is_set():
         await asyncio.sleep(1)
 
-    # Read in the camera JSON data file and write formatted data to the geo.txt (needed for ODM)
-    geo_path: Path = Path(image_dir) / "geo.txt"  # TODO verify this creates the file
+    logger.info("Capture status set, generating map...")
 
-    with open(camera_data_path, "r", encoding="utf-8") as f:
-        metadata = json.load(f)
+    # Read in the camera JSON data file and write formatted data to the geo.txt (needed for ODM)
+    geo_path: Path = Path(image_dir) / "geo.txt"
+
+    metadata: dict[str, CameraParameters] = pipe_utils.read_parameter_json(camera_data_path)
 
     # Write geo.txt with data from camera json
     lines = ["EPSG:4326"]
@@ -60,15 +103,21 @@ async def mapping_pipeline(
         lines.append(f"{image_name} {lon} {lat} {alt} {yaw} {pitch} {roll}")
 
     geo_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Wrote {geo_path}")
+    logger.info("Wrote %s", geo_path)
 
     # Set up connection to ODM node
-    n = Node("localhost", 3000)
-    print("Node info:", n.info())
+    node = Node("localhost", 3000)
+    logger.info(
+        "Node info: mem=%d/%d, engine=%s, version=%s",
+        node.info().available_memory,
+        node.info().total_memory,
+        node.info().engine,
+        node.info().version,
+    )
     image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [str(geo_path)]
 
     # Create the ODM task (tweak settings here as needed)
-    task = n.create_task(
+    task = node.create_task(
         image_files,
         {
             "fast-orthophoto": True,
@@ -78,19 +127,18 @@ async def mapping_pipeline(
             "skip-report": True,
             "tiles": False,
             "cog": False,
-            # TODO uncomment these if we need more speed
+            # uncomment these if we need more speed
             # "feature-quality": "medium",
             # "min-num-features": 4000,
             # "matcher-neighbors": 8,
             # "resize-to": 2048,
         },
     )
-    print("Task UUID:", task.uuid)
+    logger.info("Task UUID: %s", task.uuid)
 
-    _ = task.wait_for_completion()
+    await wait_for_task_completion(task)
     try:
-        out = os.listdir(task.download_assets(output_path))
-    except Exception as e:
-        print(e)
-        out = ""
-    print(out)
+        task.download_assets(output_path)
+        logger.info("Downloaded all mapping data to %s", output_path)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error(e)
