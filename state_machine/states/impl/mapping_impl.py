@@ -168,9 +168,7 @@ async def fly_mapping_pattern(self: Mapping, capture_status: asyncio.Event) -> N
 
         lat: float
         lon: float
-        lat, lon = utm.to_latlon(
-            start_easting, start_northing, utm_zone_number, utm_zone_letter
-        )
+        lat, lon = utm.to_latlon(start_easting, start_northing, utm_zone_number, utm_zone_letter)
         await move_to(self.drone.vehicle, lat, lon, MAPPING_ALTITUDE)
 
         lat, lon = utm.to_latlon(end_easting, end_northing, utm_zone_number, utm_zone_letter)
