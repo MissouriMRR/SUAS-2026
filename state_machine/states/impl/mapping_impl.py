@@ -10,16 +10,14 @@ from typing import Final
 
 import utm
 
-from flight.camera import CameraIRL, CameraAirSim
-from flight.extract_gps import extract_gps, GPSData
-from flight.extract_gps import BoundaryPointUtm
+from flight.camera import CameraAirSim, CameraIRL
+from flight.extract_gps import BoundaryPointUtm, GPSData, extract_gps
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
-
 from state_machine.state_tracker import (
-    update_state,
     update_drone,
     update_flight_settings,
+    update_state,
 )
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
@@ -191,13 +189,13 @@ async def fly_mapping_pattern(self: Mapping, capture_status: asyncio.Event) -> N
     logging.info("Mapping scan complete")
 
 
-async def vision_mapping_logic(self: Mapping, capture_status: asyncio.Event) -> None:
+async def vision_mapping_logic(_: Mapping, capture_status: asyncio.Event) -> None:
     """
     Implements the vision logic for the Mapping state.
 
     Parameters
     ----------
-    self : Mapping
+    _ : Mapping
         The Mapping state object.
     capture_status : asyncio.Event
         An event that is set when the drone has successfully captured all images.
@@ -214,7 +212,7 @@ async def vision_mapping_logic(self: Mapping, capture_status: asyncio.Event) -> 
         camera_data_filename,
         "mapping_images",
         capture_status,
-        "flight/data/mapping_state.txt",
+        "vision/mapping/results",
     )
 
 
