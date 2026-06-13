@@ -17,7 +17,7 @@ async def mapping_pipeline(
     image_dir: str,
     capture_status: asyncio.Event,
     state_path: str,
-    output_path: str,
+    output_path: str = "vision/mapping/results",
 ) -> None:
     """
     Runs the code that generates the map from a folder of photos
@@ -37,7 +37,7 @@ async def mapping_pipeline(
     """
 
     # Check capture status to see if all images have been taken
-    while not capture_status.set():
+    while not capture_status.is_set():
         await asyncio.sleep(1)
 
     # Read in the camera JSON data file and write formatted data to the geo.txt (needed for ODM)
@@ -65,7 +65,7 @@ async def mapping_pipeline(
     # Set up connection to ODM node
     n = Node("localhost", 3000)
     print("Node info:", n.info())
-    image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [str(geo_file)]
+    image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [str(geo_path)]
 
     # Create the ODM task (tweak settings here as needed)
     task = n.create_task(
@@ -80,7 +80,7 @@ async def mapping_pipeline(
 
     _ = task.wait_for_completion()
     try:
-        out = os.listdir(task.download_assets("vision/mapping/results"))
+        out = os.listdir(task.download_assets(output_path))
     except Exception as e:
         print(e)
         out = ""
