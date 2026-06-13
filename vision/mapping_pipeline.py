@@ -13,7 +13,11 @@ import time
 
 
 async def mapping_pipeline(
-    camera_data_path: str, image_dir: str, capture_status: asyncio.Event, state_path: str, output_path: str
+    camera_data_path: str,
+    image_dir: str,
+    capture_status: asyncio.Event,
+    state_path: str,
+    output_path: str,
 ) -> None:
     """
     Runs the code that generates the map from a folder of photos
@@ -36,9 +40,8 @@ async def mapping_pipeline(
     while not capture_status.set():
         await asyncio.sleep(1)
 
-
     # Read in the camera JSON data file and write formatted data to the geo.txt (needed for ODM)
-    geo_path: Path = Path(image_dir) / "geo.txt" # TODO verify this creates the file
+    geo_path: Path = Path(image_dir) / "geo.txt"  # TODO verify this creates the file
 
     with open(camera_data_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
