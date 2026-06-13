@@ -71,9 +71,18 @@ async def mapping_pipeline(
     task = n.create_task(
         image_files,
         {
-            "dsm": False,
             "fast-orthophoto": True,
             "skip-3dmodel": True,
+            "dsm": False,
+            "dtm": False,
+            "skip-report": True,
+            "tiles": False,
+            "cog": False,
+            # TODO uncomment these if we need more speed
+            # "feature-quality": "medium",
+            # "min-num-features": 4000,
+            # "matcher-neighbors": 8,
+            # "resize-to": 2048,
         },
     )
     print("Task UUID:", task.uuid)
