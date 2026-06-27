@@ -13,8 +13,8 @@ if __name__ == "__main__":
 
     asyncio.run(
         mapping_pipeline(
-            "vision/mapping/datasets/camera.json",
-            "vision/mapping/datasets/ODLC-Flight-2",
+            "flight/data/mapping_photos.json",
+            "mapping_images",
             capture_status,
             "vision/mapping/results",
         )
