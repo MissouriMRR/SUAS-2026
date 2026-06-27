@@ -5,12 +5,19 @@ import itertools
 import logging
 import os
 import sys
-from typing import Iterable
+from collections.abc import Iterable
+from typing import cast
 
+import numpy as np
+
+import vision.pipeline.standard_pipeline as std_obj
+from state_machine.flight_settings import FlightSettings
 from vision.common.bounding_box import BoundingBox
+from vision.common.constants import ODLCDict
 from vision.object_detection.model import ObjectDetection
 from vision.object_detection.queue import PhotoQueue
-from vision.pipeline import pipeline_utils, standard_pipeline
+from vision.pipeline import pipeline_utils
+from vision.vision_pipeline import filter_detections
 
 
 async def run_queue(images: Iterable[str], test_early_stop: bool = False) -> list[ObjectDetection]:
@@ -76,21 +83,29 @@ async def test_queue(camera_data_path: str | None = None) -> None:
     all_images: list[str] = get_all_images(directory, 10)
     results: list[ObjectDetection] = await run_queue(all_images)
     if camera_data_path is not None:
+        logging.info("Filtering detections with camera data")
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
-        filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = (
-            standard_pipeline.proximity_check(results, image_parameters, 7)
+        results = filter_detections(results, image_parameters)
+        bounding_boxes: list[BoundingBox] = [
+            pipeline_utils.detection_to_bbox(
+                detection, image_parameters[detection.image.split("/")[-1]]
+            )
+            for detection in results
+        ]
+
+        odlc_dict: ODLCDict = std_obj.create_odlc_dict(
+            bounding_boxes, FlightSettings.from_mission_config()
         )
-        results = [detection for detection, _ in filtered_objects]
-    if len(results) > 4:
-        results = results[:4]
+        pipeline_utils.output_odlc_json("flight/data/output.json", odlc_dict)
     for result in results:
+        x1, y1, x2, y2 = cast(tuple[int, int, int, int], result.bbox.astype(np.int32).tolist())
         logging.info(
             "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
             result.category,
-            result.bbox[0],
-            result.bbox[1],
-            result.bbox[2],
-            result.bbox[3],
+            x1,
+            y1,
+            x2,
+            y2,
             result.confidence,
             result.image,
         )
@@ -101,4 +116,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         logging.info("Need to provide a directory")
         sys.exit(1)
-    asyncio.run(test_queue())
+    asyncio.run(test_queue("flight/data/camera.json"))
