@@ -1,6 +1,6 @@
 {
   "run_title": "SUAS Test Flight",
-  "run_description": "Test flight for SUAS 2025",
+  "run_description": "Test flight for SUAS 2026",
   "real_mode_config": {
     "mission_data_path": "flight/data/golf_data.json",
     "standard_object_count": 4
