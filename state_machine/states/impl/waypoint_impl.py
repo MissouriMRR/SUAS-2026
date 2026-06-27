@@ -34,6 +34,7 @@ from state_machine.states.waypoint import Waypoint
 BOUNDARY_SHRINKAGE: Final[float] = 5.0  # in meters
 WAYPOINT_AIR_SPEED: Final[float] = 25.0  # in meters/second
 WAYPOINT_MAX_LAPS: Final[int] = 10  # Taken from SUAS Rule 3.2.2
+WAYPOINT_TOLERANCE: Final[float] = 29.0  # 100ft -> 29m
 
 
 async def run(self: Waypoint) -> State:
@@ -185,6 +186,7 @@ async def waypoint_logic(self: Waypoint) -> None:
                 lon_deg,
                 curr_altitude,
                 airspeed=WAYPOINT_AIR_SPEED,
+                tolerance=WAYPOINT_TOLERANCE,
             )
 
         await move_to(
@@ -193,6 +195,7 @@ async def waypoint_logic(self: Waypoint) -> None:
             lon_deg,
             waypoint.altitude,
             airspeed=WAYPOINT_AIR_SPEED,
+            tolerance=WAYPOINT_TOLERANCE,
         )
 
         logging.info("Reached waypoint %d", waypoint_num)
