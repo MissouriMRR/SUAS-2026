@@ -76,7 +76,7 @@ class MissionConfig(TypedDict):
     skip_odlc_and_airdrop: bool
     simple_takeoff: bool
     wind: WindConfig
-    map_output_path : str
+    map_output_path: str
     waypoint_laps_run: int
 
 

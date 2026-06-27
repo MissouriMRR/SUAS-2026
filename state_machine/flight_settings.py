@@ -442,7 +442,7 @@ class FlightSettings:
         Returns path to output the map too.
 
         Returns:
-        map_output_path : str  
+        map_output_path : str
             The string path to the desired map output.
         """
         return self.__map_output_path

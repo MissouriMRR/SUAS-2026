@@ -56,7 +56,9 @@ async def run(self: Mapping) -> State:
 
         capture_status: asyncio.Event = asyncio.Event()
 
-        asyncio.ensure_future(vision_mapping_logic(self, capture_status,self.flight_settings.map_output_path))
+        asyncio.ensure_future(
+            vision_mapping_logic(self, capture_status, self.flight_settings.map_output_path)
+        )
 
         flight_task: asyncio.Task[None] = asyncio.ensure_future(
             fly_mapping_pattern(self, capture_status)
@@ -189,7 +191,9 @@ async def fly_mapping_pattern(self: Mapping, capture_status: asyncio.Event) -> N
     logging.info("Mapping scan complete")
 
 
-async def vision_mapping_logic(_: Mapping, capture_status: asyncio.Event, map_output_path : str) -> None:
+async def vision_mapping_logic(
+    _: Mapping, capture_status: asyncio.Event, map_output_path: str
+) -> None:
     """
     Implements the vision logic for the Mapping state.
 
@@ -207,13 +211,8 @@ async def vision_mapping_logic(_: Mapping, capture_status: asyncio.Event, map_ou
     while not Path(camera_data_filename).is_file():
         await asyncio.sleep(1)
     logging.info("Mapping camera data file found.")
-    
-    await mapping_pipeline(
-        camera_data_filename,
-        "mapping_images",
-        capture_status,
-        map_output_path
-    )
+
+    await mapping_pipeline(camera_data_filename, "mapping_images", capture_status, map_output_path)
 
 
 # Setting the run_callable attribute of the Mapping class to the run function
