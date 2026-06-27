@@ -1,7 +1,6 @@
 """Defines the Drone class for the state machine."""
 
 import asyncio
-import json
 import logging
 
 import dronekit
@@ -82,9 +81,6 @@ class Drone:
         self.address: str = address
         self.baud: int | None = baud
         self.odlc_scan: bool = True
-
-        with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
-            json.dump({}, file)
 
     async def _send_servo_msg(self, servo_num: int, pwm: int) -> None:
         """Send a DO_SET_SERVO MAVLink message to the drone.
@@ -181,7 +177,7 @@ class Drone:
 
         message_1: str = "Waiting for user input to continue... "
         message_2: str = "(press enter when ready) "
-        input(f"\x1b[38;2;255;255;0m{message_1}" f"\x1b[3m{message_2}" "\x1b[0m")
+        input(f"\x1b[38;2;255;255;0m{message_1}\x1b[3m{message_2}\x1b[0m")
 
     def remove_arming_check(self) -> None:
         """
