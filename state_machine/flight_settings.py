@@ -207,8 +207,8 @@ class FlightSettings:
             sim_mode_config["standard_object_count"],
             sim_mode,
             sim_mode_config["mission_data_path"],
-            map_output_path=config["map_output_path"]
-            waypoint_laps_run=config["waypoint_laps_run"],
+            map_output_path=config["map_output_path"],
+            waypoint_laps_run=config["waypoint_laps_run"]
         )
         return config_settings
 
