@@ -15,6 +15,10 @@ from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
 QueueItem = TypeVar("QueueItem")
 
 
+class ImageReadError(Exception):
+    """Raised when an image cannot be read for inference."""
+
+
 class QueueCancelled(Exception):
     """Exception raised when the queue is cancelled."""
 
@@ -129,7 +133,7 @@ class PhotoQueue:
         """
         image = cv2.imread(photo)
         if image is None:
-            raise RuntimeError(f"Failed to read image: {photo}")
+            raise ImageReadError(f"Failed to read image: {photo}")
         for detection in results:
             x1, y1, x2, y2 = cast(
                 tuple[int, int, int, int], detection.bbox.astype(np.int32).tolist()
@@ -221,9 +225,12 @@ class PhotoQueue:
             self.results.extend(results)
 
             if self.show_results:
-                annotated_image = await self._draw_results(image, results)
-                cv2.imshow(window_title, annotated_image)
-                _ = cv2.waitKey(1)
+                try:
+                    annotated_image = await self._draw_results(image, results)
+                    cv2.imshow(window_title, annotated_image)
+                    _ = cv2.waitKey(1)
+                except ImageReadError:
+                    logging.error("Failed to show results for image: %s", image)
             self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
