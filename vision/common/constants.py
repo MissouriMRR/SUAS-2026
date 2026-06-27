@@ -79,3 +79,23 @@ class CameraParameters(TypedDict):
 # In degrees of [roll, pitch, yaw]
 # Set to [0.0, -90.0, 0.0] when the camera is facing directly downwards
 ROTATION_OFFSET: list[float] = [0.0, -90.0, 90.0]
+
+
+# Airdrop dataclasses
+class AirdropConfig(TypedDict):
+    """
+    The configuration for an airdrop
+
+    Attributes
+    ----------
+    servo: int
+        The servo number to use for the airdrop
+    loaded: bool
+        Whether the airdrop is loaded or not
+    """
+
+    servo: int
+    loaded: bool
+
+
+AirdropStatus = dict[str, AirdropConfig]

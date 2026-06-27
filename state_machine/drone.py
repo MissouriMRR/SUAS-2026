@@ -1,7 +1,6 @@
 """Defines the Drone class for the state machine."""
 
 import asyncio
-import json
 import logging
 import time
 
@@ -92,9 +91,6 @@ class Drone:
         self.odlc_scan: bool = True
         self.flight_start_time: float | None = None
         self.last_flight_time: float = 0.0
-
-        with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
-            json.dump({}, file)
 
     async def _send_servo_msg(self, servo_num: int, pwm: int) -> None:
         """Send a DO_SET_SERVO MAVLink message to the drone.
