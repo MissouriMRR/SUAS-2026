@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import zipfile
 from pathlib import Path
 
 from pyodm import Node, Task
@@ -127,6 +128,7 @@ async def mapping_pipeline(
             "skip-report": True,
             "tiles": False,
             "cog": False,
+            "orthophoto-png": True,
             # uncomment these if we need more speed
             # "feature-quality": "medium",
             # "min-num-features": 4000,
@@ -138,7 +140,21 @@ async def mapping_pipeline(
 
     await wait_for_task_completion(task)
     try:
-        task.download_assets(output_path)
-        logger.info("Downloaded all mapping data to %s", output_path)
+        # Verify output director exists and get ZIP file from ODM
+        output = Path(output_path)
+        output.mkdir(parents=True, exist_ok=True)
+        zip_path = Path(task.download_zip(str(output)))
+
+        # Extract map png or jpg to output
+        with zipfile.ZipFile(zip_path) as zf:
+            image_exts = (".png", ".jpg")
+            for name in zf.namelist():
+                if name.startswith("odm_orthophoto/") and name.endswith(image_exts):
+                    (output / Path(name).name).write_bytes(zf.read(name))
+        zip_path.unlink()
+        logger.info("Downloaded orthophoto to %s", output_path)
+
+        # Save Map to USB drive (pass in usb drive path up top)
+
     except Exception as e:  # pylint: disable=broad-exception-caught
         logger.error(e)
