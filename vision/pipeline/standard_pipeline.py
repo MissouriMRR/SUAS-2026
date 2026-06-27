@@ -1,6 +1,8 @@
 """Functions that perform standard object detection, localization, and classification"""
 
-from typing import Iterable, TypeAlias
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterable, TypeAlias
 
 import utm
 
@@ -9,7 +11,6 @@ import vision.pipeline.pipeline_utils as pipe_utils
 from flight.extract_gps import GPSData, extract_gps
 from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.geometry import Point
-from state_machine.flight_settings import FlightSettings
 from vision.common.bounding_box import BoundingBox
 from vision.common.crop import crop_image
 from vision.common.odlc_characteristics import ODLCColor
@@ -18,6 +19,9 @@ from vision.standard_object.odlc_classify_shape import process_shapes
 from vision.standard_object.odlc_colors import find_colors
 from vision.standard_object.odlc_contour_detection import fetch_shape_contours
 from vision.standard_object.odlc_text_detection import get_odlc_text
+
+if TYPE_CHECKING:
+    from state_machine.flight_settings import FlightSettings
 
 ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 
@@ -199,11 +203,13 @@ def proximity_check(
 
         collided: bool = False
         existing_bbox: BoundingBox
-        for _, existing_bbox in filtered_detections:
+        for existing_detection, existing_bbox in filtered_detections:
+            if existing_detection.category != detection.category:
+                continue
+
             existing_latitude: float = existing_bbox.get_attribute("latitude")
             existing_longitude: float = existing_bbox.get_attribute("longitude")
 
-            # We can use 0 altitude for calculation as the search area is pretty flat
             distance: float = calculate_distance(
                 latitude, longitude, 0, existing_latitude, existing_longitude, 0
             )
