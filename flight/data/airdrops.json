@@ -1,0 +1,4 @@
+{
+  "person": { "servo": 0, "loaded": true },
+  "tent": { "servo": 1, "loaded": true }
+}
