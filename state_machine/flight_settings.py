@@ -208,7 +208,7 @@ class FlightSettings:
             sim_mode,
             sim_mode_config["mission_data_path"],
             map_output_path=config["map_output_path"],
-            waypoint_laps_run=config["waypoint_laps_run"]
+            waypoint_laps_run=config["waypoint_laps_run"],
         )
         return config_settings
 
@@ -446,6 +446,7 @@ class FlightSettings:
             The string path to the desired map output.
         """
         return self.__map_output_path
+
     @property
     def waypoint_laps_run(self) -> int:
         """
