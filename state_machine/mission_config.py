@@ -61,6 +61,8 @@ class MissionConfig(TypedDict):
         Sets if flight will use a simple vertical takeoff.
     wind : WindConfig
         Manually entered information on the wind.
+    map_output_path: str
+        Path for where the map should be saved
     """
 
     run_title: str
@@ -72,6 +74,7 @@ class MissionConfig(TypedDict):
     skip_odlc_and_airdrop: bool
     simple_takeoff: bool
     wind: WindConfig
+    map_output_path : str
 
 
 def get_mission_config() -> MissionConfig:

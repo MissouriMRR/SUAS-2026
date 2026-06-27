@@ -113,6 +113,7 @@ class FlightSettings:
         standard_object_count: int = DEFAULT_STANDARD_OBJECT_COUNT,
         sim_mode: SimMode = SimMode.REAL,
         mission_data_path: str = "flight/data/waypoint_data.json",
+        map_output_path: str = "vision/mapping/results",
     ) -> None:
         """
         Default Constructor for flight settings
@@ -152,6 +153,7 @@ class FlightSettings:
         self.__sim_mode: SimMode = sim_mode
         self.__mission_data_path: str = mission_data_path
         self.__yolo_status: Event = Event()
+        self.__map_output_path = map_output_path
 
     @staticmethod
     def from_mission_config() -> "FlightSettings":
@@ -195,6 +197,7 @@ class FlightSettings:
             sim_mode_config["standard_object_count"],
             sim_mode,
             sim_mode_config["mission_data_path"],
+            map_output_path=config["map_output_path"]
         )
         return config_settings
 
@@ -408,6 +411,7 @@ class FlightSettings:
         mission_data_path : str
             The path to the JSON file containing the boundary and waypoint data.
         """
+        
 
     @property
     def yolo_status(self) -> Event:
@@ -420,3 +424,14 @@ class FlightSettings:
             The Event with status tracking the YOLO model.
         """
         return self.__yolo_status
+
+    @property
+    def map_output_path(self) -> str:
+        """
+        Returns path to output the map too.
+
+        Returns:
+        map_output_path : str  
+            The string path to the desired map output.
+        """
+        return self.__map_output_path
