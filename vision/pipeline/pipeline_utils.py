@@ -3,31 +3,9 @@
 import json
 
 import vision.common.constants as consts
-
 from vision.common.bounding_box import BoundingBox
-
 from vision.deskew.camera_distances import get_coordinates
-from vision.yolo.model import ObjectDetection
-
-# We only care about the object classes that will actually appear in the competition
-# You can see which are which here: https://github.com/WongKinYiu/yolov9/blob/main/data/coco.yaml
-CLASS_PRIORITIES: dict[str, float] = {
-    "person": 0.5,
-    "car": 1.0,
-    "motorcycle": 1.0,
-    "airplane": 1.0,
-    "bus": 1.0,
-    "boat": 1.0,
-    "stop sign": 1.0,
-    "umbrella": 1.0,
-    "suitcase": 1.0,
-    "skis": 1.0,
-    "snowboard": 1.0,
-    "sports ball": 1.0,
-    "baseball bat": 1.0,
-    "tennis racket": 1.0,
-    "bed": 1.0,
-}
+from vision.object_detection.model import ObjectDetection
 
 
 def read_parameter_json(json_path: str) -> dict[str, consts.CameraParameters]:
@@ -159,28 +137,3 @@ def detection_to_bbox(
     set_generic_attributes(bbox, detection.image, detection.shape, parameters)
 
     return bbox
-
-
-def adjust_confidences(
-    detections: list[ObjectDetection], expand_categories: bool = False, buffer: float = 0.0
-) -> None:
-    """
-    Adjusts the confidence of ObjectDetections based on whether
-    they are in the competition list or not.
-    new_confidence = detection.confidence + buffer * CLASS_PRIORITIES[detection.category]
-
-    Parameters
-    ----------
-    detections: list[ObjectDetection]
-        The list of object detections to adjust
-    expand_categories : bool, default False
-        Whether to include categories not in the competition set
-    buffer : float, default 0.0
-        The value to add to confidence values of categories in the competition set
-    """
-    detection: ObjectDetection
-    for detection in detections:
-        if detection.category in CLASS_PRIORITIES:
-            detection.confidence += buffer * CLASS_PRIORITIES[detection.category]
-        elif not expand_categories:
-            continue

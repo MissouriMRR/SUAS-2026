@@ -3,12 +3,12 @@
 import asyncio
 import collections
 import logging
-from typing import TypeVar, Iterable
+from typing import Iterable, TypeVar
 
 import cv2
 import numpy as np
 
-from vision.yolo.model import YOLO, ObjectDetection
+from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
 
 QueueItem = TypeVar("QueueItem")
 
@@ -100,7 +100,7 @@ class PhotoQueue:
     """
 
     def __init__(self, show_results: bool = False):
-        self.model = YOLO()
+        self.model = ObjectDetectionModel()
         self.queue: CancellableQueue[str] = CancellableQueue()
         self.runners: list[asyncio.Task[None]] = []
         self.results: dict[str, ObjectDetection] = {}
@@ -125,6 +125,8 @@ class PhotoQueue:
             Image with bounding boxes drawn.
         """
         image = cv2.imread(photo)
+        if image is None:
+            raise RuntimeError(f"Failed to read image: {photo}")
         for detection in results:
             conv = detection.bbox.astype(np.int32)
             logging.info(

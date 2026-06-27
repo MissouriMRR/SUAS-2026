@@ -8,9 +8,9 @@ import sys
 from typing import Iterable
 
 from vision.common.bounding_box import BoundingBox
+from vision.object_detection.model import ObjectDetection
+from vision.object_detection.queue import PhotoQueue
 from vision.pipeline import pipeline_utils, standard_pipeline
-from vision.yolo.model import ObjectDetection
-from vision.yolo.queue import PhotoQueue
 
 
 async def run_queue(images: Iterable[str], test_early_stop: bool = False) -> list[ObjectDetection]:
@@ -75,7 +75,6 @@ async def test_queue(camera_data_path: str | None = None) -> None:
     directory: str = sys.argv[1]
     all_images: list[str] = get_all_images(directory, 10)
     results: list[ObjectDetection] = await run_queue(all_images)
-    pipeline_utils.adjust_confidences(results, True, 0.5)
     if camera_data_path is not None:
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
         filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = (
@@ -102,4 +101,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         logging.info("Need to provide a directory")
         sys.exit(1)
-    asyncio.run(test_queue("flight/data/camera.json"))
+    asyncio.run(test_queue())

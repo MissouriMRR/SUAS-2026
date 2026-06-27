@@ -63,6 +63,8 @@ class MissionConfig(TypedDict):
         Manually entered information on the wind.
     map_output_path: str
         Path for where the map should be saved
+    waypoint_laps_run : int
+        The number of laps the drone has run through the waypoint state.
     """
 
     run_title: str
@@ -75,6 +77,7 @@ class MissionConfig(TypedDict):
     simple_takeoff: bool
     wind: WindConfig
     map_output_path : str
+    waypoint_laps_run: int
 
 
 def get_mission_config() -> MissionConfig:

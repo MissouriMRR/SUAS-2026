@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import time
 
 import dronekit
 from pymavlink import mavutil
@@ -36,6 +37,11 @@ class Drone:
     _vehicle : dronekit.Vehicle | None
         The Dronekit Vehicle object that controls the drone, or None if a connection
         hasn't been made yet.
+    flight_start_time : float | None
+        The monotonic time the drone was armed, or None if it has not started yet.
+    last_flight_time : float
+        The length of time in seconds the drone was last armed for.
+
 
     Methods
     -------
@@ -63,6 +69,8 @@ class Drone:
         Modify the connection settings based on the given simulation mode.
     vehicle(self) -> dronekit.Vehicle
         Get the Dronekit Vehicle object owned by this Drone object.
+    flight_time_handler(self, _vehicle: dronekit.Vehicle, _attr: str, value: bool) -> None
+        Starts/stops the flight timer based on whether or not the drone has been armed or disarmed.
     """
 
     def __init__(self, address: str = "", baud: int | None = None) -> None:
@@ -82,6 +90,8 @@ class Drone:
         self.address: str = address
         self.baud: int | None = baud
         self.odlc_scan: bool = True
+        self.flight_start_time: float | None = None
+        self.last_flight_time: float = 0.0
 
         with open("flight/data/attempted_drops.json", "w", encoding="utf8") as file:
             json.dump({}, file)
@@ -174,6 +184,10 @@ class Drone:
             if self.baud is None
             else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
         )
+
+        # Add flight timer handler
+        self._vehicle.add_attribute_listener("armed", self.flight_timer_handler)
+
         logging.info("Drone discovered!")
 
         if self._sim_mode is not SimMode.REAL:
@@ -181,7 +195,7 @@ class Drone:
 
         message_1: str = "Waiting for user input to continue... "
         message_2: str = "(press enter when ready) "
-        input(f"\x1b[38;2;255;255;0m{message_1}" f"\x1b[3m{message_2}" "\x1b[0m")
+        input(f"\x1b[38;2;255;255;0m{message_1}\x1b[3m{message_2}\x1b[0m")
 
     def remove_arming_check(self) -> None:
         """
@@ -317,3 +331,40 @@ class Drone:
                 self.baud = None
             case _:
                 raise ValueError("invalid sim mode")
+
+    def flight_timer_handler(self, _vehicle: dronekit.Vehicle, _attr: str, value: bool) -> None:
+        """
+        Starts and stops the flight timer based on the armed state of the vehicle.
+        This function is called as a callback every time the armed state changes,
+        using dronekit's `add_attribute_listener`. As such, the arguments are
+        based on the `add_attribute_listener` signature, so `_vehicle` and `_attr`
+        are unused.
+
+        Parameters
+        ----------
+        value : bool
+            The new armed state of the vehicle.
+        """
+        if value:
+            self.flight_start_time = time.monotonic()
+        else:
+            self.last_flight_time = (
+                time.monotonic() - self.flight_start_time
+                if self.flight_start_time is not None
+                else 0.0
+            )
+            self.flight_start_time = None
+
+    @property
+    def flight_time(self) -> float:
+        """
+        Returns the elapsed flight time in seconds.
+
+        Returns
+        -------
+        float
+            The elapsed flight time in seconds.
+        """
+        if self.flight_start_time is None:
+            return 0.0
+        return time.monotonic() - self.flight_start_time

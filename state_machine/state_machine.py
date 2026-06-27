@@ -79,7 +79,11 @@ class StateMachine:
         await run_task
         if self.run_task is not None:
             self.run_task = None
-            logging.info("State Machine complete")
+            logging.info(
+                "State Machine complete. Final flight time: %d:%05.2f",
+                int(self.drone.last_flight_time // 60),
+                self.drone.last_flight_time % 60,
+            )
 
         # Wait for any pending task in the running event loop
         # This can happen when for example mapping processing is still running

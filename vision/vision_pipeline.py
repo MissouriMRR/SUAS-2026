@@ -3,17 +3,13 @@
 import asyncio
 import logging
 
-from state_machine.flight_settings import FlightSettings
-
 import vision.common.constants as consts
-
-from vision.common.bounding_box import BoundingBox
-
-import vision.pipeline.standard_pipeline as std_obj
 import vision.pipeline.pipeline_utils as pipe_utils
-
-from vision.yolo.model import ObjectDetection
-from vision.yolo.queue import PhotoQueue
+import vision.pipeline.standard_pipeline as std_obj
+from state_machine.flight_settings import FlightSettings
+from vision.common.bounding_box import BoundingBox
+from vision.object_detection.model import ObjectDetection
+from vision.object_detection.queue import PhotoQueue
 
 
 async def flyover_pipeline(
@@ -76,15 +72,11 @@ async def flyover_pipeline(
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)
 
-    # Adjust confidences based on class
-    pipe_utils.adjust_confidences(detected_objects, True, 0.5)
-
     # Check for boundary collisions between predictions
     filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = std_obj.proximity_check(
         detected_objects, image_parameters, 7
     )
     # From this point on we can assume that the predictions are sorted by confidence
-
     bounding_boxes: list[BoundingBox] = [box for _, box in filtered_objects]
 
     # Take the highest confidence predictions

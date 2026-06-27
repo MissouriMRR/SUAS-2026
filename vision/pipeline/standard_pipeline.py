@@ -4,25 +4,20 @@ from typing import Iterable, TypeAlias
 
 import utm
 
-from flight.extract_gps import extract_gps, GPSData
+import vision.common.constants as consts
+import vision.pipeline.pipeline_utils as pipe_utils
+from flight.extract_gps import GPSData, extract_gps
 from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.geometry import Point
-
 from state_machine.flight_settings import FlightSettings
-
-import vision.common.constants as consts
-
-from vision.common.crop import crop_image
 from vision.common.bounding_box import BoundingBox
+from vision.common.crop import crop_image
 from vision.common.odlc_characteristics import ODLCColor
-
-from vision.standard_object.odlc_contour_detection import fetch_shape_contours
+from vision.object_detection.model import ObjectDetection
 from vision.standard_object.odlc_classify_shape import process_shapes
-from vision.standard_object.odlc_text_detection import get_odlc_text
 from vision.standard_object.odlc_colors import find_colors
-
-import vision.pipeline.pipeline_utils as pipe_utils
-from vision.yolo.model import ObjectDetection
+from vision.standard_object.odlc_contour_detection import fetch_shape_contours
+from vision.standard_object.odlc_text_detection import get_odlc_text
 
 ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 

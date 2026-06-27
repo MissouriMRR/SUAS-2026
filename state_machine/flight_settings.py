@@ -1,9 +1,9 @@
 """Class to contain setters, getters & parameters for current flight"""
 
-from asyncio import Event
-from enum import Enum
 import logging
 import sys
+from asyncio import Event
+from enum import Enum
 from typing import Final
 
 from state_machine import mission_config
@@ -57,6 +57,8 @@ class FlightSettings:
     __yolo_status: Event
         An asyncio Event tracking whether the YOLO model has
         finished processing images.
+    __waypoint_laps_run: int
+        The number of laps the drone has run through the waypoint state.
 
     Methods
     -------
@@ -96,11 +98,15 @@ class FlightSettings:
         Return the path to the JSON file containing the boundary and waypoint data.
     mission_data_path(mission_data_path: str) -> None
         Set the path to the JSON file containing the boundary and waypoint data.
+    waypoint_laps_run() -> int
+        Returns the number of laps the drone has run through the waypoint state.
+    waypoint_laps_run(laps: int) -> None
+        Sets the number of laps the drone has run through the waypoint state.
     """
 
     _read_sim_mode: bool = False
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments,too-many-arguments
     def __init__(
         self,
         simple_takeoff: bool = False,
@@ -114,6 +120,7 @@ class FlightSettings:
         sim_mode: SimMode = SimMode.REAL,
         mission_data_path: str = "flight/data/waypoint_data.json",
         map_output_path: str = "vision/mapping/results",
+        waypoint_laps_run: int = 0,
     ) -> None:
         """
         Default Constructor for flight settings
@@ -141,6 +148,8 @@ class FlightSettings:
             Whether the drone is real, running in the ardupilot sim, or running in airsim.
         mission_data_path : str, default "flight/data/waypoint_data.json"
             The path to the JSON file containing the boundary and waypoint data.
+        waypoint_laps_run : int, default 0
+            The number of laps the drone has run through the waypoint state.
         """
         self.__simple_takeoff: bool = simple_takeoff
         self.__run_title: str = title
@@ -152,6 +161,7 @@ class FlightSettings:
         self.__standard_object_count: int = standard_object_count
         self.__sim_mode: SimMode = sim_mode
         self.__mission_data_path: str = mission_data_path
+        self.__waypoint_laps_run: int = waypoint_laps_run
         self.__yolo_status: Event = Event()
         self.__map_output_path = map_output_path
 
@@ -198,6 +208,7 @@ class FlightSettings:
             sim_mode,
             sim_mode_config["mission_data_path"],
             map_output_path=config["map_output_path"]
+            waypoint_laps_run=config["waypoint_laps_run"],
         )
         return config_settings
 
@@ -435,3 +446,26 @@ class FlightSettings:
             The string path to the desired map output.
         """
         return self.__map_output_path
+    @property
+    def waypoint_laps_run(self) -> int:
+        """
+        Return the number of laps the drone has run through the waypoint state.
+
+        Returns
+        -------
+        waypoint_laps_run : int
+            The number of laps the drone has run through the waypoint state.
+        """
+        return self.__waypoint_laps_run
+
+    @waypoint_laps_run.setter
+    def waypoint_laps_run(self, waypoint_laps_run: int) -> None:
+        """
+        Set the number of laps the drone has run through the waypoint state.
+
+        Parameters
+        ----------
+        waypoint_laps_run : int
+            The number of laps the drone has run through the waypoint state.
+        """
+        self.__waypoint_laps_run = waypoint_laps_run
