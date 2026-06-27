@@ -3,10 +3,12 @@
 import asyncio
 import collections
 import logging
-from typing import Iterable, TypeVar
+from collections.abc import Iterable
+from typing import TypeVar, cast
 
 import cv2
 import numpy as np
+from typing_extensions import override
 
 from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
 
@@ -40,6 +42,7 @@ class CancellableQueue(asyncio.Queue[QueueItem]):
         self._queue: collections.deque[QueueItem]
         self._getters: collections.deque[asyncio.Future[None]]
 
+    @override
     def _get(self) -> QueueItem:
         """
         Get an item from the queue.
@@ -100,11 +103,11 @@ class PhotoQueue:
     """
 
     def __init__(self, show_results: bool = False):
-        self.model = ObjectDetectionModel()
+        self.model: ObjectDetectionModel = ObjectDetectionModel()
         self.queue: CancellableQueue[str] = CancellableQueue()
         self.runners: list[asyncio.Task[None]] = []
-        self.results: dict[str, ObjectDetection] = {}
-        self.show_results = show_results
+        self.results: list[ObjectDetection] = []
+        self.show_results: bool = show_results
 
     async def _draw_results(
         self, photo: str, results: Iterable[ObjectDetection]
@@ -128,29 +131,31 @@ class PhotoQueue:
         if image is None:
             raise RuntimeError(f"Failed to read image: {photo}")
         for detection in results:
-            conv = detection.bbox.astype(np.int32)
+            x1, y1, x2, y2 = cast(
+                tuple[int, int, int, int], detection.bbox.astype(np.int32).tolist()
+            )
             logging.info(
                 "Detected %s at (%d, %d), (%d, %d)",
                 detection.category,
-                conv[0],
-                conv[1],
-                conv[2],
-                conv[3],
+                x1,
+                y1,
+                x2,
+                y2,
             )
             image = cv2.rectangle(
                 image,
-                (conv[0], conv[1]),
-                (conv[2], conv[3]),
+                (x1, y1),
+                (x2, y2),
                 (0, 255, 0),
                 2,
             )
             # Add caption with class
-            cv2.putText(
+            _ = cv2.putText(
                 image,
                 detection.category,
-                (conv[0], conv[1] - 5),
+                (x1, y1 - 5),
                 cv2.FONT_HERSHEY_TRIPLEX,
-                (conv[2] - conv[0]) / 250,
+                (x2 - x1) / 250,
                 (0, 255, 0),
             )
         return image
@@ -159,14 +164,15 @@ class PhotoQueue:
         """
         Prints out all of the stored results, including bbox, confidence, and image path.
         """
-        for result in self.results.values():
+        for result in self.results:
+            x1, y1, x2, y2 = cast(tuple[int, int, int, int], result.bbox.astype(np.int32).tolist())
             logging.info(
                 "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
                 result.category,
-                result.bbox[0],
-                result.bbox[1],
-                result.bbox[2],
-                result.bbox[3],
+                x1,
+                y1,
+                x2,
+                y2,
                 result.confidence,
                 result.image,
             )
@@ -210,17 +216,14 @@ class PhotoQueue:
                 break
             logging.debug("Runner %d processing image %s", num, image)
             results = await self.model.process_image(image)
-            result: ObjectDetection
-            for result in results:
-                if result.category in self.results:
-                    if result.confidence > self.results[result.category].confidence:
-                        self.results[result.category] = result
-                else:
-                    self.results[result.category] = result
+
+            # Add each result to the results list
+            self.results.extend(results)
+
             if self.show_results:
                 annotated_image = await self._draw_results(image, results)
                 cv2.imshow(window_title, annotated_image)
-                cv2.waitKey(1)
+                _ = cv2.waitKey(1)
             self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
@@ -253,8 +256,8 @@ class PhotoQueue:
         # Cancel the queue to stop runners once the queue is empty
         await self.queue.cancel()
         if self.runners:
-            await asyncio.wait(self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15)
+            _ = await asyncio.wait(self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15)
 
         cv2.destroyAllWindows()
 
-        return list(self.results.values())
+        return self.results
