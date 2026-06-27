@@ -20,5 +20,6 @@
     "mean_wind_speed": 0.0,
     "mean_wind_direction": 0.0
   },
-  "waypoint_laps_run": 0
+  "waypoint_laps_run": 0,
+  "map_output_path": "vision/mapping/results"
 }

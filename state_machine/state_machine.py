@@ -63,6 +63,10 @@ class StateMachine:
             If provided, sets the state machine's current state. This must
             share the same drone and flight settings as this state machine.
         """
+        # We want to record what tasks are running at the start of the state
+        # machine, so we won't wait for them at the end.
+        initial_tasks: set[Task[None]] = asyncio.all_tasks()
+
         if self.run_task is not None:
             return
 
@@ -80,6 +84,15 @@ class StateMachine:
                 int(self.drone.last_flight_time // 60),
                 self.drone.last_flight_time % 60,
             )
+
+        # Wait for any pending task in the running event loop
+        # This can happen when for example mapping processing is still running
+        pending_tasks = asyncio.all_tasks() - initial_tasks
+        if pending_tasks:
+            logging.info("Waiting for pending tasks to complete: %s", pending_tasks)
+            await asyncio.gather(*pending_tasks, return_exceptions=True)
+
+        logging.info("Done!")
 
     async def _run(self) -> None:
         """Runs the flight code specific to each state until completion."""
