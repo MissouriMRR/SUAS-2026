@@ -1,15 +1,41 @@
 """Runs the necessary Vision code during the flyover stage of competition"""
 
+from __future__ import annotations
+
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 import vision.common.constants as consts
 import vision.pipeline.pipeline_utils as pipe_utils
 import vision.pipeline.standard_pipeline as std_obj
-from state_machine.flight_settings import FlightSettings
 from vision.common.bounding_box import BoundingBox
 from vision.object_detection.model import ObjectDetection
 from vision.object_detection.queue import PhotoQueue
+
+if TYPE_CHECKING:
+    from state_machine.flight_settings import FlightSettings
+
+
+def filter_detections(
+    detections: list[ObjectDetection],
+    image_parameters: dict[str, consts.CameraParameters],
+) -> list[ObjectDetection]:
+    """
+    Filters all the detections to the best for each of the two classes (tent and mannequin).
+    """
+    deduped: list[tuple[ObjectDetection, BoundingBox]] = std_obj.proximity_check(
+        detections, image_parameters
+    )
+
+    # First occurrence of each class in the deduped list is the highest confidence one
+    # Since it is sorted in proximity_check
+    best_per_class: dict[str, ObjectDetection] = {}
+    for detection, _ in deduped:
+        if detection.category not in best_per_class:
+            best_per_class[detection.category] = detection
+
+    return list(best_per_class.values())
 
 
 async def flyover_pipeline(
@@ -72,15 +98,14 @@ async def flyover_pipeline(
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)
 
-    # Check for boundary collisions between predictions
-    filtered_objects: list[tuple[ObjectDetection, BoundingBox]] = std_obj.proximity_check(
-        detected_objects, image_parameters, 7
-    )
-    # From this point on we can assume that the predictions are sorted by confidence
-    bounding_boxes: list[BoundingBox] = [box for _, box in filtered_objects]
+    # Filter all detections to the best for each class
+    detected_objects = filter_detections(detected_objects, image_parameters)
 
-    # Take the highest confidence predictions
-    bounding_boxes = bounding_boxes[: flight_settings.standard_object_count]
+    # Convert detections to bounding boxes with geographic information
+    bounding_boxes: list[BoundingBox] = [
+        pipe_utils.detection_to_bbox(detection, image_parameters[detection.image.split("/")[-1]])
+        for detection in detected_objects
+    ]
 
     odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(bounding_boxes, flight_settings)
     logging.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)
