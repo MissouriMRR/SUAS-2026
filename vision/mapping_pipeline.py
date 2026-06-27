@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import zipfile
+from datetime import date
 from pathlib import Path
 
 from pyodm import Node, Task
@@ -146,11 +147,14 @@ async def mapping_pipeline(
         zip_path = Path(task.download_zip(str(output)))
 
         # Extract map png or jpg to output
+        today = date.today().strftime("%Y-%m-%d")
         with zipfile.ZipFile(zip_path) as zf:
             image_exts = (".png", ".jpg")
             for name in zf.namelist():
                 if name.startswith("odm_orthophoto/") and name.endswith(image_exts):
-                    (output / Path(name).name).write_bytes(zf.read(name))
+                    ext = Path(name).suffix
+                    dest_name = f"MissouriSandT_{today}_map{ext}"
+                    (output / dest_name).write_bytes(zf.read(name))
         zip_path.unlink()
         logger.info("Downloaded orthophoto to %s", output_path)
 
