@@ -411,7 +411,7 @@ class FlightSettings:
         mission_data_path : str
             The path to the JSON file containing the boundary and waypoint data.
         """
-        
+        self.mission_data_path = mission_data_path
 
     @property
     def yolo_status(self) -> Event:
