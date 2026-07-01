@@ -15,7 +15,7 @@ dependencies = [
     "numpy>=2.2.6",
     "onnxruntime>=1.23.2",
     "opencv-python>=4.12.0.88",
-    "pymavlink>=2.4.49",
+    "pymavlink>=2.4.49.post1",
     "pyodm>=1.5.12",
     "scipy>=1.15.0",
     "shapely>=2.1.2",
@@ -28,6 +28,10 @@ dependencies = [
 [tool.uv.sources]
 dronekit = { url = "https://github.com/MissouriMRR/docs/raw/refs/heads/main/subteams/flight/installation_guide/dronekit-2.9.2-py310-none-any.whl" }
 airsim = { git = "https://github.com/heitmeih/AirSim-fixed-pyinstall.git", subdirectory = "PythonClient" }
+
+[[tool.uv.index]]
+name = "multirotor"
+url = "https://missourimrr.github.io/pypi-index/simple/"
 
 [dependency-groups]
 dev = [
