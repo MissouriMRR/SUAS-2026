@@ -16,7 +16,7 @@ WAYPOINT_TOLERANCE: int = 6
 
 # duplicate code disabled since we may want different functionality
 # for waypoints/odlcs search points
-# pylint: disable=duplicate-code
+# pylint: disable=duplicate-code,too-many-positional-arguments
 async def move_to(
     drone: dronekit.Vehicle,
     latitude: float,
@@ -79,5 +79,5 @@ async def move_to(
             break
 
         # tell machine to sleep to prevent constant polling, preventing battery drain
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(0.1)
     return
