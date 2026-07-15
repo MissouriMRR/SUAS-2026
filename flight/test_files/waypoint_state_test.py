@@ -15,25 +15,17 @@ run_test(flight_settings)
 
 import asyncio
 import logging
-import time
-from typing import Final
 
 import dronekit
 
 from flight.extract_gps import BoundaryPoint, GPSData, extract_gps
-from flight.extract_gps import Waypoint as Waylist
-from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
 from state_machine.state_machine import StateMachine
 from state_machine.states.start import Start
 
-# 3.28084 feet per meter
-CLOSE_THRESHOLD: Final[float] = (
-    15 / 3.28084
-)  # How close the drone should get to each waypoint, in meters
 
-
+# pylint: disable=too-many-positional-arguments
 def in_bounds(
     boundary: list[BoundaryPoint],
     latitude: float,
@@ -88,10 +80,9 @@ def in_bounds(
     return inside
 
 
-async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
+async def boundary_check(drone: Drone, flight_settings: FlightSettings) -> None:
     """
-    Checks if the drone reaches each waypoint in a list and remains
-    within the specified boundary during its flight.
+    Checks if the drone breaches the boundary or goes out of bounds during its flight.
 
     Parameters
     ----------
@@ -101,7 +92,6 @@ async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
         The flight settings to use.
     """
     gps_dict: GPSData = extract_gps(flight_settings.mission_data_path)
-    waypoints: list[Waylist] = gps_dict["waypoints"]
     boundary: list[BoundaryPoint] = gps_dict["boundary_points"]
     min_altitude: float = gps_dict["altitude_limits"][0]
     max_altitude: float = gps_dict["altitude_limits"][1]
@@ -117,42 +107,25 @@ async def waypoint_check(drone: Drone, flight_settings: FlightSettings) -> None:
         await asyncio.sleep(1)
 
     previously_out_of_bounds: bool = False
-    previous_log_time: float = time.perf_counter()  # time.perf_counter() is monotonic
-    for waypoint_num, waypoint in enumerate(waypoints):
-        while True:
-            location: dronekit.LocationGlobalRelative = drone.vehicle.location.global_relative_frame
+    while True:
+        location: dronekit.LocationGlobalRelative = drone.vehicle.location.global_relative_frame
 
-            # continuously checks current latitude, longitude and altitude of the drone
-            drone_lat: float = location.lat
-            drone_lon: float = location.lon
-            drone_alt: float = location.alt
+        # continuously checks current latitude, longitude and altitude of the drone
+        drone_lat: float = location.lat
+        drone_lon: float = location.lon
+        drone_alt: float = location.alt
 
-            # checks if drone's location is within boundary
-            if not in_bounds(boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude):
-                if not previously_out_of_bounds:
-                    logging.info("(Waypoint State Test) Out of bounds!")
-                    previously_out_of_bounds = True
-            else:
-                if previously_out_of_bounds:
-                    logging.info("(Waypoint State Test) Re-entered bounds.")
-                    previously_out_of_bounds = False
+        # checks if drone's location is within boundary
+        if not in_bounds(boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude):
+            if not previously_out_of_bounds:
+                logging.info("(Waypoint State Test) Out of bounds!")
+                previously_out_of_bounds = True
+        else:
+            if previously_out_of_bounds:
+                logging.info("(Waypoint State Test) Re-entered bounds.")
+                previously_out_of_bounds = False
 
-            distance_to_waypoint: float = calculate_distance(
-                drone_lat, drone_lon, drone_alt, *waypoint
-            )
-
-            # accurately checks if location is reached
-            if distance_to_waypoint < CLOSE_THRESHOLD:
-                break
-
-            curr_time: float = time.perf_counter()
-            if curr_time - previous_log_time >= 1.0:
-                logging.info("(Waypoint State Test) %f m to waypoint", distance_to_waypoint)
-                previous_log_time = curr_time
-
-            await asyncio.sleep(0.1)
-
-        logging.info("(Waypoint State Test) Waypoint %d reached.", waypoint_num)
+        await asyncio.sleep(0.1)
 
 
 async def run_test(flight_settings: FlightSettings) -> None:
@@ -174,7 +147,7 @@ async def run_test(flight_settings: FlightSettings) -> None:
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
-    await waypoint_check(drone, flight_settings)
+    await boundary_check(drone, flight_settings)
 
     while not state_task.done():
         await asyncio.sleep(1)
