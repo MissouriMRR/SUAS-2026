@@ -276,7 +276,7 @@ class Drone:
         """
         if servo_num < 1 or servo_num > 4:
             raise ValueError("Servo number must be between 1 and 4")
-        open_values: list[int] = [950, 1600, 1950, 1900]
+        open_values: list[int] = [2000, 1100, 1100, 1100]
         await self._send_servo_msg(servo_num + 8, open_values[servo_num - 1])
 
     async def close_servo(self, servo_num: int) -> None:
@@ -292,7 +292,7 @@ class Drone:
         """
         if servo_num < 1 or servo_num > 4:
             raise ValueError("Servo number must be between 1 and 4")
-        closed_values: list[int] = [2000, 1100, 1100, 1100]
+        closed_values: list[int] = [950, 1600, 1950, 1900]
         await self._send_servo_msg(servo_num + 8, closed_values[servo_num - 1])
 
     async def close(self) -> None:

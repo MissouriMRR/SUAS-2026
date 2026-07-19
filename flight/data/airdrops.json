@@ -1,4 +1,4 @@
 {
-  "person": { "servo": 0, "loaded": true },
-  "tent": { "servo": 1, "loaded": true }
+  "person": { "servo": 1, "loaded": true },
+  "tent": { "servo": 2, "loaded": true }
 }
