@@ -1,0 +1,197 @@
+{
+  "flyzones": {
+    "altitudeMin": 50,
+    "altitudeMax": 130,
+    "boundaryPoints": [
+      {
+        "latitude": 36.2193143935478,
+        "longitude": -96.00171089172362
+      },
+      {
+        "latitude": 36.2203876816226,
+        "longitude": -96.0041356086731
+      },
+      {
+        "latitude": 36.2208031440207,
+        "longitude": -96.006817817688
+      },
+      {
+        "latitude": 36.2205954130975,
+        "longitude": -96.0094571113586
+      },
+      {
+        "latitude": 36.2198164172223,
+        "longitude": -96.01181745529171
+      },
+      {
+        "latitude": 36.2181891563676,
+        "longitude": -96.0142421722412
+      },
+      {
+        "latitude": 36.2149951257415,
+        "longitude": -96.0109269618988
+      },
+      {
+        "latitude": 36.2128397305797,
+        "longitude": -96.0107660293579
+      },
+      {
+        "latitude": 36.2128051052733,
+        "longitude": -96.00916743278502
+      },
+      {
+        "latitude": 36.2106063669373,
+        "longitude": -96.00924253463749
+      },
+      {
+        "latitude": 36.2106583063506,
+        "longitude": -96.00173234939579
+      }
+    ],
+    "odlcBoundary": [
+      {
+        "latitude": 36.213469,
+        "longitude": -96.002635
+      },
+      {
+        "latitude": 36.215795,
+        "longitude": -96.002635
+      },
+      {
+        "latitude": 36.215795,
+        "longitude": -96.004286
+      },
+      {
+        "latitude": 36.213469,
+        "longitude": -96.004286
+      }
+    ],
+    "mappingBoundary": [
+      {
+        "latitude": 36.213469,
+        "longitude": -96.002635
+      },
+      {
+        "latitude": 36.215795,
+        "longitude": -96.002635
+      },
+      {
+        "latitude": 36.215795,
+        "longitude": -96.004286
+      },
+      {
+        "latitude": 36.213469,
+        "longitude": -96.004286
+      }
+    ]
+  },
+  "waypoints": [
+    {
+      "latitude": 36.21736924188489,
+      "longitude": -96.00272095680651,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21917160230679,
+      "longitude": -96.00361219988081,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.22003446416741,
+      "longitude": -96.00732069124298,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21925833262979,
+      "longitude": -96.01091516011213,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21800362763319,
+      "longitude": -96.01288586511856,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21580116046479,
+      "longitude": -96.0105988393989,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21354476829925,
+      "longitude": -96.00958418465031,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21260734066436,
+      "longitude": -96.00833801135664,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21199188147197,
+      "longitude": -96.00773792928942,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21135057889186,
+      "longitude": -96.00320882671765,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21311238245522,
+      "longitude": -96.00467719800245,
+      "altitude": 51.0
+    },
+    {
+      "latitude": 36.21642995099624,
+      "longitude": -96.00510251981895,
+      "altitude": 51.0
+    }
+  ],
+  "odlcAltitude": 51.0,
+  "odlcHeading": 13,
+  "odlcWaypoints": [
+    {
+      "latitude": 36.215795,
+      "longitude": -96.002635
+    },
+    {
+      "latitude": 36.214632,
+      "longitude": -96.002635
+    },
+    {
+      "latitude": 36.213469,
+      "longitude": -96.002635
+    },
+    {
+      "latitude": 36.215795,
+      "longitude": -96.004286
+    },
+    {
+      "latitude": 36.214632,
+      "longitude": -96.004286
+    },
+    {
+      "latitude": 36.213469,
+      "longitude": -96.004286
+    }
+  ],
+  "defaultAirdropPoints": [
+    {
+      "latitude": 36.21533,
+      "longitude": -96.003461
+    },
+    {
+      "latitude": 36.214865,
+      "longitude": -96.003461
+    },
+    {
+      "latitude": 36.214399,
+      "longitude": -96.003461
+    },
+    {
+      "latitude": 36.213934,
+      "longitude": -96.003461
+    }
+  ],
+  "airdropAltitude": 51.0
+}
