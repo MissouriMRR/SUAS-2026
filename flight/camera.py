@@ -22,7 +22,6 @@ from flight.waypoint.goto import move_to
 from flight.waypoint.calculate_distance import calculate_distance
 from vision.common.constants import CameraParameters
 
-
 WAYPOINT_TOLERANCE: int = 1  # in meters
 
 
