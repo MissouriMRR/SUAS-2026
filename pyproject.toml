@@ -37,11 +37,17 @@ name = "multirotor"
 url = "https://missourimrr.github.io/pypi-index/simple/"
 explicit = true
 
+[tool.basedpyright]
+typeCheckingMode = "recommended"
+# If uv is being used, this should match where uv creates the virtual environment
+venvPath = "."
+venv = ".venv"
+
 [dependency-groups]
 dev = [
-    "black>=25.9.0",
-    "mypy>=1.18.2",
-    "pre-commit>=4.3.0",
-    "pylint>=4.0.2",
+    "basedpyright>=1.39.10",
+    "gitlint>=0.19.1",
+    "prek>=0.4.14",
+    "ruff>=0.16.3",
     "types-aiofiles>=25.1.0.20251011",
 ]

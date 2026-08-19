@@ -125,6 +125,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Ruff
+.ruff_cache/
+
 # PyCharm
 .idea/
 # Vim
@@ -148,6 +151,7 @@ vision_videos/
 *.bmp
 vision/mapping/datasets/*
 vision/mapping/results/*
+mapping_images
 
 # Videos
 *.avi
@@ -164,3 +168,9 @@ vision/yolo/training/*.yaml
 *.onnx
 
 /state_machine/state.json
+
+# ArduPilot param files
+*.parm
+*.param
+*.waypoints
+*.tlog
