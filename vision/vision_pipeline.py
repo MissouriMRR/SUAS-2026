@@ -10,8 +10,7 @@ import vision.common.constants as consts
 import vision.pipeline.pipeline_utils as pipe_utils
 import vision.pipeline.standard_pipeline as std_obj
 from vision.common.bounding_box import BoundingBox
-from vision.object_detection.model import ObjectDetection
-from vision.object_detection.queue import PhotoQueue
+from vision.object_detection import ObjectDetection, ObjectDetectionDriver
 
 if TYPE_CHECKING:
     from state_machine.flight_settings import FlightSettings
@@ -59,8 +58,9 @@ async def flyover_pipeline(
         The json file name and path to save the data in
     """
 
-    # Load model and queue
-    queue: PhotoQueue = PhotoQueue(True)
+    # Start object detection driver
+    driver = ObjectDetectionDriver()
+    await driver.start()
 
     # List of filenames for images already completed to prevent repeating work
     completed_images: list[str] = []
@@ -70,8 +70,8 @@ async def flyover_pipeline(
         camera_data_path
     )
 
-    # Start the queue runner
-    await queue.start_queue()
+    # List of image inference tasks
+    inference_tasks: list[asyncio.Task[None]] = []
 
     # Wait for and process unfinished images until no more images are being taken
     while not capture_status.is_set() or (set(image_parameters.keys()) - set(completed_images)):
@@ -90,10 +90,17 @@ async def flyover_pipeline(
                 completed_images.append(image_path)
 
                 # Add the image to the queue
-                await queue.add_photo(full_image_path)
+                process_coro = driver.add_image(full_image_path)
+                inference_tasks.append(asyncio.create_task(process_coro))
+
+    # Wait for tasks to finish
+    task_results = await asyncio.gather(*inference_tasks, return_exceptions=True)
+    for result in task_results:
+        if isinstance(result, BaseException):
+            logging.error("Image failed to process on all providers: %s", result)
 
     # End the queue, get results
-    detected_objects: list[ObjectDetection] = await queue.end_queue()
+    detected_objects: list[ObjectDetection] = await driver.end()
 
     # Load in the json containing the camera data
     image_parameters = pipe_utils.read_parameter_json(camera_data_path)

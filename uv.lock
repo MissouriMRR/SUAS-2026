@@ -1839,6 +1839,7 @@ dependencies = [
     { name = "siyi-sdk" },
     { name = "torch" },
     { name = "torchvision" },
+    { name = "typing-extensions" },
     { name = "utm" },
 ]
 
@@ -1863,7 +1864,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "onnxruntime", specifier = ">=1.23.2" },
     { name = "opencv-python", specifier = ">=4.12.0.88" },
-    { name = "pymavlink", specifier = ">=2.4.49.post1" },
+    { name = "pymavlink", specifier = ">=2.4.49.post1", index = "https://missourimrr.github.io/pypi-index/simple/" },
     { name = "pyodm", specifier = ">=1.5.12" },
     { name = "pytesseract", specifier = ">=0.3.13" },
     { name = "scipy", specifier = ">=1.15.0" },
@@ -1871,6 +1872,7 @@ requires-dist = [
     { name = "siyi-sdk", specifier = ">=0.2.12" },
     { name = "torch", specifier = ">=2.9.0" },
     { name = "torchvision", specifier = ">=0.24.0" },
+    { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "utm", specifier = ">=0.8.1" },
 ]
 
