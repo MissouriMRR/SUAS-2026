@@ -10,7 +10,8 @@ import cv2
 import numpy as np
 from typing_extensions import override
 
-from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
+from vision.object_detection.providers.base import ObjectDetection
+from vision.object_detection.providers.local.model import ObjectDetectionModel
 
 QueueItem = TypeVar("QueueItem")
 

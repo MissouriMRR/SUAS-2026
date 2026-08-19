@@ -23,16 +23,19 @@ dependencies = [
     "siyi-sdk>=0.2.12",
     "torch>=2.9.0",
     "torchvision>=0.24.0",
+    "typing-extensions>=4.15.0",
     "utm>=0.8.1",
 ]
 
 [tool.uv.sources]
 dronekit = { url = "https://github.com/MissouriMRR/docs/raw/refs/heads/main/subteams/flight/installation_guide/dronekit-2.9.2-py310-none-any.whl" }
 airsim = { git = "https://github.com/heitmeih/AirSim-fixed-pyinstall.git", subdirectory = "PythonClient" }
+pymavlink = { index = "multirotor" }
 
 [[tool.uv.index]]
 name = "multirotor"
 url = "https://missourimrr.github.io/pypi-index/simple/"
+explicit = true
 
 [dependency-groups]
 dev = [

@@ -14,7 +14,7 @@ from flight.waypoint.geometry import Point
 from vision.common.bounding_box import BoundingBox
 from vision.common.crop import crop_image
 from vision.common.odlc_characteristics import ODLCColor
-from vision.object_detection.model import ObjectDetection
+from vision.object_detection import ObjectDetection
 from vision.standard_object.odlc_classify_shape import process_shapes
 from vision.standard_object.odlc_colors import find_colors
 from vision.standard_object.odlc_contour_detection import fetch_shape_contours
