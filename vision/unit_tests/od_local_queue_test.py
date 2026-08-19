@@ -14,8 +14,8 @@ import vision.pipeline.standard_pipeline as std_obj
 from state_machine.flight_settings import FlightSettings
 from vision.common.bounding_box import BoundingBox
 from vision.common.constants import ODLCDict
-from vision.object_detection.model import ObjectDetection
-from vision.object_detection.queue import PhotoQueue
+from vision.object_detection import ObjectDetection
+from vision.object_detection.providers.local.queue import PhotoQueue
 from vision.pipeline import pipeline_utils
 from vision.vision_pipeline import filter_detections
 
