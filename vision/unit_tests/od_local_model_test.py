@@ -9,7 +9,8 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
-from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
+from vision.object_detection import ObjectDetection
+from vision.object_detection.providers.local.model import ObjectDetectionModel
 
 
 async def test_image(image_path: str) -> None:
