@@ -1,0 +1,23 @@
+# Config for gitlint - https://jorisroovers.com/gitlint/
+# Run manually with `uv run gitlint` or `uv run gitlint --commits origin/main..HEAD`
+
+[general]
+ignore=body-is-missing
+regex-style-search=true
+
+[title-max-length]
+line-length=72
+
+[title-min-length]
+min-length=10
+
+# Commit titles must start with the issue number they address, e.g.
+# "[#42] Fix flaky camera connection test"
+[title-match-regex]
+regex=^\[#[0-9]+\] .+
+
+[title-must-not-contain-word]
+words=wip,todo
+
+[body-max-line-length]
+line-length=100

@@ -1,0 +1,23 @@
+name: Check commit messages
+
+on:
+  pull_request:
+
+jobs:
+  gitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Lint commit messages
+        run: uv run gitlint --commits origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}
