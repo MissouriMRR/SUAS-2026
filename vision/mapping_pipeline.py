@@ -1,9 +1,9 @@
 """Runs the necessary code for the Mapping component of the competition"""
 
 import asyncio
+import datetime
 import logging
 import zipfile
-from datetime import date
 from pathlib import Path
 
 from pyodm import Node, Task
@@ -38,12 +38,12 @@ async def wait_for_task_completion(
     while True:
         try:
             info: TaskInfo = task.info()
-        except NodeConnectionError as e:
+        except NodeConnectionError:
             if retry < max_retries:
                 retry += 1
                 await asyncio.sleep(retry * retry_timeout)
                 continue
-            raise e
+            raise
 
         if info.status in [
             TaskStatus.COMPLETED,
@@ -61,7 +61,6 @@ async def wait_for_task_completion(
 async def mapping_pipeline(
     camera_data_path: str,
     image_dir: str,
-    capture_status: asyncio.Event,
     output_path: str = "vision/mapping/results",
 ) -> None:
     """
@@ -73,23 +72,17 @@ async def mapping_pipeline(
         The path to the json file containing the CameraParameters
     image_dir: str
         The path with all the images
-    capture_status: asyncio.Event
-        Once all the images are taken, capture status is set
-        to true (used to determine when to generate the map)
     output_path: str
         The json file name and path to save the data in
     """
-
-    # Check capture status to see if all images have been taken
-    while not capture_status.is_set():
-        await asyncio.sleep(1)
-
-    logger.info("Capture status set, generating map...")
+    logger.info("Generating map...")
 
     # Read in the camera JSON data file and write formatted data to the geo.txt (needed for ODM)
     geo_path: Path = Path(image_dir) / "geo.txt"
 
-    metadata: dict[str, CameraParameters] = pipe_utils.read_parameter_json(camera_data_path)
+    metadata: dict[str, CameraParameters] = pipe_utils.read_parameter_json(
+        camera_data_path
+    )
 
     # Write geo.txt with data from camera json
     lines = ["EPSG:4326"]
@@ -116,7 +109,9 @@ async def mapping_pipeline(
         node.info().engine,
         node.info().version,
     )
-    image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [str(geo_path)]
+    image_files = sorted(str(path) for path in Path(image_dir).glob("*.jpg")) + [
+        str(geo_path)
+    ]
 
     # Create the ODM task (tweak settings here as needed)
     task = node.create_task(
@@ -147,7 +142,9 @@ async def mapping_pipeline(
         zip_path = Path(task.download_zip(str(output)))
 
         # Extract map png or jpg to output
-        today = date.today().strftime("%Y-%m-%d")
+        today = (
+            datetime.datetime.now(datetime.UTC).astimezone().date().strftime("%Y-%m-%d")
+        )
         with zipfile.ZipFile(zip_path) as zf:
             image_exts = (".png", ".jpg")
             for name in zf.namelist():
@@ -160,5 +157,5 @@ async def mapping_pipeline(
 
         # Save Map to USB drive (pass in usb drive path up top)
 
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except Exception as e:  # noqa: BLE001
         logger.error(e)

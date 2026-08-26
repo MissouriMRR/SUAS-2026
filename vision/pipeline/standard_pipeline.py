@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, TypeAlias
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import utm
 
@@ -23,7 +24,7 @@ from vision.standard_object.odlc_text_detection import get_odlc_text
 if TYPE_CHECKING:
     from state_machine.flight_settings import FlightSettings
 
-ContourHierarchyList: TypeAlias = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
+ContourHierarchyList: type = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
 
 
 def find_standard_objects(
@@ -50,12 +51,16 @@ def find_standard_objects(
     """
 
     found_odlcs: list[BoundingBox] = []
-    contours: list[consts.Contour] = fetch_shape_contours(original_image, True, "contours.jpg")
+    contours: list[consts.Contour] = fetch_shape_contours(
+        original_image, True, "contours.jpg"
+    )
     shapes: list[BoundingBox] = process_shapes(contours)
     shape: BoundingBox
     for shape in shapes:
         # Set the shape attributes by reference. If successful, keep the shape
-        if set_shape_attributes(shape, original_image) and pipe_utils.set_generic_attributes(
+        if set_shape_attributes(
+            shape, original_image
+        ) and pipe_utils.set_generic_attributes(
             shape, image_path, original_image.shape, camera_parameters
         ):
             found_odlcs.append(shape)
@@ -135,10 +140,10 @@ def create_odlc_dict(
     gps_data: GPSData = extract_gps(flight_settings.mission_data_path)
     odlc_boundary: list[Point] = [
         Point(odlc_boundary_point.easting, odlc_boundary_point.northing)
-        for odlc_boundary_point in gps_data["odlc_boundary_utm"]
+        for odlc_boundary_point in gps_data["object_boundary_utm"]
     ]
-    zone_number: int = gps_data["odlc_boundary_utm"][0].zone_number
-    zone_letter: str = gps_data["odlc_boundary_utm"][0].zone_letter
+    zone_number: int = gps_data["object_boundary_utm"][0].zone_number
+    zone_letter: str = gps_data["object_boundary_utm"][0].zone_letter
 
     odlc_dict: consts.ODLCDict = {}
 
@@ -197,7 +202,9 @@ def proximity_check(
     for detection in detections:
         image_name: str = detection.image.split("/")[-1]
         image_parameters: consts.CameraParameters = parameters[image_name]
-        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(detection, image_parameters)
+        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(
+            detection, image_parameters
+        )
         latitude: float = bounding_box.get_attribute("latitude")
         longitude: float = bounding_box.get_attribute("longitude")
 
