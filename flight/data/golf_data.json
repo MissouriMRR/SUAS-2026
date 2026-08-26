@@ -24,25 +24,7 @@
         "longitude": -91.7847848
       }
     ],
-    "odlcBoundary": [
-      {
-        "latitude": 37.9486055,
-        "longitude": -91.7845327
-      },
-      {
-        "latitude": 37.9482713,
-        "longitude": -91.7845595
-      },
-      {
-        "latitude": 37.948064,
-        "longitude": -91.7832774
-      },
-      {
-        "latitude": 37.9482248,
-        "longitude": -91.7832023
-      }
-    ],
-    "mappingBoundary": [
+    "searchBoundary": [
       {
         "latitude": 37.9486055,
         "longitude": -91.7845327
@@ -183,26 +165,8 @@
       "altitude": 51.0
     }
   ],
-  "odlcAltitude": 51.0,
-  "odlcHeading": 13,
-  "odlcWaypoints": [
-    {
-      "latitude": 37.9486055,
-      "longitude": -91.7845327
-    },
-    {
-      "latitude": 37.9482713,
-      "longitude": -91.7845595
-    },
-    {
-      "latitude": 37.948064,
-      "longitude": -91.7832774
-    },
-    {
-      "latitude": 37.9482248,
-      "longitude": -91.7832023
-    }
-  ],
+  "scanAltitude": 51.0,
+  "scanHeading": 13,
   "defaultAirdropPoints": [
     {
       "latitude": 37.94855,

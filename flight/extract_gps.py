@@ -6,9 +6,9 @@ the provided waypoint data JSON file for the SUAS competition.
 import argparse
 import json
 from typing import Any, NamedTuple
-from typing_extensions import TypedDict
 
 import utm
+from typing_extensions import TypedDict
 
 from vision.common.constants import Location
 
@@ -58,22 +58,6 @@ class WaypointUtm(NamedTuple):
     altitude: float
 
 
-class OdlcWaypoint(NamedTuple):
-    """
-    NamedTuple storing the data for a single ODLC waypoint.
-
-    Attributes
-    ----------
-    latitude : float
-        The latitude of the waypoint.
-    longitude : float
-        The longitude of the waypoint.
-    """
-
-    latitude: float
-    longitude: float
-
-
 class BoundaryPoint(NamedTuple):
     """
     NamedTuple storing the data for a single boundary point.
@@ -118,16 +102,13 @@ GPSData = TypedDict(
     {
         "waypoints": list[Waypoint],
         "waypoints_utm": list[WaypointUtm],
-        "odlc_waypoints": list[OdlcWaypoint],
         "boundary_points": list[BoundaryPoint],
         "boundary_points_utm": list[BoundaryPointUtm],
-        "odlc_boundary": list[BoundaryPoint],
-        "odlc_boundary_utm": list[BoundaryPointUtm],
-        "mapping_boundary": list[BoundaryPoint],
-        "mapping_boundary_utm": list[BoundaryPointUtm],
+        "object_boundary": list[BoundaryPoint],
+        "object_boundary_utm": list[BoundaryPointUtm],
         "altitude_limits": list[float],
-        "odlc_altitude": float,
-        "odlc_heading": float,
+        "scan_altitude": float,
+        "scan_heading": float,
         "default_airdrop_points": list[Location],
         "airdrop_altitude": float,
     },
@@ -166,10 +147,13 @@ def format_waypoints(
         altitude: float = waypoint["altitude"]
 
         waypoints.append(Waypoint(latitude, longitude, altitude))
-        utm_coords: tuple[float, float, int, str] = utm.from_latlon(
+        easting, northing, zone_number, zone_letter = utm.from_latlon(
             latitude, longitude, fz_num, fz_letter
         )
-        full_waypoint_utm: WaypointUtm = WaypointUtm(*utm_coords, altitude)
+        assert zone_letter is not None
+        full_waypoint_utm: WaypointUtm = WaypointUtm(
+            easting, northing, zone_number, zone_letter, altitude
+        )
         waypoints_utm.append(full_waypoint_utm)
 
     return waypoints, waypoints_utm
@@ -189,7 +173,6 @@ def extract_gps(path: str) -> GPSData:
     GPSData : TypedDict[
             list[Waypoint[float, float, float]],
             list[WaypointUtm[float, float, int, str, float]],
-            list[OdlcWaypoint[float, float]],
             list[BoundaryPoint[float, float]],
             list[BoundaryPointUtm[float, float, int, str]],
             list[BoundaryPoint[float, float]],
@@ -217,12 +200,6 @@ def extract_gps(path: str) -> GPSData:
                     The zone letter of the waypoint.
                 altitude : float
                     The altitude of the waypoint, in meters.
-        odlc_waypoints : list[OdlcWaypoint[float, float]]
-            OdlcWaypoint : OdlcWaypoint[float, float]
-                latitude : float
-                    The latitude of the waypoint, in degrees.
-                longitude : float
-                    The longitude of the waypoint, in degrees.
         boundary_points : list[BoundaryPoint[float, float]]
             BoundaryPoint : BoundaryPoint[float, float]
                 latitude : float
@@ -239,47 +216,31 @@ def extract_gps(path: str) -> GPSData:
                     The zone number of the boundary point.
                 zone_letter : str
                     The zone letter of the boundary point.
-        odlc_boundary : list[BoundaryPoint[float, float]]
+        object_boundary : list[BoundaryPoint[float, float]]
             BoundaryPoint : BoundaryPoint[float, float]
                 latitude : float
-                    The latitude of the airdrop area boundary point, in degrees.
+                    The latitude of the object boundary point, in degrees.
                 longitude : float
-                    The longitude of the airdrop area boundary point, in degrees.
-        odlc_boundary_utm : list[BoundaryPointUtm[float, float, int, str]]
+                    The longitude of the object boundary point, in degrees.
+        object_boundary_utm : list[BoundaryPointUtm[float, float, int, str]]
             BoundaryPointUtm : BoundaryPointUtm[float, float, int, str]
                 easting : float
-                    The easting of the airdrop area boundary point, in meters.
+                    The easting of the object boundary point, in meters.
                 northing : float
-                    The northing of the airdrop area boundary point, in meters.
+                    The northing of the object boundary point, in meters.
                 zone_number : int
-                    The zone number of the airdrop area boundary point.
+                    The zone number of the object boundary point.
                 zone_letter : str
-                    The zone letter of the airdrop area boundary point.
-        mapping_boundary : list[BoundaryPoint[float, float]]
-            BoundaryPoint : BoundaryPoint[float, float]
-                latitude : float
-                    The latitude of the mapping area boundary point, in degrees.
-                longitude : float
-                    The longitude of the mapping area boundary point, in degrees.
-        mapping_boundary_utm : list[BoundaryPointUtm[float, float, int, str]]
-            BoundaryPointUtm : BoundaryPointUtm[float, float, int, str]
-                easting : float
-                    The easting of the mapping area boundary point, in meters.
-                northing : float
-                    The northing of the mapping area boundary point, in meters.
-                zone_number : int
-                    The zone number of the mapping area boundary point.
-                zone_letter : str
-                    The zone letter of the mapping area boundary point.
+                    The zone letter of the object boundary point.
         altitude_limits : list[float, float]
             altitude_min : float
                 The minimum altitude that the drone must fly at all times, in meters.
             altitude_max : float
                 The maximum altitude that the drone must fly at all times, in meters.
-        odlc_altitude : float
-            The altitude to fly at during the ODLC state, in meters.
-        odlc_heading : float
-            Currently unused.
+        scan_altitude : float
+            The altitude to fly at while scanning the object area, in meters.
+        scan_heading : float
+            The heading to fly at while scanning the object area, in degrees.
         default_airdrop_points : list[Location]
             The coordinates to perform airdrops at if no objects are detected.
             Location : Location[float, float]
@@ -288,7 +249,7 @@ def extract_gps(path: str) -> GPSData:
                 longitude : float
                     The longitude of the waypoint, in degrees.
         airdrop_altitude : float
-            The altitude to fly at during the Airdrop state, in meters
+            The altitude to fly at while performing an airdrop, in meters.
 
     Raises
     ------
@@ -305,29 +266,22 @@ def extract_gps(path: str) -> GPSData:
     # Initialize lists to store waypoints & boundary points
     waypoints: list[Waypoint] = []
     waypoints_utm: list[WaypointUtm] = []
-    odlc_waypoints: list[OdlcWaypoint] = []
     boundary_points: list[BoundaryPoint] = []
     boundary_points_utm: list[BoundaryPointUtm] = []
-    odlc_boundary: list[BoundaryPoint] = []
-    odlc_boundary_utm: list[BoundaryPointUtm] = []
-    mapping_boundary: list[BoundaryPoint] = []
-    mapping_boundary_utm: list[BoundaryPointUtm] = []
+    object_boundary: list[BoundaryPoint] = []
+    object_boundary_utm: list[BoundaryPointUtm] = []
 
     # Get forced UTM zone number and zone letter
     forced_zone_number: int
-    forced_zone_letter: str
     _, _, forced_zone_number, forced_zone_letter = utm.from_latlon(
         json_data["flyzones"]["boundaryPoints"][0]["latitude"],
         json_data["flyzones"]["boundaryPoints"][0]["longitude"],
     )
+    assert forced_zone_letter is not None
 
-    waypoints, waypoints_utm = format_waypoints(json_data, forced_zone_number, forced_zone_letter)
-
-    odlc_waypoint: dict[str, float]
-    for odlc_waypoint in json_data["odlcWaypoints"]:
-        latitude = odlc_waypoint["latitude"]
-        longitude = odlc_waypoint["longitude"]
-        odlc_waypoints.append(OdlcWaypoint(latitude, longitude))
+    waypoints, waypoints_utm = format_waypoints(
+        json_data, forced_zone_number, forced_zone_letter
+    )
 
     boundary_point: dict[str, float]
     full_boundary_point_utm: BoundaryPointUtm
@@ -336,51 +290,46 @@ def extract_gps(path: str) -> GPSData:
         longitude = boundary_point["longitude"]
 
         boundary_points.append(BoundaryPoint(latitude, longitude))
+        easting, northing, zone_number, zone_letter = utm.from_latlon(
+            latitude, longitude, forced_zone_number, forced_zone_letter
+        )
+        assert zone_letter is not None
         full_boundary_point_utm = BoundaryPointUtm(
-            *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
+            easting, northing, zone_number, zone_letter
         )
         boundary_points_utm.append(full_boundary_point_utm)
 
-    for boundary_point in json_data["flyzones"]["odlcBoundary"]:
+    for boundary_point in json_data["flyzones"]["searchBoundary"]:
         latitude = boundary_point["latitude"]
         longitude = boundary_point["longitude"]
 
-        odlc_boundary.append(BoundaryPoint(latitude, longitude))
-        full_boundary_point_utm = BoundaryPointUtm(
-            *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
+        object_boundary.append(BoundaryPoint(latitude, longitude))
+        easting, northing, zone_number, zone_letter = utm.from_latlon(
+            latitude, longitude, forced_zone_number, forced_zone_letter
         )
-        odlc_boundary_utm.append(full_boundary_point_utm)
-
-    for boundary_point in json_data["flyzones"]["mappingBoundary"]:
-        latitude = boundary_point["latitude"]
-        longitude = boundary_point["longitude"]
-
-        mapping_boundary.append(BoundaryPoint(latitude, longitude))
+        assert zone_letter is not None
         full_boundary_point_utm = BoundaryPointUtm(
-            *utm.from_latlon(latitude, longitude, forced_zone_number, forced_zone_letter)
+            easting, northing, zone_number, zone_letter
         )
-        mapping_boundary_utm.append(full_boundary_point_utm)
+        object_boundary_utm.append(full_boundary_point_utm)
 
-    if len(mapping_boundary) != 4:
-        raise ValueError("the mapping boundary must have exactly 4 points")
+    if len(object_boundary) != 4:
+        raise ValueError("the object boundary must have exactly 4 points")
 
     # Package all data into the GPSData TypedDict to be exported
     waypoint_data: GPSData = {
         "waypoints": waypoints,
         "waypoints_utm": waypoints_utm,
-        "odlc_waypoints": odlc_waypoints,
         "boundary_points": boundary_points,
         "boundary_points_utm": boundary_points_utm,
-        "odlc_boundary": odlc_boundary,
-        "odlc_boundary_utm": odlc_boundary_utm,
-        "mapping_boundary": mapping_boundary,
-        "mapping_boundary_utm": mapping_boundary_utm,
+        "object_boundary": object_boundary,
+        "object_boundary_utm": object_boundary_utm,
         "altitude_limits": [
             json_data["flyzones"]["altitudeMin"],
             json_data["flyzones"]["altitudeMax"],
         ],
-        "odlc_altitude": json_data["odlcAltitude"],
-        "odlc_heading": json_data["odlcHeading"],
+        "scan_altitude": json_data["scanAltitude"],
+        "scan_heading": json_data["scanHeading"],
         "default_airdrop_points": json_data["defaultAirdropPoints"],
         "airdrop_altitude": json_data["airdropAltitude"],
     }
