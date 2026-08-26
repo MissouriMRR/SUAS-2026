@@ -2,24 +2,30 @@
 
 import asyncio
 import logging
-from pathlib import Path
+import math
 import traceback
+from pathlib import Path
+from typing import Final
 
-from flight.camera import CameraIRL, CameraAirSim
-from flight.extract_gps import extract_gps, GPSData, OdlcWaypoint
+import utm
+
+from flight.camera import CameraAirSim, CameraIRL
+from flight.extract_gps import BoundaryPointUtm, GPSData, extract_gps
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
 from state_machine.state_tracker import (
-    update_state,
     update_drone,
     update_flight_settings,
+    update_state,
 )
 from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
-
-from vision.vision_pipeline import flyover_pipeline
 from vision.common import camera_config
+from vision.vision_pipeline import flyover_pipeline
+
+HORIZONTAL_PHOTO_SPACING: Final[float] = 15  # meters
+VERTICAL_PHOTO_SPACING: Final[float] = 15  # meters
 
 
 async def run(self: ODLC) -> State:
@@ -60,7 +66,9 @@ async def run(self: ODLC) -> State:
 
         asyncio.ensure_future(vision_odlc_logic(self, capture_status))
 
-        flight_task: asyncio.Task[None] = asyncio.ensure_future(find_odlcs(self, capture_status))
+        flight_task: asyncio.Task[None] = asyncio.ensure_future(
+            fly_scanning_pattern(self, capture_status)
+        )
 
         logging.info("Starting check for flight task completion")
 
@@ -69,17 +77,17 @@ async def run(self: ODLC) -> State:
 
         logging.info("ODLC flight scan complete. State completing...")
         flight_task.cancel()
-    except asyncio.CancelledError as ex:
+    except asyncio.CancelledError:
         logging.error("ODLC state canceled")
         traceback.print_exc()
-        raise ex
+        raise
 
     return Mapping(self.drone, self.flight_settings)
 
 
-async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
+async def fly_scanning_pattern(self: ODLC, capture_status: asyncio.Event) -> None:
     """
-    Implements the flight logic fro the run method of the ODLC state.
+    This will fly the drone in a zig-zag pattern, scanning the entire search area.
 
     Parameters
     ----------
@@ -87,78 +95,101 @@ async def find_odlcs(self: ODLC, capture_status: asyncio.Event) -> None:
         The ODLC state object.
     capture_status : asyncio.Event
         An event that is set when the drone has successfully captured all images.
-
-    Returns
-    -------
-    Airdrop : State
-        The next state after the drone has successfully scanned the ODLC area.
-
-    Notes
-    -----
-    This method is responsible for initiating the ODLC scanning process of the drone.
     """
 
-    # Initialize the camera
+    gps_dict: GPSData = extract_gps(self.flight_settings.mission_data_path)
+    object_boundary_utm: list[BoundaryPointUtm] = gps_dict["object_boundary_utm"]
+
+    # The mapping area should be roughly rectangular with 4 vertices
+    # We are going to travel in line segments parallel to the long edges
+
+    is_long_edge_first: bool = math.hypot(
+        object_boundary_utm[1].easting - object_boundary_utm[0].easting,
+        object_boundary_utm[1].northing - object_boundary_utm[0].northing,
+    ) >= math.hypot(
+        object_boundary_utm[2].easting - object_boundary_utm[0].easting,
+        object_boundary_utm[2].northing - object_boundary_utm[0].northing,
+    )
+
+    # Ensure the first edge is long
+    if not is_long_edge_first:
+        object_boundary_utm[1], object_boundary_utm[3] = (
+            object_boundary_utm[3],
+            object_boundary_utm[1],
+        )
+
+    # Take the max because it's better to take too many photos than too few
+    short_edge_length = max(
+        math.hypot(
+            object_boundary_utm[3].easting - object_boundary_utm[0].easting,
+            object_boundary_utm[3].northing - object_boundary_utm[0].northing,
+        ),
+        math.hypot(
+            object_boundary_utm[2].easting - object_boundary_utm[1].easting,
+            object_boundary_utm[2].northing - object_boundary_utm[1].northing,
+        ),
+    )
+
+    # Get average direction of short edges
+    step_count: int = math.ceil(short_edge_length / VERTICAL_PHOTO_SPACING)
+
+    utm_zone_number = object_boundary_utm[0].zone_number
+    utm_zone_letter = object_boundary_utm[0].zone_letter
     if self.flight_settings.sim_mode is SimMode.REAL:
         camera: CameraIRL | CameraAirSim | None = CameraIRL()
-        # The gimbal takes some time to adjust its angle, wait for it to be ready
-        await asyncio.sleep(3)
     elif self.flight_settings.sim_mode is SimMode.AIRSIM:
         camera = CameraAirSim()
     else:
         camera = None
+    reverse_direction: bool = False
+    for i in range(step_count + 1):
+        lerp_t = i / step_count
 
-    # The waypoint values stored in waypoint_data.json are all that are needed
-    # to traverse the whole odlc drop location
-    # because it is a small rectangle
-    # The first waypoint is the midpoint of
-    # the left side of the rectangle(one of the short sides), the second point is the
-    # midpoint of the right side of the rectangle(other short side),
-    # and the third point is the top left corner of the rectangle
-    # it goes there for knowing where the drone ends to travel to each of the drop locations,
-    # the altitude is locked at 100 because
-    # we want the drone to stay level and the camera to view the whole odlc boundary
-    # the altitude 100 feet was chosen to cover the whole odlc boundary
-    # because the boundary is 70ft by 360ft the fov of the camera
-    # is vertical 52.1 degrees and horizontal 72.5,
-    # so using the minimum length side of the photo the coverage would be 90 feet allowing
-    # 10 feet overlap on both sides
+        # Linearly interpolate along the short edges
+        start_easting: float = (1 - lerp_t) * object_boundary_utm[
+            0
+        ].easting + lerp_t * object_boundary_utm[3].easting
+        start_northing: float = (1 - lerp_t) * object_boundary_utm[
+            0
+        ].northing + lerp_t * object_boundary_utm[3].northing
+        end_easting: float = (1 - lerp_t) * object_boundary_utm[
+            1
+        ].easting + lerp_t * object_boundary_utm[2].easting
+        end_northing: float = (1 - lerp_t) * object_boundary_utm[
+            1
+        ].northing + lerp_t * object_boundary_utm[2].northing
 
-    gps_data: GPSData = extract_gps(self.flight_settings.mission_data_path)
+        # Move in a serpentine pattern
+        if reverse_direction:
+            start_easting, end_easting = end_easting, start_easting
+            start_northing, end_northing = end_northing, start_northing
 
-    logging.info("Starting odlc zone flyover")
+        lat: float
+        lon: float
+        lat, lon = utm.to_latlon(
+            start_easting, start_northing, utm_zone_number, utm_zone_letter
+        )
+        await move_to(self.drone.vehicle, lat, lon, gps_dict["scan_altitude"])
 
-    # traverses the 3 waypoints starting at the midpoint on left to midpoint on the right
-    # then to the top left corner at the rectangle
-    i: int
-    point: OdlcWaypoint
-    for i, point in enumerate(gps_data["odlc_waypoints"]):
-        take_photos: bool = True
-
-        logging.info("Moving to ODLC scan point %d", i)
+        lat, lon = utm.to_latlon(
+            end_easting, end_northing, utm_zone_number, utm_zone_letter
+        )
 
         if camera is not None:
-            await camera.odlc_move_to(
+            await camera.scanning_move_to(
                 self.drone.vehicle,
-                point.latitude,
-                point.longitude,
-                gps_data["odlc_altitude"],
-                take_photos,
-            )
-        else:
-            await move_to(
-                self.drone.vehicle,
-                point.latitude,
-                point.longitude,
-                gps_data["odlc_altitude"],
-                airspeed=5,
+                lat,
+                lon,
+                gps_dict["scan_altitude"],
+                HORIZONTAL_PHOTO_SPACING,
             )
 
-    if camera:
+        reverse_direction = not reverse_direction
+
+    if camera is not None:
         camera.disconnect()
     capture_status.set()
-    self.drone.odlc_scan = False
-    logging.info("ODLC scan complete")
+    logging.info("Scan complete")
 
 
 async def vision_odlc_logic(self: ODLC, capture_status: asyncio.Event) -> None:
