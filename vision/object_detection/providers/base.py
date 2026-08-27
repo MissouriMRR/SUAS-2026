@@ -103,7 +103,7 @@ class InferenceProvider:
         """Start the inference provider"""
         raise NotImplementedError
 
-    async def add_image(self, image_path: str) -> None:
+    async def add_image(self, _image_path: str) -> None:
         """Run inference on the given image"""
         raise NotImplementedError
 

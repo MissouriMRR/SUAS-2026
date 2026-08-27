@@ -157,5 +157,5 @@ async def mapping_pipeline(
 
         # Save Map to USB drive (pass in usb drive path up top)
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.error(e)

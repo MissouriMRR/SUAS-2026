@@ -6,7 +6,7 @@ from vision.object_detection.providers.node import NodeInferenceProvider
 
 __all__ = [
     "InferenceProvider",
-    "ObjectDetection",
     "LocalInferenceProvider",
     "NodeInferenceProvider",
+    "ObjectDetection",
 ]

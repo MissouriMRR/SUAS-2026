@@ -1,8 +1,7 @@
 """Defines the NodeInferenceProvider class."""
 
 import logging
-
-from typing_extensions import final, override
+from typing import final, override
 
 import aiohttp
 
@@ -39,7 +38,9 @@ class NodeInferenceProvider(InferenceProvider):
         if not await check_health(self.session, self.base_url):
             await self.session.close()
             self.session = None
-            raise ConnectionError(f"inference_node at {self.base_url} is not reachable/healthy")
+            raise ConnectionError(
+                f"inference_node at {self.base_url} is not reachable/healthy"
+            )
 
     @override
     async def add_image(self, image_path: str) -> None:
@@ -47,7 +48,9 @@ class NodeInferenceProvider(InferenceProvider):
         Run inference on the given image by calling the /detect endpoint with the image
         """
         if self.session is None:
-            raise RuntimeError("NodeInferenceProvider.start() must be called before add_image()")
+            raise RuntimeError(
+                "NodeInferenceProvider.start() must be called before add_image()"
+            )
         self.results.extend(await detect_image(self.session, image_path, self.base_url))
 
     @override

@@ -3,10 +3,10 @@ Testing vision.deskew.coordinate_lengths.py
 """
 
 import unittest
+
 import numpy as np
 
-from vision.deskew.coordinate_lengths import latitude_length
-from vision.deskew.coordinate_lengths import longitude_length
+from vision.deskew.coordinate_lengths import latitude_length, longitude_length
 
 
 class TestLongitudeLength(unittest.TestCase):
@@ -29,9 +29,13 @@ class TestLongitudeLength(unittest.TestCase):
         resulting_longitude_length: float = longitude_length(max_latitude_deg)
 
         # Testing data types of parameters and return
-        self.assertIsInstance(max_latitude_deg, float, "max_latitude_deg parameter is not a float")
         self.assertIsInstance(
-            resulting_longitude_length, float, "return from longitude_length is not a float"
+            max_latitude_deg, float, "max_latitude_deg parameter is not a float"
+        )
+        self.assertIsInstance(
+            resulting_longitude_length,
+            float,
+            "return from longitude_length is not a float",
         )
         # Tests to insure the expected output is the same as the actual output, given the same input
         self.assertEqual(expected_longitude_length, resulting_longitude_length)
@@ -51,9 +55,13 @@ class TestLongitudeLength(unittest.TestCase):
         resulting_longitude_length: float = longitude_length(min_latitude_deg)
 
         # Testing data types of parameters and return
-        self.assertIsInstance(min_latitude_deg, float, "min_latitude_deg is not a float")
         self.assertIsInstance(
-            resulting_longitude_length, float, "resulting_longitude_length is not a float"
+            min_latitude_deg, float, "min_latitude_deg is not a float"
+        )
+        self.assertIsInstance(
+            resulting_longitude_length,
+            float,
+            "resulting_longitude_length is not a float",
         )
         # Tests to insure the expected output is the same as the actual output, given the same input
         self.assertEqual(expected_longitude_length, resulting_longitude_length)
@@ -73,9 +81,13 @@ class TestLongitudeLength(unittest.TestCase):
         resulting_longitude_length: float = longitude_length(basic_latitude_rad)
 
         # Testing data types of parameters and return
-        self.assertIsInstance(basic_latitude_deg, float, "basic_latitude_deg is not a float")
         self.assertIsInstance(
-            resulting_longitude_length, float, "resulting_longitude_length is not a float"
+            basic_latitude_deg, float, "basic_latitude_deg is not a float"
+        )
+        self.assertIsInstance(
+            resulting_longitude_length,
+            float,
+            "resulting_longitude_length is not a float",
         )
         # Tests to insure the expected output is the same as the actual output, given the same input
         self.assertEqual(expected_longitude_length, resulting_longitude_length)
@@ -125,7 +137,9 @@ class TestLatitudeLength(unittest.TestCase):
         resulting_latitude_length: float = latitude_length(min_latitude_deg)
 
         # Testing data types of parameters and return
-        self.assertIsInstance(min_latitude_deg, float, "min_latitude_deg is not a float")
+        self.assertIsInstance(
+            min_latitude_deg, float, "min_latitude_deg is not a float"
+        )
         self.assertIsInstance(
             resulting_latitude_length, float, "resulting_latitude_length is not a float"
         )
@@ -148,8 +162,12 @@ class TestLatitudeLength(unittest.TestCase):
         resulting_latitude_length: float = latitude_length(basic_latitude_rad)
 
         # Testing data types of parameters and return
-        self.assertIsInstance(basic_latitude_deg, float, "min_latitude_deg is not a float")
-        self.assertIsInstance(resulting_latitude_length, float, "min_latitude_deg is not a float")
+        self.assertIsInstance(
+            basic_latitude_deg, float, "min_latitude_deg is not a float"
+        )
+        self.assertIsInstance(
+            resulting_latitude_length, float, "min_latitude_deg is not a float"
+        )
         # Tests to insure the expected output is the same as the actual output, given the same input
         self.assertEqual(expected_latitude_length, resulting_latitude_length)
 

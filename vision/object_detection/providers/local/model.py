@@ -3,8 +3,8 @@
 import asyncio
 import logging
 import os
-from dataclasses import dataclass
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import cv2
 import numpy as np
@@ -145,7 +145,9 @@ class ObjectDetectionModel:
         log_results: bool = False,
     ) -> None:
         # All models should be put in the models folder.
-        full_model_path: str = os.path.join(os.path.dirname(__file__), "models", model_path)
+        full_model_path: str = os.path.join(
+            os.path.dirname(__file__), "models", model_path
+        )
         if not os.path.exists(full_model_path):
             raise FileNotFoundError(
                 f"Model file {full_model_path} not found. Check the documentation \
@@ -156,14 +158,18 @@ class ObjectDetectionModel:
         # Set up options and providers. We want to use CUDA if available, otherwise CPU,
         # and ORT_DISABLE_ALL was required in the past to run through WSL
         opt_session = onnxruntime.SessionOptions()
-        opt_session.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+        opt_session.graph_optimization_level = (
+            onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+        )
         providers: list[str] = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
         self.onnx_session: onnxruntime.InferenceSession = onnxruntime.InferenceSession(
             full_model_path, sess_options=opt_session, providers=providers
         )
         logging.info("Model loaded: %s", model_path)
-        self.model_output: Sequence[onnxruntime.NodeArg] = self.onnx_session.get_outputs()
+        self.model_output: Sequence[onnxruntime.NodeArg] = (
+            self.onnx_session.get_outputs()
+        )
         # We get output names so that we can return all model outputs on callback
         self.output_names: list[str] = [
             self.model_output[i].name for i in range(len(self.model_output))
