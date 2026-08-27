@@ -13,8 +13,9 @@ min-length=10
 
 # Commit titles must start with the issue number they address, e.g.
 # "[#42] Fix flaky camera connection test"
+# or with a hotfix prefix, e.g. "[hotfix] Add new pre-commit exclusion"
 [title-match-regex]
-regex=^\[#[0-9]+\] .+
+regex=^(\[#[0-9]+\]|\[hotfix\]) .+
 
 [title-must-not-contain-word]
 words=wip,todo
