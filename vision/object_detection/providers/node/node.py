@@ -5,7 +5,7 @@ https://github.com/MissouriMRR/inference_node
 
 import logging
 import os
-from typing import Any
+from typing import TypedDict
 
 import aiofiles
 import aiohttp
@@ -29,7 +29,30 @@ HEALTH_TIMEOUT = 5
 DETECT_TIMEOUT = 30
 
 
-async def check_health(session: aiohttp.ClientSession, base_url: str = DEFAULT_URL) -> bool:
+class HealthResponseJSON(TypedDict):
+    """Schema of the JSON body returned by inference_node's /health endpoint."""
+
+    status: str
+
+
+class DetectionJSON(TypedDict):
+    """Schema of a single detection object returned by inference_node's /detect endpoint."""
+
+    category: str
+    bbox: list[int]
+    confidence: float
+
+
+class DetectResponseJSON(TypedDict):
+    """Schema of the JSON body returned by inference_node's /detect endpoint."""
+
+    shape: list[int]
+    detections: list[DetectionJSON]
+
+
+async def check_health(
+    session: aiohttp.ClientSession, base_url: str = DEFAULT_URL
+) -> bool:
     """
     Call the /health endpoint of an inference_node instance to see if it is up
     and usable.
@@ -51,9 +74,11 @@ async def check_health(session: aiohttp.ClientSession, base_url: str = DEFAULT_U
             f"{base_url}/health", timeout=aiohttp.ClientTimeout(total=HEALTH_TIMEOUT)
         ) as response:
             if response.status != 200:
-                logger.error("inference_node health check failed with status %d", response.status)
+                logger.error(
+                    "inference_node health check failed with status %d", response.status
+                )
                 return False
-            data: dict[str, Any] = await response.json()
+            data: HealthResponseJSON = await response.json()
             return data.get("status") == "running"
     except aiohttp.ClientError as exc:
         logger.error("inference_node health check failed: %s", exc)
@@ -98,14 +123,17 @@ async def detect_image(
     )
 
     async with session.post(
-        f"{base_url}/detect", data=form, timeout=aiohttp.ClientTimeout(total=DETECT_TIMEOUT)
+        f"{base_url}/detect",
+        data=form,
+        timeout=aiohttp.ClientTimeout(total=DETECT_TIMEOUT),
     ) as response:
-        body: dict[str, Any] = await response.json()
+        body: DetectResponseJSON = await response.json()
         if response.status != 200:
             logger.error("Inference failed for %s: %s", image_path, body)
             raise ValueError(f"inference_node failed to process {image_path}")
 
-    shape: tuple[int, int] = tuple(body["shape"])  # (height, width)
+    height, width = body["shape"]
+    shape: tuple[int, int] = (height, width)
 
     return [
         ObjectDetection(

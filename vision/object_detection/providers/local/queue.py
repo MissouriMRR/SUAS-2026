@@ -4,11 +4,10 @@ import asyncio
 import collections
 import logging
 from collections.abc import Iterable
-from typing import TypeVar, cast
+from typing import TypeVar, cast, override
 
 import cv2
 import numpy as np
-from typing_extensions import override
 
 from vision.object_detection.providers.base import ObjectDetection
 from vision.object_detection.providers.local.model import ObjectDetectionModel
@@ -170,7 +169,9 @@ class PhotoQueue:
         Prints out all of the stored results, including bbox, confidence, and image path.
         """
         for result in self.results:
-            x1, y1, x2, y2 = cast(tuple[int, int, int, int], result.bbox.astype(np.int32).tolist())
+            x1, y1, x2, y2 = cast(
+                tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
+            )
             logging.info(
                 "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
                 result.category,
@@ -264,7 +265,9 @@ class PhotoQueue:
         # Cancel the queue to stop runners once the queue is empty
         await self.queue.cancel()
         if self.runners:
-            _ = await asyncio.wait(self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15)
+            _ = await asyncio.wait(
+                self.runners, return_when=asyncio.ALL_COMPLETED, timeout=15
+            )
 
         cv2.destroyAllWindows()
 

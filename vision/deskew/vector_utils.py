@@ -6,8 +6,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from utils import type_utils
-from vision.common.constants import Point, Vector, CameraConfig
-
+from vision.common.constants import CameraConfig, Point, Vector
 
 # Vector pointing toward the +X axis, represents the camera's forward direction when the
 #   rotation on all axes is 0

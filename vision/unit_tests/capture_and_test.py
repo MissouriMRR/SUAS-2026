@@ -12,7 +12,8 @@ import numpy as np
 import numpy.typing as npt
 
 from flight.camera import CameraIRL
-from vision.object_detection.model import ObjectDetection, ObjectDetectionModel
+from vision.object_detection import ObjectDetection
+from vision.object_detection.providers import LocalInferenceProvider
 
 
 async def test_capture_and_test() -> None:
@@ -36,9 +37,10 @@ async def test_capture_and_test() -> None:
     cv2.imshow("Captured Image", image)
 
     # Run inference on the image
-    yolo: ObjectDetectionModel = ObjectDetectionModel()
-    logging.info(yolo.model_output[0])
-    results: list[ObjectDetection] = await yolo.process_image(image_path)
+    yolo: LocalInferenceProvider = LocalInferenceProvider()
+    await yolo.start()
+    await yolo.add_image(image_path)
+    results: list[ObjectDetection] = await yolo.end()
 
     for detection in results:
         conv: npt.NDArray[np.int32] = detection.bbox.astype(np.int32)

@@ -1,6 +1,7 @@
 """Defines the LocalInferenceProvider class."""
 
-from typing_extensions import final, override
+from typing import final, override
+
 from vision.object_detection.providers.base import InferenceProvider, ObjectDetection
 from vision.object_detection.providers.local.queue import PhotoQueue
 

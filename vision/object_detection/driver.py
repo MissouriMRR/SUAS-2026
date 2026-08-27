@@ -16,7 +16,10 @@ from vision.object_detection.providers import (
 logger = logging.getLogger(__name__)
 
 # All possible providers are listed here, in order of priority
-PROVIDERS: list[type[InferenceProvider]] = [NodeInferenceProvider, LocalInferenceProvider]
+PROVIDERS: list[type[InferenceProvider]] = [
+    NodeInferenceProvider,
+    LocalInferenceProvider,
+]
 
 
 @final
@@ -56,8 +59,10 @@ class ObjectDetectionDriver:
             try:
                 provider = provider_type()
                 await provider.start()
-            except Exception:  # pylint: disable=broad-exception-caught
-                logger.warning("Provider %s failed to start, skipping", provider_type.__name__)
+            except Exception:
+                logger.warning(
+                    "Provider %s failed to start, skipping", provider_type.__name__
+                )
                 continue
             self._providers.append(provider)
 
@@ -74,7 +79,7 @@ class ObjectDetectionDriver:
             try:
                 await provider.add_image(image_path)
                 return
-            except Exception:  # pylint: disable=broad-exception-caught
+            except Exception:
                 logger.warning(
                     "Provider %s failed on %s, trying next provider",
                     type(provider).__name__,

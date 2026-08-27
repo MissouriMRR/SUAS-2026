@@ -1,28 +1,23 @@
 """Constant variables and common type aliases for Vision"""
 
-from typing import TypeAlias, TypedDict
+from typing import Annotated, TypedDict
 
-from nptyping import Bool, Float64, IntC, NDArray, Shape, UInt8
+import numpy as np
+from numpy.typing import NDArray
 
-Image: TypeAlias = NDArray[Shape["*, *, 3"], UInt8]
-# single channel image type
-ScImage: TypeAlias = NDArray[Shape["*, *"], UInt8]
-# single channel image of booleans
-Mask: TypeAlias = NDArray[Shape["*, *"], Bool]
+# The shape annotations below are documentation only, no way to enforce
+type Image = Annotated[NDArray[np.uint8], "(height, width, 3)"]
 
-Point: TypeAlias = NDArray[Shape["2"], Float64]
-Vector: TypeAlias = NDArray[Shape["3"], Float64]
-
-# return types for cv2.findContours() -> tuple[tuple[Contour, ...], Hierarchy]
-Contour: TypeAlias = NDArray[Shape["*, 1, 2"], IntC]
-Hierarchy: TypeAlias = NDArray[Shape["1, *, 4"], IntC]
+type Point = Annotated[NDArray[np.float64], "(2,)"]
+type Vector = Annotated[NDArray[np.float64], "(3,)"]
 
 # Format of Corners is: (top left, top right, bottom right, bottom left), or
 #     1--2
 #     |  |
 #     4--3
-Corners: TypeAlias = NDArray[Shape["4, 2"], Float64]
-ImageShape: TypeAlias = tuple[int, int] | tuple[int, int, int]
+type Corners = Annotated[NDArray[np.float64], "(4, 2)"]
+
+type ImageShape = tuple[int, int] | tuple[int, int, int]
 
 
 class Location(TypedDict):
@@ -43,7 +38,7 @@ class Location(TypedDict):
 
 # str is the index of the water bottle to drop as a string (because json)
 # Location is the coordinates of the standard object once found
-ODLCDict: TypeAlias = dict[str, Location]
+type ODLCDict = dict[str, Location]
 
 CameraConfig = TypedDict(
     "CameraConfig",

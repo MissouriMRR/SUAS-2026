@@ -1,6 +1,8 @@
 """Unit test for camera deskew functionality."""
+# pyright: reportUninitializedInstanceVariable=false
 
 import unittest
+from typing import override
 
 import numpy as np
 
@@ -28,11 +30,15 @@ class TestVisionFunctions(unittest.TestCase):
         Sample localized detection of an object to be used in the test.
     """
 
+    camera_params: CameraParameters
+    image_shape: tuple[int, int, int]
+    box: LocalizedDetection
+
+    @override
     def setUp(self) -> None:
         """
         Initializes common properties for all test methods. Sets up camera parameters
         and image dimensions that simulate a typical usage scenario.
-
         """
         self.camera_params = CameraParameters(
             rotation_deg=[0, 0, 0],
