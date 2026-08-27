@@ -12,15 +12,19 @@ import numpy as np
 
 import vision.pipeline.standard_pipeline as std_obj
 from state_machine.flight_settings import FlightSettings
-from vision.common.bounding_box import BoundingBox
 from vision.common.constants import ODLCDict
+from vision.common.localized_detection import LocalizedDetection
 from vision.object_detection import ObjectDetection
 from vision.object_detection.providers.local.queue import PhotoQueue
 from vision.pipeline import pipeline_utils
 from vision.vision_pipeline import filter_detections
 
+logger = logging.getLogger(__name__)
 
-async def run_queue(images: Iterable[str], test_early_stop: bool = False) -> list[ObjectDetection]:
+
+async def run_queue(
+    images: Iterable[str], test_early_stop: bool = False
+) -> list[ObjectDetection]:
     """
     Test the PhotoQueue class by adding images to the queue and running inference on them.
 
@@ -42,7 +46,7 @@ async def run_queue(images: Iterable[str], test_early_stop: bool = False) -> lis
         initial_size += 1
         await queue.add_photo(image_path)
 
-    logging.info("%d images loaded into the queue. Starting queue...", initial_size)
+    logger.info("%d images loaded into the queue. Starting queue...", initial_size)
     await queue.start_queue()
     while not queue.queue.empty():
         if test_early_stop and queue.queue.qsize() < initial_size / 2:
@@ -67,7 +71,9 @@ def get_all_images(path: str, limit: int = 10) -> list[str]:
     list[str]
         A list of image paths.
     """
-    return list(itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit))
+    return list(
+        itertools.islice((os.path.join(path, f.name) for f in os.scandir(path)), limit)
+    )
 
 
 async def test_queue(camera_data_path: str | None = None) -> None:
@@ -83,23 +89,26 @@ async def test_queue(camera_data_path: str | None = None) -> None:
     all_images: list[str] = get_all_images(directory, 10)
     results: list[ObjectDetection] = await run_queue(all_images)
     if camera_data_path is not None:
-        logging.info("Filtering detections with camera data")
+        logger.info("Filtering detections with camera data")
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
         results = filter_detections(results, image_parameters)
-        bounding_boxes: list[BoundingBox] = [
-            pipeline_utils.detection_to_bbox(
+        localized_detections: list[LocalizedDetection] = []
+        for detection in results:
+            localized = pipeline_utils.localize_detection(
                 detection, image_parameters[detection.image.split("/")[-1]]
             )
-            for detection in results
-        ]
+            if localized is not None:
+                localized_detections.append(localized)
 
         odlc_dict: ODLCDict = std_obj.create_odlc_dict(
-            bounding_boxes, FlightSettings.from_mission_config()
+            localized_detections, FlightSettings.from_mission_config()
         )
         pipeline_utils.output_odlc_json("flight/data/output.json", odlc_dict)
     for result in results:
-        x1, y1, x2, y2 = cast(tuple[int, int, int, int], result.bbox.astype(np.int32).tolist())
-        logging.info(
+        x1, y1, x2, y2 = cast(
+            tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
+        )
+        logger.info(
             "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
             result.category,
             x1,
@@ -114,6 +123,6 @@ async def test_queue(camera_data_path: str | None = None) -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) < 2:
-        logging.info("Need to provide a directory")
+        logger.info("Need to provide a directory")
         sys.exit(1)
     asyncio.run(test_queue("flight/data/camera.json"))
