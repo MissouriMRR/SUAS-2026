@@ -12,11 +12,13 @@ import numpy as np
 
 import vision.pipeline.standard_pipeline as std_obj
 from state_machine.flight_settings import FlightSettings
-from vision.common.bounding_box import BoundingBox
 from vision.common.constants import ODLCDict
+from vision.common.localized_detection import LocalizedDetection
 from vision.object_detection import ObjectDetection, ObjectDetectionDriver
 from vision.pipeline import pipeline_utils
 from vision.vision_pipeline import filter_detections
+
+logger = logging.getLogger(__name__)
 
 
 async def run_driver(images: Iterable[str]) -> list[ObjectDetection]:
@@ -44,11 +46,14 @@ async def run_driver(images: Iterable[str]) -> list[ObjectDetection]:
         initial_size += 1
         inference_tasks.append(asyncio.create_task(driver.add_image(image_path)))
 
-    logging.info("%d images added to the driver. Waiting for inference to finish...", initial_size)
+    logger.info(
+        "%d images added to the driver. Waiting for inference to finish...",
+        initial_size,
+    )
     task_results = await asyncio.gather(*inference_tasks, return_exceptions=True)
     for result in task_results:
         if isinstance(result, BaseException):
-            logging.error("Image failed to process on all providers: %s", result)
+            logger.error("Image failed to process on all providers: %s", result)
 
     return await driver.end()
 
@@ -90,23 +95,26 @@ async def test_driver(camera_data_path: str | None = None) -> None:
     all_images: list[str] = get_all_images(directory)
     results: list[ObjectDetection] = await run_driver(all_images)
     if camera_data_path is not None:
-        logging.info("Filtering detections with camera data")
+        logger.info("Filtering detections with camera data")
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
         results = filter_detections(results, image_parameters)
-        bounding_boxes: list[BoundingBox] = [
-            pipeline_utils.detection_to_bbox(
+        localized_detections: list[LocalizedDetection] = []
+        for detection in results:
+            localized = pipeline_utils.localize_detection(
                 detection, image_parameters[detection.image.split("/")[-1]]
             )
-            for detection in results
-        ]
+            if localized is not None:
+                localized_detections.append(localized)
 
         odlc_dict: ODLCDict = std_obj.create_odlc_dict(
-            bounding_boxes, FlightSettings.from_mission_config()
+            localized_detections, FlightSettings.from_mission_config()
         )
         pipeline_utils.output_odlc_json("flight/data/output.json", odlc_dict)
     for result in results:
-        x1, y1, x2, y2 = cast(tuple[int, int, int, int], result.bbox.astype(np.int32).tolist())
-        logging.info(
+        x1, y1, x2, y2 = cast(
+            tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
+        )
+        logger.info(
             "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
             result.category,
             x1,
@@ -121,6 +129,6 @@ async def test_driver(camera_data_path: str | None = None) -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) < 2:
-        logging.info("Need to provide a directory")
+        logger.info("Need to provide a directory")
         sys.exit(1)
     asyncio.run(test_driver("flight/data/camera.json"))

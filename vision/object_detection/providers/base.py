@@ -1,135 +1,94 @@
 """Sets up the base InferenceProvider class."""
 
-from typing_extensions import override
+from dataclasses import dataclass
+from typing import override
+
 import numpy as np
 import numpy.typing as npt
 
 from vision.common.constants import ImageShape
 
 
+@dataclass(eq=False)
 class ObjectDetection:
     """
-    A class that stores the info of an object detection.
+    Stores the info of an object detection.
 
-    Parameters
+    Attributes
     ----------
-    image_path : str
+    image : str
         The path to the image file.
     category : str
         The category (or class name) of the object detection.
     bbox : npt.NDArray[np.int64]
-        The bounding box of the object detection.
+        The bounding box of the object detection, as [x1, y1, x2, y2].
     confidence : float
         The confidence score of the object detection.
-    shape : tuple[int, ...]
+    shape : ImageShape
         The shape of the image of the object detection from numpy.
-
-    Methods
-    -------
-    __repr__()
-        Returns a string representation of the ObjectDetection instance.
-    category()
-        Returns the category of the object detection.
-    bbox()
-        Returns the bounding box of the object detection.
-    confidence()
-        Returns the confidence score of the object detection.
-    image()
-        Returns the image path of the object detection.
-    shape()
-        Returns the shape of the image of the object detection.
     """
 
-    # pylint: disable=too-many-positional-arguments
-    def __init__(
-        self,
-        image_path: str,
-        category: str,
-        bbox: npt.NDArray[np.int64],
-        confidence: float,
-        shape: ImageShape,
-    ):
-        self._image_path: str = image_path
-        self._category: str = category
-        self._bbox: npt.NDArray[np.int64] = bbox
-        self._confidence: float = confidence
-        self._shape: ImageShape = shape
+    image: str
+    """The path to the image file."""
+    category: str
+    """The category (or class name) of the object detection."""
+    bbox: npt.NDArray[np.int64]
+    """The bounding box of the object detection, as [x1, y1, x2, y2]."""
+    confidence: float
+    """The confidence score of the object detection."""
+    shape: ImageShape
+    """The shape of the image of the object detection from numpy."""
 
     @override
     def __repr__(self) -> str:
         return f"{self.image} @ {self.bbox}: {self.confidence}"
 
-    @property
-    def category(self) -> str:
+    def get_center_coord(self) -> tuple[int, int]:
         """
-        Returns the category (or class name) of the object detection.
+        Gets the pixel coordinate at the center of the bounding box.
 
         Returns
         -------
-        str
-            The category (or class name) of the object detection.
+        center : tuple[int, int]
+            The (x, y) pixel coordinate at the center of the bounding box.
         """
-        return self._category
+        x1, y1, x2, y2 = self.bbox
+        return int((x1 + x2) / 2), int((y1 + y2) / 2)
 
     @property
-    def bbox(self) -> npt.NDArray[np.int64]:
+    def top_left(self) -> tuple[int, int]:
+        """The (x, y) pixel coordinate of the top-left corner of the bounding box."""
+        return int(self.bbox[0]), int(self.bbox[1])
+
+    @property
+    def top_right(self) -> tuple[int, int]:
+        """The (x, y) pixel coordinate of the top-right corner of the bounding box."""
+        return int(self.bbox[2]), int(self.bbox[1])
+
+    @property
+    def bottom_left(self) -> tuple[int, int]:
+        """The (x, y) pixel coordinate of the bottom-left corner of the bounding box."""
+        return int(self.bbox[0]), int(self.bbox[3])
+
+    def get_x_extremes(self) -> tuple[int, int]:
         """
-        Returns the bounding box of the object detection.
+        Gets the minimum and maximum x values of the bounding box.
 
         Returns
         -------
-        npt.NDArray[np.float32]
-            The bounding box of the object detection.
+        min_x, max_x : tuple[int, int]
         """
-        return self._bbox
+        return int(self.bbox[0]), int(self.bbox[2])
 
-    @property
-    def confidence(self) -> float:
+    def get_y_extremes(self) -> tuple[int, int]:
         """
-        Returns the confidence of the object detection.
+        Gets the minimum and maximum y values of the bounding box.
 
         Returns
         -------
-        float
-            The confidence of the object detection.
+        min_y, max_y : tuple[int, int]
         """
-        return self._confidence
-
-    @confidence.setter
-    def confidence(self, value: float) -> None:
-        """
-        Sets the confidence of the object detection.
-
-        Parameters
-        ----------
-        value : float
-            The new confidence value.
-        """
-        self._confidence = value
-
-    @property
-    def image(self) -> str:
-        """
-        Returns the path to the image of the object detection.
-
-        Returns
-        -------
-        str
-            The path to the image of the object detection.
-        """
-        return self._image_path
-
-    @property
-    def shape(self) -> ImageShape:
-        """
-        Returns the shape of the image of the object detection.
-
-        Returns
-        -------
-        ImageShape
-            The shape of the image of the object detection.
-        """
-        return self._shape
+        return int(self.bbox[1]), int(self.bbox[3])
 
 
 class InferenceProvider:

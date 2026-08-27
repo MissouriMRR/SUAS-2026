@@ -1,12 +1,15 @@
 """Unit test for camera deskew functionality."""
 
 import unittest
+
+import numpy as np
+
 from vision.common.constants import CameraParameters
-from vision.common.bounding_box import BoundingBox
+from vision.common.localized_detection import LocalizedDetection
 from vision.deskew.camera_distances import (
-    get_coordinates,
     bounding_area,
     calculate_distance,
+    get_coordinates,
 )
 
 
@@ -21,8 +24,8 @@ class TestVisionFunctions(unittest.TestCase):
         Sample camera parameters to be used in the test.
     image_shape: tuple[int, int, int]
         The dimensions of the image used in tests, specified as (height, width, channels).
-    box: BoundingBox
-        Sample bounding box of an object to be used in the test.
+    box: LocalizedDetection
+        Sample localized detection of an object to be used in the test.
     """
 
     def setUp(self) -> None:
@@ -37,9 +40,14 @@ class TestVisionFunctions(unittest.TestCase):
             altitude=1000.0,
         )
         self.image_shape = (1080, 1920, 3)  # Image size with 3 color channels
-        self.box = BoundingBox(
-            obj_type="object",
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+        self.box = LocalizedDetection(
+            image="test.jpg",
+            category="object",
+            bbox=np.array([100, 200, 200, 300], dtype=np.int64),
+            confidence=1.0,
+            shape=self.image_shape,
+            latitude=0.0,
+            longitude=0.0,
         )
 
     def test_get_coordinates(self) -> None:
@@ -77,9 +85,14 @@ class TestVisionFunctions(unittest.TestCase):
         -------
             None: This method does not return a value but asserts the area calculation is correct.
         """
-        self.box = BoundingBox(
-            obj_type="",
-            vertices=((100, 200), (200, 200), (200, 300), (100, 300)),
+        self.box = LocalizedDetection(
+            image="test.jpg",
+            category="",
+            bbox=np.array([100, 200, 200, 300], dtype=np.int64),
+            confidence=1.0,
+            shape=self.image_shape,
+            latitude=0.0,
+            longitude=0.0,
         )
         result = bounding_area(self.box, self.image_shape, self.camera_params)
 
@@ -93,10 +106,14 @@ class TestVisionFunctions(unittest.TestCase):
         """
         pixel1 = (100, 100)
         pixel2 = (200, 200)  # Valid pixel coordinates
-        result = calculate_distance(pixel1, pixel2, self.image_shape, self.camera_params)
+        result = calculate_distance(
+            pixel1, pixel2, self.image_shape, self.camera_params
+        )
 
         # Ensure result is not None before asserting
-        self.assertIsNotNone(result, "Result should not be None for valid pixel coordinates")
+        self.assertIsNotNone(
+            result, "Result should not be None for valid pixel coordinates"
+        )
 
 
 if __name__ == "__main__":

@@ -12,119 +12,23 @@ import vision.pipeline.pipeline_utils as pipe_utils
 from flight.extract_gps import GPSData, extract_gps
 from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.geometry import Point
-from vision.common.bounding_box import BoundingBox
-from vision.common.crop import crop_image
-from vision.common.odlc_characteristics import ODLCColor
+from vision.common.localized_detection import LocalizedDetection
 from vision.object_detection import ObjectDetection
-from vision.standard_object.odlc_classify_shape import process_shapes
-from vision.standard_object.odlc_colors import find_colors
-from vision.standard_object.odlc_contour_detection import fetch_shape_contours
-from vision.standard_object.odlc_text_detection import get_odlc_text
 
 if TYPE_CHECKING:
     from state_machine.flight_settings import FlightSettings
 
-ContourHierarchyList: type = list[tuple[tuple[consts.Contour, ...], consts.Hierarchy]]
-
-
-def find_standard_objects(
-    original_image: consts.Image,
-    camera_parameters: consts.CameraParameters,
-    image_path: str,
-) -> list[BoundingBox]:
-    """
-    Finds all bounding boxes of standard objects in an image
-
-    Parameters
-    ----------
-    original_image: Image
-        The image to find shapes in
-    camera_parameters: CameraParameters
-        The details of how and where the photo was taken
-    image_path: str
-        The path for the image the bounding box is from
-
-    Returns
-    -------
-    found_odlcs: list[BoundingBox]
-        The list of bounding boxes of detected standard objects
-    """
-
-    found_odlcs: list[BoundingBox] = []
-    contours: list[consts.Contour] = fetch_shape_contours(
-        original_image, True, "contours.jpg"
-    )
-    shapes: list[BoundingBox] = process_shapes(contours)
-    shape: BoundingBox
-    for shape in shapes:
-        # Set the shape attributes by reference. If successful, keep the shape
-        if set_shape_attributes(
-            shape, original_image
-        ) and pipe_utils.set_generic_attributes(
-            shape, image_path, original_image.shape, camera_parameters
-        ):
-            found_odlcs.append(shape)
-
-    return found_odlcs
-
-
-def set_shape_attributes(
-    shape: BoundingBox,
-    original_image: consts.Image,
-) -> bool:
-    """
-    Gets the attributes of a shape returned from process_shapes()
-    Modifies `shape` in place
-
-    Parameters
-    ----------
-    shape: BoundingBox
-        The bounding box of the shape. Attribute "shape" must be set
-    original_image: Image
-        The image used to get the details for each shape
-
-    Returns
-    -------
-    attributes_found: bool
-        Returns true if all attributes were successfully found
-    """
-
-    if shape.get_attribute("shape") is None:
-        return False
-
-    odlc_img: consts.Image = crop_image(original_image, shape)
-
-    text_bounding: BoundingBox = get_odlc_text(odlc_img)
-
-    shape_color: ODLCColor
-    text_color: ODLCColor
-
-    if not text_bounding.get_attribute("text"):
-        # No text was found, we can only get the shape color
-        _, shape_color = find_colors(odlc_img)
-        shape.set_attribute("shape_color", shape_color)
-    else:
-        # Text found, we can try to look for both colors
-        shape.set_attribute("text", text_bounding.get_attribute("text"))
-        text_img: consts.Image = crop_image(odlc_img, text_bounding)
-        shape_color, text_color = find_colors(text_img)
-
-        shape.set_attribute("shape_color", shape_color)
-        shape.set_attribute("text_color", text_color)
-
-    return True
-
 
 def create_odlc_dict(
-    bounding_boxes: Iterable[BoundingBox], flight_settings: FlightSettings
+    localized_detections: Iterable[LocalizedDetection], flight_settings: FlightSettings
 ) -> consts.ODLCDict:
     """
-    Creates the ODLCDict dictionary from a list of shape bounding boxes.
-    Discards bounding boxes whose center is not inside the airdrop boundary.
+    Creates the ODLCDict dictionary from a list of localized detections.
+    Discards detections whose center is not inside the airdrop boundary.
 
     Parameters
     ----------
-    bounding_boxes : Iterable[BoundingBox]
+    localized_detections : Iterable[LocalizedDetection]
         An iterable of the sightings of each object.
     flight_settings : FlightSettings
         The flight settings.
@@ -147,23 +51,23 @@ def create_odlc_dict(
 
     odlc_dict: consts.ODLCDict = {}
 
-    bbox: BoundingBox
-    for bbox in bounding_boxes:
+    detection: LocalizedDetection
+    for detection in localized_detections:
         # Check if in bounds
         easting: float
         northing: float
         easting, northing, _, _ = utm.from_latlon(
-            bbox.get_attribute("latitude"),
-            bbox.get_attribute("longitude"),
+            detection.latitude,
+            detection.longitude,
             force_zone_number=zone_number,
             force_zone_letter=zone_letter,
         )
         if not Point(easting, northing).is_inside_shape(odlc_boundary):
             continue
 
-        odlc_dict[bbox.obj_type] = {
-            "latitude": bbox.get_attribute("latitude"),
-            "longitude": bbox.get_attribute("longitude"),
+        odlc_dict[detection.category] = {
+            "latitude": detection.latitude,
+            "longitude": detection.longitude,
         }
 
     return odlc_dict
@@ -173,7 +77,7 @@ def proximity_check(
     detections: list[ObjectDetection],
     parameters: dict[str, consts.CameraParameters],
     min_distance: float = 7.0,
-) -> list[tuple[ObjectDetection, BoundingBox]]:
+) -> list[tuple[ObjectDetection, LocalizedDetection]]:
     """
     Checks for detections that are too close to each other, and
     removes the one with lower confidence.
@@ -191,40 +95,42 @@ def proximity_check(
 
     Returns
     -------
-    filtered_detections : list[tuple[ObjectDetection, BoundingBox]]
+    filtered_detections : list[tuple[ObjectDetection, LocalizedDetection]]
         All detections that are at least `min_distance` apart, along with
-        their bounding boxes.
+        their localized detections.
     """
-    filtered_detections: list[tuple[ObjectDetection, BoundingBox]] = []
+    filtered_detections: list[tuple[ObjectDetection, LocalizedDetection]] = []
     # If we sort the detections by confidence, we can stop as soon as we find a collision
     detections.sort(key=lambda entry: entry.confidence, reverse=True)
 
     for detection in detections:
         image_name: str = detection.image.split("/")[-1]
         image_parameters: consts.CameraParameters = parameters[image_name]
-        bounding_box: BoundingBox = pipe_utils.detection_to_bbox(
+        localized: LocalizedDetection | None = pipe_utils.localize_detection(
             detection, image_parameters
         )
-        latitude: float = bounding_box.get_attribute("latitude")
-        longitude: float = bounding_box.get_attribute("longitude")
+        if localized is None:
+            continue
 
         collided: bool = False
-        existing_bbox: BoundingBox
-        for existing_detection, existing_bbox in filtered_detections:
+        existing_localized: LocalizedDetection
+        for existing_detection, existing_localized in filtered_detections:
             if existing_detection.category != detection.category:
                 continue
 
-            existing_latitude: float = existing_bbox.get_attribute("latitude")
-            existing_longitude: float = existing_bbox.get_attribute("longitude")
-
             distance: float = calculate_distance(
-                latitude, longitude, 0, existing_latitude, existing_longitude, 0
+                localized.latitude,
+                localized.longitude,
+                0,
+                existing_localized.latitude,
+                existing_localized.longitude,
+                0,
             )
             if distance < min_distance:
                 collided = True
                 break
 
         if not collided:
-            filtered_detections.append((detection, bounding_box))
+            filtered_detections.append((detection, localized))
 
     return filtered_detections

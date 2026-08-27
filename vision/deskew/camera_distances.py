@@ -2,11 +2,9 @@
 
 import numpy as np
 
-from vision.common.constants import Point, CameraParameters
-from vision.common.bounding_box import BoundingBox
-
-from vision.deskew import coordinate_lengths
-from vision.deskew import vector_utils
+from vision.common.constants import CameraParameters, Point
+from vision.deskew import coordinate_lengths, vector_utils
+from vision.object_detection import ObjectDetection
 
 
 def get_coordinates(
@@ -66,14 +64,18 @@ def get_coordinates(
     intersect[1] *= -1
 
     # Convert the location to latitude and longitude and add it to the drone's coordinates
-    pixel_lat: float = camera_parameters["drone_coordinates"][0] + intersect[0] / latitude_length
-    pixel_lon: float = camera_parameters["drone_coordinates"][1] + intersect[1] / longitude_length
+    pixel_lat: float = (
+        camera_parameters["drone_coordinates"][0] + intersect[0] / latitude_length
+    )
+    pixel_lon: float = (
+        camera_parameters["drone_coordinates"][1] + intersect[1] / longitude_length
+    )
 
     return pixel_lat, pixel_lon
 
 
 def bounding_area(
-    box: BoundingBox,
+    box: ObjectDetection,
     image_shape: tuple[int, int, int] | tuple[int, int],
     camera_parameters: CameraParameters,
 ) -> float | None:
@@ -82,7 +84,7 @@ def bounding_area(
 
     Parameters
     ----------
-    box: BoundingBox
+    box: ObjectDetection
         The bounding box of the object
     image_shape : tuple[int, int, int] | tuple[int, int]
         The shape of the image (returned by `image.shape` when image is a numpy image array)
@@ -105,12 +107,12 @@ def bounding_area(
 
     # Calculate the distance from the top left vertex to the top right vertex
     width_length: float | None = calculate_distance(
-        box.vertices[0], box.vertices[1], image_shape, camera_parameters
+        box.top_left, box.top_right, image_shape, camera_parameters
     )
 
     # Calculate the distance from the top left vertex to the bottom left vertex
     height_length: float | None = calculate_distance(
-        box.vertices[0], box.vertices[3], image_shape, camera_parameters
+        box.top_left, box.bottom_left, image_shape, camera_parameters
     )
 
     if height_length is None or width_length is None:
