@@ -1,4 +1,4 @@
-"""Runs the necessary Vision code during the flyover stage of competition"""
+"""Runs the necessary Vision code during the ODLC stage of competition"""
 
 from __future__ import annotations
 
@@ -7,10 +7,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import vision.common.constants as consts
-import vision.pipeline.pipeline_utils as pipe_utils
-import vision.pipeline.standard_pipeline as std_obj
-from vision.common.localized_detection import LocalizedDetection
 from vision.object_detection import ObjectDetection, ObjectDetectionDriver
+from vision.pipeline import odlc_utils, pipeline_utils
 
 if TYPE_CHECKING:
     from state_machine.flight_settings import FlightSettings
@@ -18,28 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def filter_detections(
-    detections: list[ObjectDetection],
-    image_parameters: dict[str, consts.CameraParameters],
-) -> list[ObjectDetection]:
-    """
-    Filters all the detections to the best for each of the two classes (tent and mannequin).
-    """
-    deduped: list[tuple[ObjectDetection, LocalizedDetection]] = std_obj.proximity_check(
-        detections, image_parameters
-    )
-
-    # First occurrence of each class in the deduped list is the highest confidence one
-    # Since it is sorted in proximity_check
-    best_per_class: dict[str, ObjectDetection] = {}
-    for detection, _ in deduped:
-        if detection.category not in best_per_class:
-            best_per_class[detection.category] = detection
-
-    return list(best_per_class.values())
-
-
-async def flyover_pipeline(
+async def odlc_pipeline(
     flight_settings: FlightSettings,
     camera_data_path: str,
     capture_status: asyncio.Event,
@@ -69,7 +46,7 @@ async def flyover_pipeline(
 
     # Dictionary storing all of the photo metadata (location, altitude, etc.)
     image_parameters: dict[str, consts.CameraParameters] = (
-        pipe_utils.read_parameter_json(camera_data_path)
+        pipeline_utils.read_parameter_json(camera_data_path)
     )
 
     # List of image inference tasks
@@ -82,7 +59,7 @@ async def flyover_pipeline(
         # Wait to check the file instead of spamming it
         await asyncio.sleep(1)
 
-        image_parameters = pipe_utils.read_parameter_json(camera_data_path)
+        image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
 
         # Loop through all images in the json - if it hasn't been processed, process it
         for image_path in image_parameters:
@@ -107,38 +84,14 @@ async def flyover_pipeline(
     detected_objects: list[ObjectDetection] = await driver.end()
 
     # Load in the json containing the camera data
-    image_parameters = pipe_utils.read_parameter_json(camera_data_path)
+    image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
 
     # Filter all detections to the best for each class
-    detected_objects = filter_detections(detected_objects, image_parameters)
+    filtered_objects = odlc_utils.filter_detections(detected_objects, image_parameters)
 
-    # Localize detections with geographic information, falling back to the
-    # drone's coordinates for the image if the center pixel had no valid
-    # ground intersect
-    localized_detections: list[LocalizedDetection] = []
-    for detection in detected_objects:
-        parameters = image_parameters[detection.image.split("/")[-1]]
-        localized = pipe_utils.localize_detection(detection, parameters)
-        if localized is None:
-            logger.warning(
-                "Failed to localize detection in %s, falling back to drone coordinates",
-                detection.image,
-            )
-            drone_latitude, drone_longitude = parameters["drone_coordinates"]
-            localized = LocalizedDetection(
-                image=detection.image,
-                category=detection.category,
-                bbox=detection.bbox,
-                confidence=detection.confidence,
-                shape=detection.shape,
-                latitude=drone_latitude,
-                longitude=drone_longitude,
-            )
-        localized_detections.append(localized)
-
-    odlc_dict: consts.ODLCDict = std_obj.create_odlc_dict(
-        localized_detections, flight_settings
+    odlc_dict: consts.ODLCDict = odlc_utils.create_odlc_dict(
+        filtered_objects, flight_settings
     )
     logger.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)
-    pipe_utils.output_odlc_json(output_path, odlc_dict)
+    odlc_utils.output_odlc_json(output_path, odlc_dict)
     flight_settings.yolo_status.set()

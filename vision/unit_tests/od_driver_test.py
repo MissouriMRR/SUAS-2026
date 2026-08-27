@@ -10,13 +10,10 @@ from typing import cast
 
 import numpy as np
 
-import vision.pipeline.standard_pipeline as std_obj
 from state_machine.flight_settings import FlightSettings
 from vision.common.constants import ODLCDict
-from vision.common.localized_detection import LocalizedDetection
 from vision.object_detection import ObjectDetection, ObjectDetectionDriver
-from vision.pipeline import pipeline_utils
-from vision.vision_pipeline import filter_detections
+from vision.pipeline import odlc_utils, pipeline_utils
 
 logger = logging.getLogger(__name__)
 
@@ -97,19 +94,13 @@ async def test_driver(camera_data_path: str | None = None) -> None:
     if camera_data_path is not None:
         logger.info("Filtering detections with camera data")
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
-        results = filter_detections(results, image_parameters)
-        localized_detections: list[LocalizedDetection] = []
-        for detection in results:
-            localized = pipeline_utils.localize_detection(
-                detection, image_parameters[detection.image.split("/")[-1]]
-            )
-            if localized is not None:
-                localized_detections.append(localized)
+        filtered_results = odlc_utils.filter_detections(results, image_parameters)
 
-        odlc_dict: ODLCDict = std_obj.create_odlc_dict(
-            localized_detections, FlightSettings.from_mission_config()
+        odlc_dict: ODLCDict = odlc_utils.create_odlc_dict(
+            filtered_results, FlightSettings.from_mission_config()
         )
-        pipeline_utils.output_odlc_json("flight/data/output.json", odlc_dict)
+        logger.info("Filtered ODLC dict: %s", odlc_dict)
+        odlc_utils.output_odlc_json("flight/data/output.json", odlc_dict)
     for result in results:
         x1, y1, x2, y2 = cast(
             tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
