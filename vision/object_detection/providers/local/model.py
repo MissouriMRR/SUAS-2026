@@ -15,9 +15,6 @@ from cv2.typing import MatLike
 from vision.common.constants import Image
 from vision.object_detection.providers.base import ObjectDetection
 
-# The confidence needed to accept a prediction from the model
-CONFIDENCE_THRESHOLD: float = 0.8
-
 # Class mappings for the model outputs
 CLASS_MAPPINGS = {1: "person", 2: "tent"}
 
@@ -243,9 +240,6 @@ class ObjectDetectionModel:
         # Take the results from best_indices and keep the rest of the data associated with them
         results = results[sorted_indices[best_indices], :]
 
-        # Filter the results to only include those with high confidence
-        results = results[results[:, -1] > CONFIDENCE_THRESHOLD]
-
         # These bboxes are based on the model input image size, convert back to og image size
         x1: np.float32
         y1: np.float32
@@ -271,9 +265,8 @@ class ObjectDetectionModel:
         # Log results if desired
         if self.log_results:
             logging.info(
-                "Found %d detections with confidence above %.2f:",
+                "Found %d detections:",
                 len(final_results),
-                CONFIDENCE_THRESHOLD,
             )
             for box, class_name, confidence in final_results:
                 logging.info(
