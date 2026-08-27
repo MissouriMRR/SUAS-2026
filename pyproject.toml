@@ -37,15 +37,6 @@ name = "multirotor"
 url = "https://missourimrr.github.io/pypi-index/simple/"
 explicit = true
 
-[tool.basedpyright]
-typeCheckingMode = "recommended"
-# If uv is being used, this should match where uv creates the virtual environment
-venvPath = "."
-venv = ".venv"
-reportUnusedCallResult = false
-reportMissingTypeStubs = false
-exclude = ["vision"] # Temporary, remove after rewrite
-
 [dependency-groups]
 dev = [
     "basedpyright>=1.39.10",
@@ -54,3 +45,18 @@ dev = [
     "ruff>=0.16.3",
     "types-aiofiles>=25.1.0.20251011",
 ]
+
+[tool.basedpyright]
+typeCheckingMode = "recommended"
+# If uv is being used, this should match where uv creates the virtual environment
+venvPath = "."
+venv = ".venv"
+reportUnusedCallResult = false
+reportMissingTypeStubs = false
+reportAny = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+
+[tool.ruff.lint]
+ignore = ["BLE001", "LOG015"]

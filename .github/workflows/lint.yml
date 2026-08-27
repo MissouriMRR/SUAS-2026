@@ -52,4 +52,4 @@ jobs:
         run: uv sync --dev
 
       - name: Run basedpyright
-        run: uv run basedpyright
+        run: uv run basedpyright --level error
