@@ -22,7 +22,7 @@ from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from vision.common import camera_config
-from vision.vision_pipeline import flyover_pipeline
+from vision.odlc_pipeline import odlc_pipeline
 
 HORIZONTAL_PHOTO_SPACING: Final[float] = 15  # meters
 VERTICAL_PHOTO_SPACING: Final[float] = 15  # meters
@@ -202,8 +202,6 @@ async def vision_odlc_logic(self: ODLC, capture_status: asyncio.Event) -> None:
         The ODLC state object.
     capture_status : asyncio.Event
         An event that is set when the drone has successfully captured all images.
-    flight_settings : FlightSettings
-        Settings for this flight.
 
     Returns
     -------
@@ -223,7 +221,7 @@ async def vision_odlc_logic(self: ODLC, capture_status: asyncio.Event) -> None:
         await asyncio.sleep(1)
     logging.info("Camera data file found.")
 
-    await flyover_pipeline(
+    await odlc_pipeline(
         self.flight_settings,
         "flight/data/camera.json",
         capture_status,
