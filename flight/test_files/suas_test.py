@@ -6,7 +6,6 @@ import asyncio
 import logging
 import sys
 
-
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
@@ -52,7 +51,7 @@ async def run(flight_settings: FlightSettings) -> None:
         await move_to(drone.vehicle, point[0], point[1], obj_altitude)
 
     # return home
-    await drone.return_to_launch()
+    await drone.return_to_launch(12)
     print("Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect

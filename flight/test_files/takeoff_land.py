@@ -45,7 +45,7 @@ async def run(flight_settings: FlightSettings) -> None:
     await asyncio.sleep(5)
 
     # return home
-    await drone.return_to_launch()
+    await drone.return_to_launch(15)
     print("Landed. Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect

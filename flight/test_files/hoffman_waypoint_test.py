@@ -68,7 +68,7 @@ async def run(flight_settings: FlightSettings) -> None:
 
     # return home
     logging.info("Last waypoint reached")
-    await drone.return_to_launch()
+    await drone.return_to_launch(100)
     print("Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect
