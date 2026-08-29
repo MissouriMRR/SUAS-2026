@@ -21,5 +21,7 @@
     "mean_wind_direction": 0.0
   },
   "waypoint_laps_run": 0,
-  "map_output_path": "vision/mapping/results"
+  "map_output_path": "vision/mapping/results",
+  "odm_ip": "localhost",
+  "odm_port": 3000
 }

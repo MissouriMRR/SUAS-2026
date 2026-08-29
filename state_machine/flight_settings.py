@@ -12,6 +12,8 @@ from state_machine.mission_config import MissionConfig, SimModeConfig
 DEFAULT_RUN_TITLE: Final[str] = "SUAS Test Flight"
 DEFAULT_RUN_DESCRIPTION: Final[str] = "Test flight for SUAS 2025"
 DEFAULT_STANDARD_OBJECT_COUNT: Final[int] = 5
+DEFAULT_ODM_IP: Final[str] = "localhost"
+DEFAULT_ODM_PORT: Final[int] = 3000
 
 
 class SimMode(Enum):
@@ -59,6 +61,10 @@ class FlightSettings:
         finished processing images.
     __waypoint_laps_run: int
         The number of laps the drone has run through the waypoint state.
+    __odm_ip: str
+        The hostname or IP address of the ODM node used to generate the map.
+    __odm_port: int
+        The port of the ODM node used to generate the map.
 
     Methods
     -------
@@ -102,6 +108,14 @@ class FlightSettings:
         Returns the number of laps the drone has run through the waypoint state.
     waypoint_laps_run(laps: int) -> None
         Sets the number of laps the drone has run through the waypoint state.
+    odm_ip() -> str
+        Returns the hostname or IP address of the ODM node.
+    odm_ip(odm_ip: str) -> None
+        Sets the hostname or IP address of the ODM node.
+    odm_port() -> int
+        Returns the port of the ODM node.
+    odm_port(odm_port: int) -> None
+        Sets the port of the ODM node.
     """
 
     _read_sim_mode: bool = False
@@ -121,6 +135,8 @@ class FlightSettings:
         mission_data_path: str = "flight/data/waypoint_data.json",
         map_output_path: str = "vision/mapping/results",
         waypoint_laps_run: int = 0,
+        odm_ip: str = DEFAULT_ODM_IP,
+        odm_port: int = DEFAULT_ODM_PORT,
     ) -> None:
         """
         Default Constructor for flight settings
@@ -150,6 +166,10 @@ class FlightSettings:
             The path to the JSON file containing the boundary and waypoint data.
         waypoint_laps_run : int, default 0
             The number of laps the drone has run through the waypoint state.
+        odm_ip : str, default "localhost"
+            The hostname or IP address of the ODM node used to generate the map.
+        odm_port : int, default 3000
+            The port of the ODM node used to generate the map.
         """
         self.__simple_takeoff: bool = simple_takeoff
         self.__run_title: str = title
@@ -164,6 +184,8 @@ class FlightSettings:
         self.__waypoint_laps_run: int = waypoint_laps_run
         self.__yolo_status: Event = Event()
         self.__map_output_path = map_output_path
+        self.__odm_ip: str = odm_ip
+        self.__odm_port: int = odm_port
 
     @staticmethod
     def from_mission_config() -> "FlightSettings":
@@ -209,6 +231,8 @@ class FlightSettings:
             sim_mode_config["mission_data_path"],
             map_output_path=config["map_output_path"],
             waypoint_laps_run=config["waypoint_laps_run"],
+            odm_ip=config["odm_ip"],
+            odm_port=config["odm_port"],
         )
         return config_settings
 
@@ -470,3 +494,52 @@ class FlightSettings:
             The number of laps the drone has run through the waypoint state.
         """
         self.__waypoint_laps_run = waypoint_laps_run
+
+    # ----- Mapping Settings ----- #
+    @property
+    def odm_ip(self) -> str:
+        """
+        Return the hostname or IP address of the ODM node used to generate the map.
+
+        Returns
+        -------
+        odm_ip : str
+            The hostname or IP address of the ODM node.
+        """
+        return self.__odm_ip
+
+    @odm_ip.setter
+    def odm_ip(self, odm_ip: str) -> None:
+        """
+        Set the hostname or IP address of the ODM node used to generate the map.
+
+        Parameters
+        ----------
+        odm_ip : str
+            The hostname or IP address of the ODM node.
+        """
+        self.__odm_ip = odm_ip
+
+    @property
+    def odm_port(self) -> int:
+        """
+        Return the port of the ODM node used to generate the map.
+
+        Returns
+        -------
+        odm_port : int
+            The port of the ODM node.
+        """
+        return self.__odm_port
+
+    @odm_port.setter
+    def odm_port(self, odm_port: int) -> None:
+        """
+        Set the port of the ODM node used to generate the map.
+
+        Parameters
+        ----------
+        odm_port : int
+            The port of the ODM node.
+        """
+        self.__odm_port = odm_port
