@@ -42,7 +42,7 @@ async def run(self: Mapping) -> State:
         logging.info("Mapping")
 
         asyncio.ensure_future(
-            vision_mapping_logic(self, self.flight_settings.map_output_path)
+            vision_mapping_logic(self, self.flight_settings.map_output_path, self.flight_settings.odm_ip, self.flight_settings.odm_port)
         )
 
         logging.info("Mapping task scheduled")
@@ -62,7 +62,7 @@ async def run(self: Mapping) -> State:
     return Airdrop(self.drone, self.flight_settings)
 
 
-async def vision_mapping_logic(_: Mapping, map_output_path: str) -> None:
+async def vision_mapping_logic(_: Mapping, map_output_path: str, odm_ip: str, odm_port : int) -> None:
     """
     Implements the vision logic for the Mapping state.
 
@@ -81,7 +81,13 @@ async def vision_mapping_logic(_: Mapping, map_output_path: str) -> None:
         await asyncio.sleep(1)
     logging.info("Mapping camera data file found.")
 
-    await mapping_pipeline(camera_data_filename, "images", map_output_path)
+    await mapping_pipeline(
+        camera_data_filename,
+        "images",
+        odm_ip,
+        odm_port,
+        map_output_path,
+    )
 
 
 # Setting the run_callable attribute of the Mapping class to the run function

@@ -12,6 +12,8 @@ if __name__ == "__main__":
         mapping_pipeline(
             "flight/data/camera.json",
             "images",
+            "localhost",
+            3000,
             "vision/mapping/results",
         )
     )
