@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Iterable
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import vision.common.constants as consts
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from state_machine.flight_settings import FlightSettings
 
 DEFAULT_CONFIDENCE_THRESHOLD: float = 0.8
+DEFAULT_DETECTIONS_OUTPUT_PATH: Path = Path("vision/review/data/detections.json")
 
 # Minimum number of pixels in a detection axis to be considered
 MIN_DETECTION_SIZE: int = 2
@@ -74,6 +76,14 @@ def filter_detections(
             best_per_class[detection.category] = detection
 
     return list(best_per_class.values())
+
+
+def create_review_JSON(
+    detections: list[ObjectDetection],
+    output_path: Path = DEFAULT_DETECTIONS_OUTPUT_PATH,
+) -> None:
+    with open(output_path, "w") as f:
+        json.dump([d.as_dict() for d in detections], f)
 
 
 def create_odlc_dict(
