@@ -169,16 +169,8 @@
   "scanHeading": 13,
   "defaultAirdropPoints": [
     {
-      "latitude": 37.94855,
-      "longitude": -91.78399
-    },
-    {
       "latitude": 37.94839,
       "longitude": -91.78425
-    },
-    {
-      "latitude": 37.94836,
-      "longitude": -91.78352
     },
     {
       "latitude": 37.94813,

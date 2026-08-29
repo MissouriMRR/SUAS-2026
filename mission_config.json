@@ -3,15 +3,15 @@
   "run_description": "Test flight for SUAS 2026",
   "real_mode_config": {
     "mission_data_path": "flight/data/golf_data.json",
-    "standard_object_count": 4
+    "standard_object_count": 2
   },
   "sim_mode_config": {
     "mission_data_path": "flight/data/golf_data.json",
-    "standard_object_count": 4
+    "standard_object_count": 2
   },
   "airsim_mode_config": {
     "mission_data_path": "flight/data/golf_data.json",
-    "standard_object_count": 4
+    "standard_object_count": 2
   },
   "skip_waypoint": false,
   "skip_odlc_and_airdrop": false,
