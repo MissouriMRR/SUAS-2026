@@ -11,6 +11,8 @@ from pymavlink.dialects.v20.all import MAVLink_command_long_message
 from flight.waypoint.calculate_distance import calculate_distance
 from state_machine.flight_settings import SimMode
 
+logger = logging.getLogger(__name__)
+
 
 class Drone:
     """
@@ -104,18 +106,20 @@ class Drone:
         pwm : int
             The PWM value to send to the servo.
         """
-        msg: MAVLink_command_long_message = self.vehicle.message_factory.command_long_encode(
-            0,  # target_system, should always be 0
-            0,  # target_component, should always be 0
-            mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
-            0,  # confirmation
-            servo_num,  # servo number
-            pwm,  # servo value
-            0,
-            0,
-            0,
-            0,
-            0,  # param3-7 unused
+        msg: MAVLink_command_long_message = (
+            self.vehicle.message_factory.command_long_encode(
+                0,  # target_system, should always be 0
+                0,  # target_component, should always be 0
+                mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # cmd
+                0,  # confirmation
+                servo_num,  # servo number
+                pwm,  # servo value
+                0,
+                0,
+                0,
+                0,
+                0,  # param3-7 unused
+            )
         )
         self.vehicle.send_mavlink(msg)
 
@@ -174,17 +178,19 @@ class Drone:
         if len(self.address) == 0:
             raise RuntimeError("no connection address specified")
 
-        logging.info("Waiting for drone to connect...")
+        logger.info("Waiting for drone to connect...")
         self._vehicle = (
             dronekit.connect(self.address, wait_ready=True, timeout=90)
             if self.baud is None
-            else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
+            else dronekit.connect(
+                self.address, wait_ready=True, baud=self.baud, timeout=90
+            )
         )
 
         # Add flight timer handler
         self._vehicle.add_attribute_listener("armed", self.flight_timer_handler)
 
-        logging.info("Drone discovered!")
+        logger.info("Drone discovered!")
 
         if self._sim_mode is not SimMode.REAL:
             return
@@ -197,6 +203,9 @@ class Drone:
         """
         For use with airsim.
         """
+        logger.warning("--- REMOVING ARMING CHECK ---")
+        logger.warning("--- REMOVING ARMING CHECK ---")
+        logger.warning("--- REMOVING ARMING CHECK ---")
         self.vehicle.parameters["ARMING_CHECK"] = 0
 
     async def arm(self) -> None:
@@ -204,7 +213,7 @@ class Drone:
         Arm the drone.
         """
 
-        logging.info("Waiting for vehicle to intialize...")
+        logger.info("Waiting for vehicle to intialize...")
         while not self.vehicle.is_armable:
             # Vehicle is not ready to accept code
             await asyncio.sleep(0.5)
@@ -213,7 +222,7 @@ class Drone:
         self.vehicle.armed = True
 
         # Confirm vehicle is properly armed
-        logging.info("Waiting for arming...")
+        logger.info("Waiting for arming...")
         while not self.vehicle.armed or self.vehicle.mode.name != "GUIDED":
             await asyncio.sleep(0.5)
 
@@ -226,42 +235,63 @@ class Drone:
         takeoff_alt: float
             Altitude to reach in meters
         """
-        logging.info("Using takeoff altitude of %f m", takeoff_alt)
+        logger.info("Using takeoff altitude of %f m", takeoff_alt)
         self.vehicle.simple_takeoff(takeoff_alt + 1.5)  # Add 5ft for margin of error
 
         # Verify vehicle reaches target altitude
-        while self.vehicle.location.global_relative_frame.alt < takeoff_alt:
+        while (
+            self.vehicle.location.global_relative_frame.alt is None
+            or self.vehicle.location.global_relative_frame.alt < takeoff_alt
+        ):
             await asyncio.sleep(0.5)
-        logging.info("Reached target altitude (%f m).", takeoff_alt)
+        logger.info("Reached target altitude (%f m).", takeoff_alt)
 
-    async def return_to_launch(self) -> None:
+    async def return_to_launch(self, min_alt: float) -> None:
         """
         Method to move vehicle above home location, then descend vertically.
         """
+        if self.vehicle.home_location is None:
+            logger.warning("No home location set. Cancelling return to launch.")
+            return
+
         home_loc = dronekit.LocationGlobalRelative(
-            self.vehicle.home_location.lat, self.vehicle.home_location.lon, 23
-        )  # Min alt should be in constants file
+            self.vehicle.home_location.lat, self.vehicle.home_location.lon, min_alt
+        )
         self.vehicle.simple_goto(home_loc)
-        logging.info("Moving to home lat/lon...")
+        logger.info("Moving to home lat/lon...")
+
         while (
-            calculate_distance(
+            self.vehicle.location.global_relative_frame.lat is None
+            or self.vehicle.location.global_relative_frame.lon is None
+            or self.vehicle.location.global_relative_frame.alt is None
+        ):  # Wait for a GPS fix
+            await asyncio.sleep(0.5)
+        while True:
+            # Check if current location was lost for some reason
+            assert (
+                self.vehicle.location.global_relative_frame.lat is not None
+                and self.vehicle.location.global_relative_frame.lon is not None
+                and self.vehicle.location.global_relative_frame.alt is not None
+            ), "Lost GPS fix while returning to launch"
+            distance = calculate_distance(
                 self.vehicle.location.global_relative_frame.lat,
                 self.vehicle.location.global_relative_frame.lon,
                 self.vehicle.location.global_relative_frame.alt,
                 home_loc.lat,
                 home_loc.lon,
-                home_loc.alt,
+                home_loc.alt or min_alt,
             )
-            > 1
-        ):  # Get within 1 meter above home location
+            if distance <= 1:  # Get within 1 meter above home location
+                break
             await asyncio.sleep(0.5)
         self.vehicle.mode = dronekit.VehicleMode("RTL")
-        logging.info("Descending...")
+        logger.info("Descending...")
         while (
-            self.vehicle.location.global_relative_frame.alt > 0.2
+            self.vehicle.location.global_relative_frame.alt
+            and self.vehicle.location.global_relative_frame.alt > 0.2
         ):  # Ensure drone gets within 8in above ground
             await asyncio.sleep(0.5)
-        logging.info("Reached ground.")
+        logger.info("Reached ground.")
 
     async def open_servo(self, servo_num: int) -> None:
         """
@@ -318,6 +348,7 @@ class Drone:
         match sim_mode:
             case SimMode.REAL:
                 self.address = "/dev/ttyUSB0"
+                # self.address = "udpout:192.168.43.1:14552"
                 self.baud = 57600
             case SimMode.SIM:
                 self.address = "tcp:127.0.0.1:5762"
@@ -325,10 +356,10 @@ class Drone:
             case SimMode.AIRSIM:
                 self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
-            case _:
-                raise ValueError("invalid sim mode")
 
-    def flight_timer_handler(self, _vehicle: dronekit.Vehicle, _attr: str, value: bool) -> None:
+    def flight_timer_handler(
+        self, _vehicle: dronekit.Vehicle, _attr: str, value: bool
+    ) -> None:
         """
         Starts and stops the flight timer based on the armed state of the vehicle.
         This function is called as a callback every time the armed state changes,

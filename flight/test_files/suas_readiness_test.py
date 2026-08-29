@@ -49,6 +49,9 @@ async def move_to(
     logging.info("Going to waypoint")
     while not location_reached:
         position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+        if position.alt is None:
+            await asyncio.sleep(0.1)
+            continue
 
         drone_lat: float = position.lat
         drone_long: float = position.lon
@@ -70,7 +73,6 @@ async def move_to(
 
         # tell machine to sleep to prevent contstant polling, preventing battery drain
         await asyncio.sleep(1)
-    return
 
 
 # duplicate code disabled for testing function
@@ -115,7 +117,7 @@ async def run(flight_settings: FlightSettings) -> None:
 
     # return home
     logging.info("12 miles accomplished")
-    await drone.return_to_launch()
+    await drone.return_to_launch(25)
 
     logging.info("Staying connected...")
     # infinite loop till forced disconnect

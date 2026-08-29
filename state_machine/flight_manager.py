@@ -6,9 +6,9 @@ import logging
 import dronekit
 
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings, SimMode
 from state_machine.state_machine import StateMachine
 from state_machine.states import Start
-from state_machine.flight_settings import FlightSettings
 
 
 class FlightManager:
@@ -55,8 +55,7 @@ class FlightManager:
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()
 
-        if flight_settings.sim_mode.AIRSIM:
-
+        if flight_settings.sim_mode is SimMode.AIRSIM:
             self.drone.remove_arming_check()
 
         logging.info("Starting processes")
@@ -102,7 +101,10 @@ class FlightManager:
         await self.drone.connect_drone()
         logging.info("Kill switch has been enabled.")
 
-        while self.drone.vehicle.mode.name != "POSITION":
+        while (
+            self.drone.vehicle.mode is None
+            or self.drone.vehicle.mode.name != "POSITION"
+        ):
             await asyncio.sleep(0.5)
 
         logging.critical("Kill switch activated. Terminating state machine.")

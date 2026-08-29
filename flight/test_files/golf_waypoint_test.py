@@ -10,7 +10,7 @@ from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
 
-WAYPOINT_TOLERANCE: int = 6  #
+WAYPOINT_TOLERANCE: int = 6
 
 
 # duplicate code disabled for testing function
@@ -56,7 +56,7 @@ async def run(flight_settings: FlightSettings) -> None:
 
     # return home
     logging.info("Last waypoint reached")
-    await drone.return_to_launch()
+    await drone.return_to_launch(15)
     print("Staying connected, press Ctrl-C to exit")
 
     # infinite loop till forced disconnect
