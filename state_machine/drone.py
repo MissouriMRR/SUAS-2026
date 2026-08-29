@@ -301,12 +301,12 @@ class Drone:
         ----------
         servo_num : int
             The number of the servo to open. This should
-            be from 1 to 4, and matches with the AUX port on
+            be from 1 to 2, and matches with the AUX port on
             the carrier board that the servo is connected to.
         """
-        if servo_num < 1 or servo_num > 4:
-            raise ValueError("Servo number must be between 1 and 4")
-        open_values: list[int] = [2000, 1100, 1100, 1100]
+        if servo_num < 1 or servo_num > 2:
+            raise ValueError("Servo number must be between 1 and 2")
+        open_values: list[int] = [2000, 1100]
         await self._send_servo_msg(servo_num + 8, open_values[servo_num - 1])
 
     async def close_servo(self, servo_num: int) -> None:
@@ -317,12 +317,12 @@ class Drone:
         ----------
         servo_num : int
             The number of the servo to close. This should
-            be from 1 to 4, and matches with the AUX port on
+            be from 1 to 2, and matches with the AUX port on
             the carrier board that the servo is connected to.
         """
-        if servo_num < 1 or servo_num > 4:
-            raise ValueError("Servo number must be between 1 and 4")
-        closed_values: list[int] = [950, 1600, 1950, 1900]
+        if servo_num < 1 or servo_num > 2:
+            raise ValueError("Servo number must be between 1 and 2")
+        closed_values: list[int] = [950, 1600]
         await self._send_servo_msg(servo_num + 8, closed_values[servo_num - 1])
 
     async def close(self) -> None:
