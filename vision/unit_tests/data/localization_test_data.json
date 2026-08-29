@@ -1,0 +1,35 @@
+{
+  "dataset_root": "datasets",
+  "images": [
+    {
+      "dataset": "localize_test_images",
+      "image": "20260829_0_0020.jpg",
+      "detections": [
+        {
+          "label": "John Image 20",
+          "category": "object",
+          "bbox": [1766, 861, 1807, 883],
+          "real_coordinates": {
+            "latitude": 37.9483159,
+            "longitude": -91.7840613
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "localize_test_images",
+      "image": "20260829_0_0020.jpg",
+      "detections": [
+        {
+          "label": "Tent Image 20",
+          "category": "object",
+          "bbox": [749, 1041, 929, 1173],
+          "real_coordinates": {
+            "latitude": 37.9485301,
+            "longitude": -91.7840467
+          }
+        }
+      ]
+    }
+  ]
+}

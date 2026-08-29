@@ -174,3 +174,5 @@ vision/yolo/training/*.yaml
 *.param
 *.waypoints
 *.tlog
+
+datasets/
