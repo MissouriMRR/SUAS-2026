@@ -6,6 +6,7 @@ import logging
 import math
 from typing import cast
 
+import aiofiles
 import utm
 
 from flight.extract_gps import extract_gps
@@ -53,20 +54,26 @@ async def run(self: Airdrop) -> State:
         update_flight_settings(self.flight_settings)
         logging.info("Airdrop state running")
 
-        with open("flight/data/output.json", encoding="utf8") as output:
-            drop_locations: ODLCDict = cast(ODLCDict, json.load(output))
-            if not drop_locations:
-                logging.error("No drop locations found, loading fallback locations")
-                fallback_locations: list[Location] = extract_gps(
-                    self.flight_settings.mission_data_path
-                )["default_airdrop_points"]
-                for i, location in enumerate(fallback_locations):
-                    drop_locations[f"fallback_{i}"] = location
+        fallback_locations: list[Location] = extract_gps(
+            self.flight_settings.mission_data_path
+        )["default_airdrop_points"]
 
-        with open("flight/data/airdrops.json", encoding="utf8") as output:
-            airdrops: AirdropStatus = cast(AirdropStatus, json.load(output))
+        async with aiofiles.open("flight/data/output.json", encoding="utf8") as output:
+            drop_locations: ODLCDict = cast(ODLCDict, json.loads(await output.read()))
+            # Fill in missing drop locations with fallback locations
+            for i, category in enumerate(["tent", "person"]):
+                if category not in drop_locations:
+                    logging.warning(
+                        f"No {category} drop location found, replacing with fallback location {i}"
+                    )
+                    drop_locations[category] = fallback_locations[i]
 
-        logging.info("Moving to drop location")
+        async with aiofiles.open(
+            "flight/data/airdrops.json", encoding="utf8"
+        ) as output:
+            airdrops: AirdropStatus = cast(
+                AirdropStatus, json.loads(await output.read())
+            )
 
         # Find if there is a loaded airdrop
         airdrop_to_use: str = ""
@@ -81,6 +88,8 @@ async def run(self: Airdrop) -> State:
             logging.warning("No beacons are loaded.")
             return Land(self.drone, self.flight_settings)
 
+        logging.info(f"Moving to drop location {drop_locations[airdrop_to_use]}")
+
         dropped: bool = await attempt_drop(
             self.drone,
             self.flight_settings,
@@ -93,8 +102,10 @@ async def run(self: Airdrop) -> State:
         )
 
         # Write new data back out to airdrops.json
-        with open("flight/data/airdrops.json", "w", encoding="utf8") as file:
-            json.dump(airdrops, file)
+        async with aiofiles.open(
+            "flight/data/airdrops.json", "w", encoding="utf8"
+        ) as file:
+            await file.write(json.dumps(airdrops))
 
         if not dropped:
             return Airdrop(self.drone, self.flight_settings)
@@ -108,9 +119,9 @@ async def run(self: Airdrop) -> State:
             return Airdrop(self.drone, self.flight_settings)
         return Land(self.drone, self.flight_settings)
 
-    except asyncio.CancelledError as ex:
+    except asyncio.CancelledError:
         logging.error("Airdrop state canceled")
-        raise ex
+        raise
     finally:
         pass
 
@@ -158,14 +169,13 @@ async def attempt_drop(
 
         airdrop_altitude: float = extract_gps(path)["airdrop_altitude"]
 
-        wind_offset: float = calculate_airdrop_wind_offset(mean_wind_speed, airdrop_altitude)
+        wind_offset: float = calculate_airdrop_wind_offset(
+            mean_wind_speed, airdrop_altitude
+        )
 
-        easting: float
-        northing: float
-        zone_number: int
-        zone_letter: str
-        easting, northing, zone_number, zone_letter = utm.from_latlon(
-            drop_loc["latitude"], drop_loc["longitude"]
+        easting, northing, zone_number, zone_letter = cast(
+            "tuple[float, float, int, str]",
+            utm.from_latlon(drop_loc["latitude"], drop_loc["longitude"]),
         )
 
         easting += wind_offset * -math.sin(math.radians(mean_wind_direction))
@@ -235,12 +245,16 @@ def calculate_airdrop_wind_offset(wind_speed: float, drop_altitude: float) -> fl
         / (air_density * parachute_drag_coefficient * parachute_area)
     )  # m/s
 
-    freefall_distance: float = 0.5 * gravity_acceleration * parachute_closed_duration**2  # meters
+    freefall_distance: float = (
+        0.5 * gravity_acceleration * parachute_closed_duration**2
+    )  # meters
 
     parachute_open_duration: float = (
         drop_altitude - freefall_distance
     ) / vertical_velocity_parachute_open  # seconds
-    drop_duration: float = parachute_closed_duration + parachute_open_duration  # seconds
+    drop_duration: float = (
+        parachute_closed_duration + parachute_open_duration
+    )  # seconds
 
     offset: float = -wind_speed * (
         drop_duration + 0.2 * (math.exp(-5.0 * drop_duration) - 1.0)
