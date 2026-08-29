@@ -1,12 +1,20 @@
 """Sets up the base InferenceProvider class."""
 
 from dataclasses import dataclass
-from typing import override
+from typing import TypedDict, override
 
 import numpy as np
 import numpy.typing as npt
 
 from vision.common.constants import ImageShape
+
+
+class ObjectDetectionDict(TypedDict):
+    image: str
+    category: str
+    bbox: list[int]
+    confidence: float
+    shape: ImageShape
 
 
 @dataclass(eq=False)
@@ -42,6 +50,15 @@ class ObjectDetection:
     @override
     def __repr__(self) -> str:
         return f"{self.image} @ {self.bbox}: {self.confidence}"
+
+    def as_dict(self) -> ObjectDetectionDict:
+        return {
+            "image": self.image,
+            "category": self.category,
+            "bbox": self.bbox.tolist(),
+            "confidence": self.confidence,
+            "shape": self.shape,
+        }
 
     def get_center_coord(self) -> tuple[int, int]:
         """
