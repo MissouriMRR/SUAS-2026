@@ -63,6 +63,10 @@ class MissionConfig(TypedDict):
         Manually entered information on the wind.
     map_output_path: str
         Path for where the map should be saved
+    odm_ip : str
+        The hostname or IP address of the ODM node used to generate the map.
+    odm_port : int
+        The port of the ODM node used to generate the map.
     waypoint_laps_run : int
         The number of laps the drone has run through the waypoint state.
     """
@@ -77,6 +81,8 @@ class MissionConfig(TypedDict):
     simple_takeoff: bool
     wind: WindConfig
     map_output_path: str
+    odm_ip: str
+    odm_port: int
     waypoint_laps_run: int
 
 

@@ -61,6 +61,8 @@ async def wait_for_task_completion(
 async def mapping_pipeline(
     camera_data_path: str,
     image_dir: str,
+    odm_ip: str,
+    odm_port: int,
     output_path: str = "vision/mapping/results",
 ) -> None:
     """
@@ -72,6 +74,10 @@ async def mapping_pipeline(
         The path to the json file containing the CameraParameters
     image_dir: str
         The path with all the images
+    odm_ip: str
+        The hostname or IP address of the ODM node used to generate the map
+    odm_port: int
+        The port of the ODM node used to generate the map
     output_path: str
         The json file name and path to save the data in
     """
@@ -101,7 +107,7 @@ async def mapping_pipeline(
     logger.info("Wrote %s", geo_path)
 
     # Set up connection to ODM node
-    node = Node("localhost", 3000)
+    node = Node(odm_ip, odm_port)
     logger.info(
         "Node info: mem=%d/%d, engine=%s, version=%s",
         node.info().available_memory,
