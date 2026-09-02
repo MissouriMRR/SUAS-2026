@@ -87,11 +87,11 @@ async def odlc_pipeline(
     image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
 
     # Filter all detections to the best for each class
-    filtered_objects = odlc_utils.filter_detections(detected_objects, image_parameters)
-
-    odlc_dict: consts.ODLCDict = odlc_utils.create_odlc_dict(
-        filtered_objects, flight_settings
+    filtered_objects = odlc_utils.filter_detections(
+        detected_objects, image_parameters, flight_settings
     )
+
+    odlc_dict: consts.ODLCDict = odlc_utils.create_odlc_dict(filtered_objects)
     logger.info("%d ODLCs found: %s", len(odlc_dict), odlc_dict)
     odlc_utils.output_odlc_json(output_path, odlc_dict)
     flight_settings.yolo_status.set()

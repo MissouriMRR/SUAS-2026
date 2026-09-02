@@ -42,6 +42,7 @@ async def run_driver(images: Iterable[str]) -> list[ObjectDetection]:
     for image_path in images:
         initial_size += 1
         inference_tasks.append(asyncio.create_task(driver.add_image(image_path)))
+        await asyncio.sleep(1)
 
     logger.info(
         "%d images added to the driver. Waiting for inference to finish...",
@@ -94,27 +95,44 @@ async def test_driver(camera_data_path: str | None = None) -> None:
     if camera_data_path is not None:
         logger.info("Filtering detections with camera data")
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
-        filtered_results = odlc_utils.filter_detections(results, image_parameters)
-
-        odlc_dict: ODLCDict = odlc_utils.create_odlc_dict(
-            filtered_results, FlightSettings.from_mission_config()
+        filtered_results = odlc_utils.filter_detections(
+            results, image_parameters, FlightSettings.from_mission_config()
         )
+
+        odlc_dict: ODLCDict = odlc_utils.create_odlc_dict(filtered_results)
         logger.info("Filtered ODLC dict: %s", odlc_dict)
         odlc_utils.output_odlc_json("flight/data/output.json", odlc_dict)
-    for result in results:
-        x1, y1, x2, y2 = cast(
-            tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
-        )
-        logger.info(
-            "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
-            result.category,
-            x1,
-            y1,
-            x2,
-            y2,
-            result.confidence,
-            result.image,
-        )
+        for result in filtered_results:
+            x1, y1, x2, y2 = cast(
+                tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
+            )
+            logger.info(
+                "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s Coords: (%f, %f)",
+                result.category,
+                x1,
+                y1,
+                x2,
+                y2,
+                result.confidence,
+                result.image,
+                result.latitude,
+                result.longitude,
+            )
+    else:
+        for result in results:
+            x1, y1, x2, y2 = cast(
+                tuple[int, int, int, int], result.bbox.astype(np.int32).tolist()
+            )
+            logger.info(
+                "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f Img: %s",
+                result.category,
+                x1,
+                y1,
+                x2,
+                y2,
+                result.confidence,
+                result.image,
+            )
 
 
 if __name__ == "__main__":

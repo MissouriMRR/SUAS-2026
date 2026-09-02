@@ -88,11 +88,11 @@ async def test_queue(camera_data_path: str | None = None) -> None:
     if camera_data_path is not None:
         logger.info("Filtering detections with camera data")
         image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
-        filtered_results = odlc_utils.filter_detections(results, image_parameters)
-
-        odlc_dict: ODLCDict = odlc_utils.create_odlc_dict(
-            filtered_results, FlightSettings.from_mission_config()
+        filtered_results = odlc_utils.filter_detections(
+            results, image_parameters, FlightSettings.from_mission_config()
         )
+
+        odlc_dict: ODLCDict = odlc_utils.create_odlc_dict(filtered_results)
         logger.info("Filtered ODLC dict: %s", odlc_dict)
         odlc_utils.output_odlc_json("flight/data/output.json", odlc_dict)
     for result in results:
