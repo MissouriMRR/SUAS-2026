@@ -139,12 +139,13 @@ class PhotoQueue:
                 tuple[int, int, int, int], detection.bbox.astype(np.int32).tolist()
             )
             logging.info(
-                "Detected %s at (%d, %d), (%d, %d)",
+                "Detected %s at (%d, %d), (%d, %d) Cfd: %.2f",
                 detection.category,
                 x1,
                 y1,
                 x2,
                 y2,
+                detection.confidence,
             )
             image = cv2.rectangle(
                 image,
@@ -233,12 +234,14 @@ class PhotoQueue:
                     _ = cv2.waitKey(1)
                 except ImageReadError:
                     logging.error("Failed to show results for image: %s", image)
-            self._print_results()
             self.queue.task_done()
             logging.debug("Runner %d finished processing image %s", num, image)
 
         if self.show_results:
-            cv2.destroyWindow(f"Runner {num} Results")
+            try:
+                cv2.destroyWindow(f"Runner {num} Results")
+            except cv2.error:
+                pass
 
     async def start_queue(self, max_runners: int = 3) -> None:
         """
@@ -270,5 +273,5 @@ class PhotoQueue:
             )
 
         cv2.destroyAllWindows()
-
+        self._print_results()
         return self.results

@@ -138,7 +138,7 @@ class ObjectDetectionModel:
 
     def __init__(
         self,
-        model_path: str = "mannequin_tent_cnn_resnet50.onnx",
+        model_path: str = "mannequin-tent-mrr3.onnx",
         log_results: bool = False,
     ) -> None:
         # All models should be put in the models folder.

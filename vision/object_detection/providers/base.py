@@ -70,6 +70,21 @@ class ObjectDetection:
         """The (x, y) pixel coordinate of the bottom-left corner of the bounding box."""
         return int(self.bbox[0]), int(self.bbox[3])
 
+    @property
+    def width(self) -> int:
+        """The width of the bounding box."""
+        return int(self.bbox[2] - self.bbox[0])
+
+    @property
+    def height(self) -> int:
+        """The height of the bounding box."""
+        return int(self.bbox[3] - self.bbox[1])
+
+    @property
+    def area(self) -> int:
+        """The area of the bounding box."""
+        return int(self.width * self.height)
+
     def get_x_extremes(self) -> tuple[int, int]:
         """
         Gets the minimum and maximum x values of the bounding box.
