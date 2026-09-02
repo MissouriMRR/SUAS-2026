@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 import math
 
+import utm
+
 import vision.common.constants as consts
+from flight.extract_gps import GPSData
 from flight.waypoint.calculate_distance import calculate_distance
+from flight.waypoint.geometry import Point
 from vision.common.localized_detection import LocalizedDetection
 from vision.deskew.camera_distances import get_coordinates
 from vision.object_detection import ObjectDetection
+
+logger = logging.getLogger(__name__)
 
 
 def localize_detection(
@@ -77,9 +84,71 @@ def get_center_offset(detection: ObjectDetection) -> float:
     return math.dist((detection_x, detection_y), (image_center_x, image_center_y))
 
 
-def proximity_check(
+def boundary_check(
     detections: list[ObjectDetection],
     parameters: dict[str, consts.CameraParameters],
+    gps_data: GPSData,
+) -> list[LocalizedDetection]:
+    """
+    Removes all detections that are not within the object boundary specified in the
+    flight data file.
+
+    Parameters
+    ----------
+    detections : list[ObjectDetection]
+        The list of detections to filter.
+    parameters : dict[str, consts.CameraParameters]
+        The camera parameters for each image.
+    gps_data : GPSData
+        The GPS data for the flight.
+
+    Returns
+    -------
+    list[LocalizedDetection]
+        The filtered list of detections.
+    """
+    # Get ODLC boundary
+    odlc_boundary: list[Point] = [
+        Point(odlc_boundary_point.easting, odlc_boundary_point.northing)
+        for odlc_boundary_point in gps_data["object_boundary_utm"]
+    ]
+    zone_number: int = gps_data["object_boundary_utm"][0].zone_number
+    zone_letter: str = gps_data["object_boundary_utm"][0].zone_letter
+
+    detection: ObjectDetection
+    filtered_detections: list[LocalizedDetection] = []
+    for detection in detections:
+        # Convert to LocalizedDetection
+        image_name: str = detection.image.split("/")[-1]
+        image_parameters: consts.CameraParameters = parameters[image_name]
+        localized: LocalizedDetection | None = localize_detection(
+            detection, image_parameters
+        )
+        if localized is None:
+            continue
+
+        # Check if in bounds
+        easting: float
+        northing: float
+        easting, northing, _, _ = utm.from_latlon(
+            localized.latitude,
+            localized.longitude,
+            force_zone_number=zone_number,
+            force_zone_letter=zone_letter,
+        )
+
+        if not Point(easting, northing).is_inside_shape(odlc_boundary):
+            logger.debug(
+                f"Detection {detection} is outside the ODLC boundary, dropping"
+            )
+            continue
+
+        filtered_detections.append(localized)
+    return filtered_detections
+
+
+def proximity_check(
+    detections: list[LocalizedDetection],
     min_distance: float = 30.0,  # Objects will be at least 30 meters apart, as per RN Discord
 ) -> list[LocalizedDetection]:
     """
@@ -90,11 +159,8 @@ def proximity_check(
 
     Parameters
     ----------
-    detections : list[ObjectDetection]
+    detections : list[LocalizedDetection]
         A list with all object detections.
-    parameters : dict[str, consts.CameraParameters]
-        A dictionary with the image parameters for every
-        captured image.
     min_distance : float, optional
         The minimum distance between objects in METERS, by default 30.0
 
@@ -113,14 +179,6 @@ def proximity_check(
     detections.sort(key=get_center_offset)
 
     for detection in detections:
-        image_name: str = detection.image.split("/")[-1]
-        image_parameters: consts.CameraParameters = parameters[image_name]
-        localized: LocalizedDetection | None = localize_detection(
-            detection, image_parameters
-        )
-        if localized is None:
-            continue
-
         collided: bool = False
         existing_detection: LocalizedDetection
         for existing_detection in filtered_detections:
@@ -128,8 +186,8 @@ def proximity_check(
                 continue
 
             distance: float = calculate_distance(
-                localized.latitude,
-                localized.longitude,
+                detection.latitude,
+                detection.longitude,
                 0,
                 existing_detection.latitude,
                 existing_detection.longitude,
@@ -140,6 +198,6 @@ def proximity_check(
                 break
 
         if not collided:
-            filtered_detections.append(localized)
+            filtered_detections.append(detection)
 
     return filtered_detections
