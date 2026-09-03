@@ -21,6 +21,8 @@ dependencies = [
     "siyi-sdk>=0.2.12",
     "typing-extensions>=4.15.0",
     "utm>=0.8.1",
+    "open3d==0.19",
+    "pytesseract>=0.3.13",
 ]
 
 [tool.uv.sources]

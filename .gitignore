@@ -174,3 +174,6 @@ vision/yolo/training/*.yaml
 *.param
 *.waypoints
 *.tlog
+
+# Airsim Logs
+projectairsim_client.log

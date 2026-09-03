@@ -5,6 +5,7 @@ import logging
 import time
 
 import dronekit
+from dronekit import connect, APIException
 from pymavlink import mavutil
 from pymavlink.dialects.v20.all import MAVLink_command_long_message
 
@@ -178,14 +179,29 @@ class Drone:
         if len(self.address) == 0:
             raise RuntimeError("no connection address specified")
 
-        logger.info("Waiting for drone to connect...")
-        self._vehicle = (
-            dronekit.connect(self.address, wait_ready=True, timeout=90)
-            if self.baud is None
-            else dronekit.connect(
-                self.address, wait_ready=True, baud=self.baud, timeout=90
+        if self._sim_mode == SimMode.AIRSIM:
+            logging.info(f"Attempting to reach ArduPilot at {self.address}...")
+            vehicle = None
+            while not vehicle:
+                try:
+                    logging.info("Attempting to reach ArduPilot...")
+                    vehicle = dronekit.connect(self.address, wait_ready=False, timeout=60)
+                except (APIException, Exception) as e:
+                    logging.warning(f"SITL not ready yet ({e}). Retrying in 2s...")
+                    await asyncio.sleep(2)
+
+            logging.info("Link established. Waiting for parameters...")
+            vehicle.wait_ready(True, timeout=60)
+            self._vehicle = vehicle
+
+        else:
+            logging.info(f"Waiting for drone to connect at {self.address}...")
+            self._vehicle = (
+                dronekit.connect(self.address, wait_ready=True, timeout=90)
+                if self.baud is None
+                else dronekit.connect(self.address, wait_ready=True, baud=self.baud, timeout=90)
             )
-        )
+
 
         # Add flight timer handler
         self._vehicle.add_attribute_listener("armed", self.flight_timer_handler)
@@ -354,7 +370,7 @@ class Drone:
                 self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
             case SimMode.AIRSIM:
-                self.address = "tcp:127.0.0.1:5762"
+                self.address = "udp:127.0.0.1:14550"
                 self.baud = None
 
     def flight_timer_handler(

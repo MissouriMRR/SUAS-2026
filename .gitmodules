@@ -1,0 +1,4 @@
+[submodule "simulation"]
+	path = simulation
+	url = https://github.com/MissouriMRR/Simulation-2026.git
+	branch = feature/projectairsim
