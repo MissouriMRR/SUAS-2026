@@ -347,9 +347,8 @@ class Drone:
 
         match sim_mode:
             case SimMode.REAL:
-                self.address = "/dev/ttyUSB0"
-                # self.address = "udpout:192.168.43.1:14552"
-                self.baud = 57600
+                self.address = "udp:127.0.0.1:14750"
+                self.baud = None
             case SimMode.SIM:
                 self.address = "tcp:127.0.0.1:5762"
                 self.baud = None
