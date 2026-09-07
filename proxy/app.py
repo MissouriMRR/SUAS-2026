@@ -13,6 +13,7 @@ from proxy import (
     DEFAULT_REOPEN_INTERVAL,
     DEFAULT_STATUS_INTERVAL,
     DEFAULT_STREAM_RATE,
+    DEFAULT_VEHICLE_ID,
 )
 from proxy.link import Link
 from proxy.proxy import MRRProxy
@@ -64,6 +65,12 @@ def main(
         float,
         typer.Option(help="seconds between status log lines, 0 to disable"),
     ] = DEFAULT_STATUS_INTERVAL,
+    vehicle_id: Annotated[
+        int,
+        typer.Option(
+            help="MAVLink system ID of the vehicle autopilot, used to decide link liveness"
+        ),
+    ] = DEFAULT_VEHICLE_ID,
     verbose: Annotated[
         bool,
         typer.Option("-v", "--verbose", help="enable debug logging"),
@@ -95,6 +102,7 @@ def main(
         recover_time=recover_time,
         stream_rate=stream_rate,
         status_interval=status_interval,
+        vehicle_id=vehicle_id,
     )
     # Stop proxy safely if interrupted
     signal.signal(signal.SIGINT, proxy.stop)

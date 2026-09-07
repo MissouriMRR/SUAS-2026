@@ -5,6 +5,7 @@ os.environ.setdefault("MAVLINK20", "1")
 
 # MAVLink constants
 GCS_SYSTEM_ID: int = 255
+DEFAULT_VEHICLE_ID: int = 1
 
 # mrrproxy constants
 # Default system ID for the proxy's own heartbeats
