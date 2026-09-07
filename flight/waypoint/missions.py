@@ -13,7 +13,7 @@ from flight.waypoint import pathfinding
 from flight.waypoint.geometry import LineSegment, Point
 from flight.waypoint.graph import GraphNode
 
-BOUNDARY_SHRINKAGE: Final[float] = 5.0  # in meters
+BOUNDARY_SHRINKAGE: Final[float] = 0.0  # in meters
 WAYPOINT_TOLERANCE: Final[float] = 29.0  # 100ft -> 29m
 
 
@@ -38,7 +38,7 @@ class WaypointMission:
         # mission data), excluding intermediary boundary-avoidance points.
         self.waypoint_seqs: list[int] = []
         self.laps: int = 0
-        self._finalized: bool = False
+        self.finalized: bool = False
 
         self.command_sequence: CommandSequence = self.vehicle.commands
         # Download the vehicle's current mission (if any), once, so `clear()`
@@ -62,15 +62,17 @@ class WaypointMission:
         for point in boundary:
             boundary_vertices.append(Point(point.easting, point.northing))
 
-        self.search_graph: list[GraphNode[Point, float]] = pathfinding.create_pathfinding_graph(
-            boundary_vertices, BOUNDARY_SHRINKAGE
+        self.search_graph: list[GraphNode[Point, float]] = (
+            pathfinding.create_pathfinding_graph(boundary_vertices, BOUNDARY_SHRINKAGE)
         )
         self.boundary: list[BoundaryPointUtm] = boundary
         self.zone_number: int = self.boundary[0].zone_number
         self.zone_letter: str = self.boundary[0].zone_letter
 
     def _get_drone_pos(self) -> tuple[Point, float]:
-        drone_position: LocationGlobalRelative = self.vehicle.location.global_relative_frame
+        drone_position: LocationGlobalRelative = (
+            self.vehicle.location.global_relative_frame
+        )
         drone_easting: float
         drone_northing: float
         drone_easting, drone_northing, _, _ = utm.from_latlon(
@@ -84,7 +86,9 @@ class WaypointMission:
         path: list[Point]
         try:
             path = list(
-                pathfinding.shortest_path_between(start_point, end_point, self.search_graph)
+                pathfinding.shortest_path_between(
+                    start_point, end_point, self.search_graph
+                )
             )
         except RuntimeError:
             # No path found, just use a direct path
@@ -111,9 +115,13 @@ class WaypointMission:
         for waypoint in self.waypoints:
             # Find the best path to the next waypoint,
             # avoiding the boundary.
-            path = self._find_best_path(last_point, Point(waypoint.easting, waypoint.northing))
+            path = self._find_best_path(
+                last_point, Point(waypoint.easting, waypoint.northing)
+            )
 
-            segments: list[LineSegment] = list(LineSegment.from_points([last_point] + path, False))
+            segments: list[LineSegment] = list(
+                LineSegment.from_points([last_point] + path, False)
+            )
             path_length: float = sum(segment.length() for segment in segments)
             leg_start_altitude: float = last_altitude
 
@@ -168,10 +176,10 @@ class WaypointMission:
         advances past the final real waypoint, so wouldn't be able to detect
         when the mission is complete.
         """
-        if self._finalized:
+        if self.finalized:
             return
         self.mission.append(self.mission[-1])
-        self._finalized = True
+        self.finalized = True
         self.upload()
 
     def unfinalize(self) -> None:
@@ -180,10 +188,10 @@ class WaypointMission:
         laps can be appended. Does not re-upload the mission as laps should
         be added after.
         """
-        if not self._finalized:
+        if not self.finalized:
             return
         _ = self.mission.pop()
-        self._finalized = False
+        self.finalized = False
 
     def waypoints_reached(self) -> int:
         """
