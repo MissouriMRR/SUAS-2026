@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
-from vision.pipeline.odlc_utils import DEFAULT_CONFIDENCE_THRESHOLD
+from vision.common.constants import DEFAULT_CONFIDENCE_THRESHOLD
 from vision.reviewer.image import STATUS_COLORS, ImageView
 from vision.reviewer.models import ReviewDetection, ReviewSession, ReviewStatus
 

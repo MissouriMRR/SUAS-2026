@@ -1,9 +1,18 @@
 """Constant variables and common type aliases for Vision"""
 
+from pathlib import Path
 from typing import Annotated, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
+
+# The minimum confidence for a detection to be used by the ODLC pipeline
+DEFAULT_CONFIDENCE_THRESHOLD: float = 0.6
+
+# The detections the pipeline hands to the reviewer, and the reviewed
+# detections it hands back
+DEFAULT_DETECTIONS_OUTPUT_PATH: Path = Path("vision/reviewer/data/detections.json")
+DEFAULT_REVIEWER_OUTPUT_PATH: Path = Path("vision/reviewer/data/output.json")
 
 # The shape annotations below are documentation only, no way to enforce
 type Image = Annotated[NDArray[np.uint8], "(height, width, 3)"]

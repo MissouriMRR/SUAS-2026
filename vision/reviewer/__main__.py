@@ -11,9 +11,9 @@ from typing import Annotated
 import typer
 from PySide6.QtWidgets import QApplication
 
+from vision.common.constants import DEFAULT_DETECTIONS_OUTPUT_PATH
 from vision.reviewer.main_window import ReviewWindow
 from vision.reviewer.models import (
-    DEFAULT_DETECTIONS_PATH,
     SUAS_ROOT,
     ReviewSession,
 )
@@ -29,7 +29,7 @@ def main(
         typer.Option(
             help="path to detections JSON file, output from create_review_JSON()"
         ),
-    ] = DEFAULT_DETECTIONS_PATH,
+    ] = DEFAULT_DETECTIONS_OUTPUT_PATH,
     images: Annotated[
         Path,
         typer.Option(help="path to the folder containing the images"),
