@@ -1,5 +1,5 @@
 """
-A unit test for the waypoint state.
+A unit test for the Waypoint state.
 
 Functions
 ---------
@@ -71,7 +71,8 @@ def in_bounds(
         long_j: float = boundary[j][1]
 
         if ((long_i > longitude) != (long_j > longitude)) and (
-            latitude < (lat_j - lat_i) * (longitude - long_i) / (long_j - long_i) + lat_i
+            latitude
+            < (lat_j - lat_i) * (longitude - long_i) / (long_j - long_i) + lat_i
         ):
             inside = not inside
 
@@ -108,7 +109,10 @@ async def boundary_check(drone: Drone, flight_settings: FlightSettings) -> None:
 
     previously_out_of_bounds: bool = False
     while True:
-        location: dronekit.LocationGlobalRelative = drone.vehicle.location.global_relative_frame
+        location: dronekit.LocationGlobalRelative = (
+            drone.vehicle.location.global_relative_frame
+        )
+        assert location.alt is not None
 
         # continuously checks current latitude, longitude and altitude of the drone
         drone_lat: float = location.lat
@@ -116,7 +120,9 @@ async def boundary_check(drone: Drone, flight_settings: FlightSettings) -> None:
         drone_alt: float = location.alt
 
         # checks if drone's location is within boundary
-        if not in_bounds(boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude):
+        if not in_bounds(
+            boundary, drone_lat, drone_lon, drone_alt, min_altitude, max_altitude
+        ):
             if not previously_out_of_bounds:
                 logging.info("(Waypoint State Test) Out of bounds!")
                 previously_out_of_bounds = True
@@ -140,19 +146,19 @@ async def run_test(flight_settings: FlightSettings) -> None:
     """
     drone: Drone = Drone()
     drone.use_settings(flight_settings.sim_mode)
-
+    flight_settings.skip_odlc_and_airdrop = True
     drone.odlc_scan = False
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(
         StateMachine(Start(drone, flight_settings), drone, flight_settings).run()
     )
-    await boundary_check(drone, flight_settings)
+    asyncio.ensure_future(boundary_check(drone, flight_settings))
 
     while not state_task.done():
         await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     asyncio.run(run_test(FlightSettings.from_mission_config()))
