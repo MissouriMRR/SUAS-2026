@@ -15,6 +15,7 @@ at all.
 
 import json
 import logging
+import math
 import statistics
 import sys
 from dataclasses import dataclass
@@ -37,8 +38,8 @@ TEST_DATA_PATH: Path = Path(__file__).parent / "data" / "localization_test_data.
 
 # The layout of the report table - a left-aligned object name, then the error
 # and the localized coordinate right-aligned in their own columns
-TABLE_ROW: str = "%-32s%12s%34s"
-TABLE_RULE: str = "-" * 78
+TABLE_ROW: str = "%-32s%12s%34s%24s"
+TABLE_RULE: str = "-" * 102
 
 
 class DetectionData(TypedDict):
@@ -228,7 +229,7 @@ def test_localize_detection(data_path: Path = TEST_DATA_PATH) -> list[float]:
 
     errors_m: list[float] = []
 
-    logger.info(TABLE_ROW, "object", "error (m)", "localized (lat, lon)")
+    logger.info(TABLE_ROW, "object", "error (m)", "localized (lat, lon)", "error (x,y) m")
     logger.info(TABLE_RULE)
 
     labeled: LabeledDetection
@@ -257,11 +258,35 @@ def test_localize_detection(data_path: Path = TEST_DATA_PATH) -> list[float]:
         )
         errors_m.append(error_m)
 
+        error_x_m: float = math.copysign(
+            calculate_distance(
+                localized.latitude,
+                localized.longitude,
+                0,
+                localized.latitude,
+                labeled.real_coordinates["longitude"],
+                0,
+            ),
+            labeled.real_coordinates["longitude"] - localized.longitude,
+        )
+        error_y_m: float = math.copysign(
+            calculate_distance(
+                localized.latitude,
+                localized.longitude,
+                0,
+                labeled.real_coordinates["latitude"],
+                localized.longitude,
+                0,
+            ),
+            labeled.real_coordinates["latitude"] - localized.latitude,
+        )
+
         logger.info(
             TABLE_ROW,
             labeled.label,
             f"{error_m:.2f}",
             f"({localized.latitude:.7f}, {localized.longitude:.7f})",
+            f"X: {error_x_m:.2f}, Y: {error_y_m:.2f}",
         )
 
     if not errors_m:
