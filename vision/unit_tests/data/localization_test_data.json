@@ -1,5 +1,5 @@
 {
-  "dataset_root": "datasets",
+  "dataset_root": "vision/unit_tests/data",
   "images": [
     {
       "dataset": "localize_test_images",
