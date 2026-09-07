@@ -9,10 +9,13 @@ from enum import Enum
 from pathlib import Path
 from typing import TypedDict
 
+from vision.common.constants import (
+    DEFAULT_DETECTIONS_OUTPUT_PATH,
+    DEFAULT_REVIEWER_OUTPUT_PATH,
+)
+
 logger = logging.getLogger(__name__)
 
-DEFAULT_DETECTIONS_PATH: Path = Path("vision/reviewer/data/detections.json")
-DEFAULT_OUTPUT_PATH: Path = Path("vision/reviewer/data/output.json")
 # Absolute path to ensure that Qt can load the images
 SUAS_ROOT: Path = Path(__file__).resolve().parents[2]
 
@@ -133,7 +136,7 @@ class ReviewSession:
     @classmethod
     def load(
         cls,
-        path: Path = DEFAULT_DETECTIONS_PATH,
+        path: Path = DEFAULT_DETECTIONS_OUTPUT_PATH,
         image_root: Path = SUAS_ROOT,
     ) -> ReviewSession:
         """
@@ -156,7 +159,7 @@ class ReviewSession:
         logger.info(f"Loaded {len(detections)} detections from {path}")
         return cls(detections, Path(path), image_root)
 
-    def save(self, path: Path = DEFAULT_OUTPUT_PATH):
+    def save(self, path: Path = DEFAULT_REVIEWER_OUTPUT_PATH):
         """Writes the accepted detections back to JSON.
 
         Parameters

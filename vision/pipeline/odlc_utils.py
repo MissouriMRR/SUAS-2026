@@ -2,23 +2,31 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import os
+import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 import vision.common.constants as consts
 from flight.extract_gps import GPSData, extract_gps
+from vision.common.constants import (
+    DEFAULT_CONFIDENCE_THRESHOLD,
+    DEFAULT_DETECTIONS_OUTPUT_PATH,
+    DEFAULT_REVIEWER_OUTPUT_PATH,
+)
 from vision.common.localized_detection import LocalizedDetection
 from vision.object_detection import ObjectDetection
+from vision.object_detection.providers.base import ObjectDetectionDict
 from vision.pipeline import localization
 
 if TYPE_CHECKING:
     from state_machine.flight_settings import FlightSettings
-
-DEFAULT_CONFIDENCE_THRESHOLD: float = 0.8
-DEFAULT_DETECTIONS_OUTPUT_PATH: Path = Path("vision/review/data/detections.json")
 
 # Minimum number of pixels in a detection axis to be considered
 MIN_DETECTION_SIZE: int = 2
@@ -84,6 +92,99 @@ def create_review_JSON(
 ) -> None:
     with open(output_path, "w") as f:
         json.dump([d.as_dict() for d in detections], f)
+
+
+def import_review_JSON(
+    path: Path = DEFAULT_REVIEWER_OUTPUT_PATH,
+) -> list[ObjectDetection]:
+    """
+    Reads the detections accepted in the reviewer back in.
+
+    Parameters
+    ----------
+    path : Path
+        The JSON file the reviewer saved the accepted detections to.
+
+    Returns
+    -------
+    detections : list[ObjectDetection]
+        The accepted detections.
+    """
+    with open(path) as f:
+        data: list[ObjectDetectionDict] = json.load(f)
+
+    detections: list[ObjectDetection] = []
+    for entry in data:
+        # The reviewer stores bbox corners as floats and shape as a JSON list
+        height, width = entry["shape"][0], entry["shape"][1]
+        detections.append(
+            ObjectDetection(
+                image=entry["image"],
+                category=entry["category"],
+                bbox=np.array(entry["bbox"], dtype=np.int64),
+                confidence=entry["confidence"],
+                shape=(height, width),
+            )
+        )
+    return detections
+
+
+async def run_reviewer(
+    detections: list[ObjectDetection],
+    detections_path: Path = DEFAULT_DETECTIONS_OUTPUT_PATH,
+    output_path: Path = DEFAULT_REVIEWER_OUTPUT_PATH,
+) -> list[ObjectDetection]:
+    """
+    Opens the reviewer on the given detections and waits for the user to close it.
+
+    The app runs as a subprocess because Qt has to own the main thread, which
+    would block this event loop for as long as the review takes.
+
+    Parameters
+    ----------
+    detections : list[ObjectDetection]
+        The detections to review.
+    detections_path : Path
+        The JSON file the reviewer reads the detections from.
+    output_path : Path
+        The JSON file the reviewer writes the accepted detections to.
+
+    Returns
+    -------
+    reviewed : list[ObjectDetection]
+        The accepted detections, or all of the given detections if the reviewer
+        was closed without saving.
+    """
+    create_review_JSON(detections, detections_path)
+
+    # Clear the previous run's output so a discarded review can be detected
+    output_path.unlink(missing_ok=True)
+
+    # Importing opencv points QT_QPA_PLATFORM_PLUGIN_PATH at its own bundled Qt
+    # plugins, which the reviewer would inherit and load instead of PySide6's
+    environment = os.environ.copy()
+    environment.pop("QT_QPA_PLATFORM_PLUGIN_PATH", None)
+
+    logger.info(f"Opening the reviewer with {len(detections)} detections...")
+    process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "vision.reviewer",
+        "--detection-data",
+        str(detections_path),
+        env=environment,
+    )
+    return_code = await process.wait()
+    if return_code != 0:
+        logger.error(f"Reviewer exited with code {return_code}")
+
+    if not output_path.is_file():
+        logger.warning("Reviewer closed without saving, keeping all detections")
+        return detections
+
+    reviewed = import_review_JSON(output_path)
+    logger.info(f"Reviewer accepted {len(reviewed)} of {len(detections)} detections")
+    return reviewed
 
 
 def create_odlc_dict(

@@ -83,12 +83,17 @@ async def odlc_pipeline(
     # End the queue, get results
     detected_objects: list[ObjectDetection] = await driver.end()
 
+    # Hand the detections to the reviewer and wait for review to finish
+    reviewed_objects: list[ObjectDetection] = await odlc_utils.run_reviewer(
+        detected_objects
+    )
+
     # Load in the json containing the camera data
     image_parameters = pipeline_utils.read_parameter_json(camera_data_path)
 
     # Filter all detections to the best for each class
     filtered_objects = odlc_utils.filter_detections(
-        detected_objects, image_parameters, flight_settings
+        reviewed_objects, image_parameters, flight_settings
     )
 
     odlc_dict: consts.ODLCDict = odlc_utils.create_odlc_dict(filtered_objects)
