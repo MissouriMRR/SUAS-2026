@@ -176,3 +176,4 @@ vision/yolo/training/*.yaml
 *.tlog
 
 datasets/
+vision/reviewer/data/*.json
