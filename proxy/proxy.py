@@ -11,6 +11,7 @@ from proxy import (
     DEFAULT_RECOVER_TIME,
     DEFAULT_STATUS_INTERVAL,
     DEFAULT_STREAM_RATE,
+    DEFAULT_VEHICLE_ID,
     GCS_SYSTEM_ID,
 )
 from proxy.link import Link
@@ -36,6 +37,8 @@ class MRRProxy:
         Rate at which to request stream data from vehicles.
     status_interval : float
         Interval at which to log status information.
+    vehicle_id : int
+        Vehicle ID to use for filtering true autopilot messages.
     """
 
     def __init__(
@@ -45,12 +48,15 @@ class MRRProxy:
         recover_time: float = DEFAULT_RECOVER_TIME,
         stream_rate: int = DEFAULT_STREAM_RATE,
         status_interval: float = DEFAULT_STATUS_INTERVAL,
+        vehicle_id: int = DEFAULT_VEHICLE_ID,
     ) -> None:
         self.inputs: list[Link] = inputs
         self.outputs: list[Link] = outputs
         self.recover_time: float = recover_time
         self.stream_rate: int = stream_rate
         self.status_interval: float = status_interval
+
+        self.vehicle_id: int = vehicle_id
 
         self.active: Link | None = None
         self.vehicles: set[tuple[int, int]] = set()
@@ -140,21 +146,28 @@ class MRRProxy:
         source: tuple[int, int] = (msg.get_srcSystem(), msg.get_srcComponent())
         # Need to make sure that we only forward vehicle messages and not
         # GCS messages like that ones that MissionPlanner sends
-        from_vehicle = source[0] not in (
+        not_self_msg = source[0] not in (
             GCS_SYSTEM_ID,
             link.source_system,
         )
+        true_vehicle_msg = source == (
+            self.vehicle_id,
+            mavutil.mavlink.MAV_COMP_ID_AUTOPILOT1,
+        )
 
-        if from_vehicle:
+        if true_vehicle_msg:
+            # Only update last_rx for vehicle messages,
+            # we don't want other clients on the link
+            # to cause the link to be considered alive
             link.update_last_rx()
+        if not_self_msg and msg.get_type() == "HEARTBEAT":
             # HEARTBEAT msgs can be used to detect vehicle presence
             # https://mavlink.io/en/services/heartbeat.html
             # this is done in dronekit/pymavlink as well
-            if msg.get_type() == "HEARTBEAT":
-                self.vehicles.add(source)
-                if source not in link.streams_requested:
-                    link.streams_requested.add(source)
-                    self._request_streams(link, source)
+            self.vehicles.add(source)
+            if source not in link.streams_requested:
+                link.streams_requested.add(source)
+                self._request_streams(link, source)
         if link is self.active:
             # If the link is the active one then we want
             # to forward the message to all outputs
