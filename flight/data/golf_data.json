@@ -4,42 +4,46 @@
     "altitudeMax": 130,
     "boundaryPoints": [
       {
-        "latitude": 37.9492356,
-        "longitude": -91.7846881
+        "latitude": 37.94930769,
+        "longitude": -91.78506374
       },
       {
-        "latitude": 37.9484024,
-        "longitude": -91.7825852
+        "latitude": 37.94815708,
+        "longitude": -91.78271413
       },
       {
-        "latitude": 37.9474041,
-        "longitude": -91.7826712
+        "latitude": 37.94698953,
+        "longitude": -91.78318620
       },
       {
-        "latitude": 37.9468034,
-        "longitude": -91.7833685
+        "latitude": 37.94685417,
+        "longitude": -91.78421617
       },
       {
-        "latitude": 37.9468837,
-        "longitude": -91.7847848
+        "latitude": 37.94773406,
+        "longitude": -91.78529978
+      },
+      {
+        "latitude": 37.94857164,
+        "longitude": -91.78553581
       }
     ],
     "searchBoundary": [
       {
-        "latitude": 37.9486055,
-        "longitude": -91.7845327
+        "latitude": 37.9491384811606,
+        "longitude": -91.7849940061569
       },
       {
-        "latitude": 37.9482713,
-        "longitude": -91.7845595
+        "latitude": 37.9481232383363,
+        "longitude": -91.782848238945
       },
       {
-        "latitude": 37.948064,
-        "longitude": -91.7832774
+        "latitude": 37.9469937642092,
+        "longitude": -91.7836743593216
       },
       {
-        "latitude": 37.9482248,
-        "longitude": -91.7832023
+        "latitude": 37.9482501444566,
+        "longitude": -91.7853587865829
       }
     ]
   },
