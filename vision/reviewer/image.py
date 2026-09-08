@@ -202,7 +202,6 @@ class ImageView(QGraphicsView):
     def set_image(self, pixmap: QPixmap, detections: list[ReviewDetection]) -> None:
         """
         Shows an image and the boxes belonging to it
-        TODO: Set to first detection on load
 
         Parameters
         ----------

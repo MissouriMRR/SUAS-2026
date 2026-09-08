@@ -1,6 +1,6 @@
 """Entry point for the object detection reviewer app.
 
-Run with `uv run -m vision.review [detections.json] [--images IMAGE_ROOT]`.
+Run with `uv run -m vision.reviewer [detections.json] [--images IMAGE_ROOT]`.
 """
 
 import logging
