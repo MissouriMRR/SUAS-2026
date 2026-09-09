@@ -1,7 +1,5 @@
 """Implement the behavior of the Waypoint state."""
 
-# pylint: disable=too-many-locals,too-many-statements
-
 import asyncio
 import logging
 import traceback
@@ -11,8 +9,7 @@ import dronekit
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 
-from flight.extract_gps import BoundaryPointUtm, GPSData, WaypointUtm, extract_gps
-from flight.waypoint.missions import WaypointMission
+from flight.waypoint.missions import WAYPOINT_MAX_LAPS, WaypointMission
 from state_machine.state_tracker import (
     update_drone,
     update_flight_settings,
@@ -24,8 +21,9 @@ from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
 
 WAYPOINT_AIR_SPEED: Final[float] = 25.0  # in meters/second
-WAYPOINT_MAX_LAPS: Final[int] = 10  # Taken from SUAS Rule 3.2.2
 MISSION_POLL_INTERVAL: Final[float] = 0.1  # in seconds
+
+logger = logging.getLogger(__name__)
 
 
 async def run(self: Waypoint) -> State:
@@ -48,7 +46,7 @@ async def run(self: Waypoint) -> State:
     try:
         if not self.flight_settings.skip_waypoint:
             await waypoint_logic(self)
-            logging.info(
+            logger.info(
                 "Waypoint state completed after %d lap(s). Currently at a flight time of %d:%05.2f",
                 self.flight_settings.waypoint_laps_run,
                 int(self.drone.flight_time // 60),
@@ -60,7 +58,7 @@ async def run(self: Waypoint) -> State:
         )
 
     except asyncio.CancelledError:
-        logging.error("Waypoint state canceled")
+        logger.error("Waypoint state canceled")
         traceback.print_exc()
         raise
     finally:
@@ -93,29 +91,31 @@ async def ask_to_continue(
             answer: str = reply.strip().lower()
 
             if answer not in ("y", "n"):
-                logging.info("Invalid choice. Please enter 'y' or 'n'.")
+                logger.info("Invalid choice. Please enter 'y' or 'n'.")
                 continue
 
             if answer == "n":
-                logging.info("No more laps queued; ending after lap %d", mission.laps)
+                logger.info(
+                    "No more laps queued; ending after lap %d", mission.requested_laps
+                )
                 return
 
-            if mission.waypoints_reached() >= mission.laps * waypoints_per_lap:
+            if (
+                mission.waypoints_reached()
+                >= mission.requested_laps * waypoints_per_lap
+            ):
                 # The drone is already flying to the dummy end command, so a lap
                 # appended now wouldn't be picked up automatically.
-                logging.info(
+                logger.info(
                     "Last waypoint reached; too late to add another lap, skipping lap"
                 )
                 return
 
-            # Unfinalize, add a lap, and re-finalize to re-upload the mission
-            mission.unfinalize()
-            mission.add_lap()
-            mission.finalize()  # appends the dummy end command and uploads
-            logging.info("Uploaded waypoint lap %d", mission.laps)
+            mission.request_lap()
+            logger.info("Requested waypoint lap %d", mission.requested_laps)
 
-            if mission.laps >= WAYPOINT_MAX_LAPS:
-                logging.info("Reached the %d lap limit", WAYPOINT_MAX_LAPS)
+            if mission.requested_laps >= WAYPOINT_MAX_LAPS:
+                logger.info("Reached the %d lap limit", WAYPOINT_MAX_LAPS)
                 return
 
 
@@ -136,62 +136,68 @@ async def waypoint_logic(self: Waypoint) -> None:
     update_state("Waypoint")
     update_drone(self.drone)
     update_flight_settings(self.flight_settings)
-    logging.info("Waypoint state running")
+    logger.info("Waypoint state running")
 
-    # Extract GPS data from the mission data path
-    gps_dict: GPSData = extract_gps(self.flight_settings.mission_data_path)
-    waypoints_utm: list[WaypointUtm] = gps_dict["waypoints_utm"]
-    waypoints_per_lap: int = len(waypoints_utm)
+    if self.drone.waypoint_mission is None:
+        logger.warning("Waypoint mission was not set up yet, setting up now")
+        self.drone.init_waypoint_mission(self.flight_settings)
+        # waypoint_mission should be set up by now
+        if self.drone.waypoint_mission is None:
+            raise RuntimeError("Failed to set up waypoint mission")
 
-    boundary_points: list[BoundaryPointUtm] = gps_dict["boundary_points_utm"]
+    # Add a single requested lap
+    self.drone.waypoint_mission.request_lap()
 
-    # Initialize the waypoint mission
-    mission: WaypointMission = WaypointMission(
-        self.drone.vehicle, waypoints_utm, boundary_points
-    )
-
-    # Upload initial lap and set to AUTO mode
-    mission.add_lap()
-    mission.finalize()  # appends the dummy end command and uploads
+    waypoints_per_lap: int = len(self.drone.waypoint_mission.waypoints)
 
     self.drone.vehicle.airspeed = WAYPOINT_AIR_SPEED
     self.drone.vehicle.mode = dronekit.VehicleMode("AUTO")
     while self.drone.vehicle.mode.name != "AUTO":
         await asyncio.sleep(0.1)
-    logging.info("Uploaded waypoint lap %d", mission.laps)
+    logger.info(
+        "Flying with %d waypoint laps", self.drone.waypoint_mission.uploaded_laps
+    )
 
     # Runs alongside the mission for its whole duration, so laps can be queued
     # at any time. Once it's done, no more laps are coming.
     prompt_task: asyncio.Task[None] = asyncio.create_task(
-        ask_to_continue(mission, waypoints_per_lap)
+        ask_to_continue(self.drone.waypoint_mission, waypoints_per_lap)
     )
 
     waypoint_num: int = 0  # real waypoints reached so far, across all laps
     # While the prompt task is still running and the drone hasn't reached the end of the mission
-    while not (prompt_task.done() and waypoint_num >= mission.laps * waypoints_per_lap):
+    while not (
+        prompt_task.done()
+        and waypoint_num
+        >= self.drone.waypoint_mission.requested_laps * waypoints_per_lap
+    ):
         position_in_lap: int = waypoint_num % waypoints_per_lap
         current_lap: int = waypoint_num // waypoints_per_lap + 1
         self.flight_settings.waypoint_laps_run = current_lap - 1
 
-        if not prompt_task.done() and waypoint_num >= mission.laps * waypoints_per_lap:
+        if (
+            not prompt_task.done()
+            and waypoint_num
+            >= self.drone.waypoint_mission.requested_laps * waypoints_per_lap
+        ):
             # The last waypoint was reached before an answer came in, so
             # it's too late to splice in another lap, stop the prompt task
-            logging.info("Final waypoint reached with no answer, ending mission")
+            logger.info("Final waypoint reached with no answer, ending mission")
             _ = prompt_task.cancel()
 
         # Log waypoint num, lap num, and distance to waypoint after each waypoint hit
-        radius: float = mission.distance_to_waypoint(waypoint_num)
-        logging.debug(
+        radius: float = self.drone.waypoint_mission.distance_to_waypoint(waypoint_num)
+        logger.debug(
             "Distance to waypoint %d, lap %d: %.1f m / %.1f ft",
             position_in_lap + 1,
             current_lap,
             radius,
             radius * 3.28084,
         )
-        if mission.waypoints_reached() > waypoint_num:
+        if self.drone.waypoint_mission.waypoints_reached() > waypoint_num:
             # This means the drone reached the waypoint it was going towards
             flight_time: float = self.drone.flight_time
-            logging.info(
+            logger.info(
                 "Reached waypoint %d of lap %d | mission time %d:%05.2f | radius %.1f m / %.1f ft",
                 position_in_lap + 1,
                 current_lap,
@@ -211,9 +217,9 @@ async def waypoint_logic(self: Waypoint) -> None:
         # Prompt task died on its own
         prompt_error: BaseException | None = prompt_task.exception()
         if prompt_error is not None:
-            logging.error("Lap prompt failed: %r", prompt_error)
+            logger.error("Lap prompt failed: %r", prompt_error)
 
-    self.flight_settings.waypoint_laps_run = mission.laps
+    self.flight_settings.waypoint_laps_run = self.drone.waypoint_mission.requested_laps
 
     # Hand control back to GUIDED mode for subsequent states
     self.drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
