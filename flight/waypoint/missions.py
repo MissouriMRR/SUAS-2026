@@ -13,11 +13,16 @@ from flight.waypoint import pathfinding
 from flight.waypoint.geometry import LineSegment, Point
 from flight.waypoint.graph import GraphNode
 
-BOUNDARY_SHRINKAGE: Final[float] = 0.0  # in meters
+# in meters, the buffer distance inside of flight boundary
+# that pathfinding will avoid (pathfinding will refuse to go this
+# close to the boundary)
+BOUNDARY_SHRINKAGE: Final[float] = 5.0
 WAYPOINT_TOLERANCE: Final[float] = 29.0  # 100ft -> 29m
+WAYPOINT_MAX_LAPS: Final[int] = 10  # Taken from SUAS Rule 3.2.2
+
+logger = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-instance-attributes
 class WaypointMission:
     """
     Class to handle parsing waypoint laps into Mission items, appending
@@ -37,7 +42,8 @@ class WaypointMission:
         # Mission sequence number of each real waypoint (the ones from the
         # mission data), excluding intermediary boundary-avoidance points.
         self.waypoint_seqs: list[int] = []
-        self.laps: int = 0
+        self.uploaded_laps: int = 0
+        self.requested_laps: int = 0
         self.finalized: bool = False
 
         self.command_sequence: CommandSequence = self.vehicle.commands
@@ -93,7 +99,7 @@ class WaypointMission:
         except RuntimeError:
             # No path found, just use a direct path
             # (this should never happen)
-            logging.warning("No path found, using direct path")
+            logger.warning("No path found, using direct path")
             path = [start_point, end_point]
         return path
 
@@ -105,8 +111,9 @@ class WaypointMission:
         last_point: Point
         last_altitude: float
         if len(self.mission) == 0:
-            # First lap, get drone position
-            last_point, last_altitude = self._get_drone_pos()
+            # First lap, get drone position, and take first point altitude
+            last_point, _ = self._get_drone_pos()
+            last_altitude = self.waypoints[0].altitude
         else:
             # Subsequent laps are routed from the previous lap's final waypoint
             last_point = Point(self.waypoints[-1].easting, self.waypoints[-1].northing)
@@ -167,7 +174,20 @@ class WaypointMission:
 
             last_point = Point(waypoint.easting, waypoint.northing)
             last_altitude = waypoint.altitude
-        self.laps += 1
+        self.uploaded_laps += 1
+
+    def request_lap(self) -> None:
+        """
+        Increment the requested laps count.
+        """
+        if self.requested_laps >= self.uploaded_laps:
+            logger.warning(
+                "Tried to request lap %d but only %d uploaded",
+                self.requested_laps + 1,
+                self.uploaded_laps,
+            )
+            return
+        self.requested_laps += 1
 
     def finalize(self) -> None:
         """

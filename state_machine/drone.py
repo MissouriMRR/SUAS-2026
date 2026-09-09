@@ -8,8 +8,10 @@ import dronekit
 from pymavlink import mavutil
 from pymavlink.dialects.v20.all import MAVLink_command_long_message
 
+from flight.extract_gps import BoundaryPointUtm, GPSData, WaypointUtm, extract_gps
 from flight.waypoint.calculate_distance import calculate_distance
-from state_machine.flight_settings import SimMode
+from flight.waypoint.missions import WAYPOINT_MAX_LAPS, WaypointMission
+from state_machine.flight_settings import FlightSettings, SimMode
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +95,7 @@ class Drone:
         self.odlc_scan: bool = True
         self.flight_start_time: float | None = None
         self.last_flight_time: float = 0.0
+        self.waypoint_mission: WaypointMission | None = None
 
     async def _send_servo_msg(self, servo_num: int, pwm: int) -> None:
         """Send a DO_SET_SERVO MAVLink message to the drone.
@@ -191,13 +194,6 @@ class Drone:
         self._vehicle.add_attribute_listener("armed", self.flight_timer_handler)
 
         logger.info("Drone discovered!")
-
-        if self._sim_mode is not SimMode.REAL:
-            return
-
-        message_1: str = "Waiting for user input to continue... "
-        message_2: str = "(press enter when ready) "
-        input(f"\x1b[38;2;255;255;0m{message_1}\x1b[3m{message_2}\x1b[0m")
 
     def remove_arming_check(self) -> None:
         """
@@ -394,3 +390,23 @@ class Drone:
         if self.flight_start_time is None:
             return 0.0
         return time.monotonic() - self.flight_start_time
+
+    def init_waypoint_mission(self, flight_settings: FlightSettings) -> None:
+        """
+        Initialize the waypoint mission with the given flight settings.
+        """
+        # Extract GPS data from the mission data path
+        gps_dict: GPSData = extract_gps(flight_settings.mission_data_path)
+        waypoints_utm: list[WaypointUtm] = gps_dict["waypoints_utm"]
+
+        boundary_points: list[BoundaryPointUtm] = gps_dict["boundary_points_utm"]
+
+        # Initialize the waypoint mission, add all laps for max points
+        self.waypoint_mission = WaypointMission(
+            self.vehicle, waypoints_utm, boundary_points
+        )
+        for _ in range(WAYPOINT_MAX_LAPS):
+            self.waypoint_mission.add_lap()
+        self.waypoint_mission.finalize()  # appends the dummy end command and uploads
+
+        logger.info("Uploaded %d laps", WAYPOINT_MAX_LAPS)
