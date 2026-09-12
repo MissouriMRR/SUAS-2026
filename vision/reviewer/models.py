@@ -150,8 +150,6 @@ class ReviewSession:
         for detection in detections:
             self._by_image.setdefault(detection.image, []).append(detection)
         self._images: list[str] = images
-        print(self._by_image)
-        print(self._images)
 
     @classmethod
     def load(
@@ -304,3 +302,13 @@ class ReviewSession:
         if found is None:
             logger.warning(f"Could not find image {image_path}")
         return found
+
+    def missing_categories(self) -> set[str]:
+        """
+        Returns a set of all categories that do not
+        have an accepted detection.
+        """
+        detected_categories = {
+            d.category for d in self.detections if d.status == ReviewStatus.ACCEPTED
+        }
+        return set(CATEGORIES) - detected_categories

@@ -247,6 +247,11 @@ class ImageView(QGraphicsView):
         pixmap = self._pixmap_item.pixmap()
         return pixmap.height(), pixmap.width()
 
+    @property
+    def add_mode(self) -> bool:
+        """Whether or not add mode is enabled."""
+        return self._add_mode
+
     def set_add_mode(self, enabled: bool) -> None:
         """
         Enables or disables add mode, handles cursor change
