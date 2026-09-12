@@ -10,14 +10,17 @@ from pathlib import Path
 from typing import TypedDict
 
 from vision.common.constants import (
+    DEFAULT_CAMERA_DATA_PATH,
     DEFAULT_DETECTIONS_OUTPUT_PATH,
     DEFAULT_REVIEWER_OUTPUT_PATH,
+    CameraParameters,
 )
 
 logger = logging.getLogger(__name__)
 
 # Absolute path to ensure that Qt can load the images
 SUAS_ROOT: Path = Path(__file__).resolve().parents[2]
+IMAGE_ROOT: Path = SUAS_ROOT / "images"
 
 
 class ReviewStatus(Enum):
@@ -46,7 +49,7 @@ class ReviewDetection:
     Attributes
     ----------
     image : str
-        The path to the image file, as written by the object detection driver.
+        The path to the image file, relative to the images root.
     category : str
         The category (or class name) of the object detection.
     bbox : tuple[float, float, float, float]
@@ -71,8 +74,12 @@ class ReviewDetection:
         """Creates a detection from one entry of the detections JSON file."""
         x1, y1, x2, y2 = (float(value) for value in data["bbox"])
         height, width = (int(value) for value in data["shape"][:2])
+
+        # Need to resolve the image path relative to the SUAS root
+        image_path = str(SUAS_ROOT / data["image"])
+
         return cls(
-            image=data["image"],
+            image=image_path,
             category=data["category"],
             bbox=(x1, y1, x2, y2),
             confidence=float(data["confidence"]),
@@ -115,6 +122,8 @@ class ReviewSession:
         Every loaded detection, in file order.
     source : Path
         The JSON file the detections were loaded from.
+    images : list[str]
+        Paths to all images captured, whether or not they have detections.
     image_root : Path
         The directory image paths are resolved against.
     """
@@ -123,6 +132,7 @@ class ReviewSession:
         self,
         detections: list[ReviewDetection],
         source: Path,
+        images: list[str],
         image_root: Path,
     ) -> None:
         self.detections: list[ReviewDetection] = detections
@@ -132,20 +142,26 @@ class ReviewSession:
         # Add each detection to the image index under its base image
         for detection in detections:
             self._by_image.setdefault(detection.image, []).append(detection)
+        self._images: list[str] = images
+        print(self._by_image)
+        print(self._images)
 
     @classmethod
     def load(
         cls,
-        path: Path = DEFAULT_DETECTIONS_OUTPUT_PATH,
-        image_root: Path = SUAS_ROOT,
+        detections_data_path: Path = DEFAULT_DETECTIONS_OUTPUT_PATH,
+        camera_data_path: Path = DEFAULT_CAMERA_DATA_PATH,
+        image_root: Path = IMAGE_ROOT,
     ) -> ReviewSession:
         """
         Creates a new ReviewSession from a detections JSON file written by `create_review_JSON()`.
 
         Parameters
         ----------
-        path : Path
-            The JSON file to load.
+        detections_data_path : Path
+            The detections JSON file to load.
+        camera_data_path : Path
+            The camera data JSON file naming every captured image.
         image_root : Path
             The directory to resolve the image paths against.
 
@@ -153,11 +169,23 @@ class ReviewSession:
         -------
         session : ReviewSession
         """
-        with open(path) as file:
+        with open(detections_data_path) as file:
             raw: list[ReviewDetectionDict] = json.load(file)
         detections = [ReviewDetection.from_dict(entry) for entry in raw]
-        logger.info(f"Loaded {len(detections)} detections from {path}")
-        return cls(detections, Path(path), image_root)
+        logger.info(f"Loaded {len(detections)} detections from {detections_data_path}")
+
+        with open(camera_data_path) as file:
+            camera_data: dict[str, CameraParameters] = json.load(file)
+        logger.info(f"Loaded {len(camera_data)} images from {camera_data_path}")
+
+        # Only keep the images that actually exist
+        image_paths: list[str] = [
+            str(image_root / image)
+            for image in camera_data
+            if (image_root / image).is_file()
+        ]
+
+        return cls(detections, Path(detections_data_path), image_paths, image_root)
 
     def save(self, path: Path = DEFAULT_REVIEWER_OUTPUT_PATH):
         """Writes the accepted detections back to JSON.
@@ -178,8 +206,13 @@ class ReviewSession:
 
     @property
     def images(self) -> list[str]:
-        """The image paths that have detections, in the order they first appear."""
+        """The image paths that have detections, in the order they were captured."""
         return list(self._by_image)
+
+    @property
+    def all_images(self) -> list[str]:
+        """Every captured image path, including the ones without detections."""
+        return list(self._images)
 
     def for_image(self, image: str) -> list[ReviewDetection]:
         """The detections belonging to one image, highest confidence first."""

@@ -11,10 +11,13 @@ from typing import Annotated
 import typer
 from PySide6.QtWidgets import QApplication
 
-from vision.common.constants import DEFAULT_DETECTIONS_OUTPUT_PATH
+from vision.common.constants import (
+    DEFAULT_CAMERA_DATA_PATH,
+    DEFAULT_DETECTIONS_OUTPUT_PATH,
+)
 from vision.reviewer.main_window import ReviewWindow
 from vision.reviewer.models import (
-    SUAS_ROOT,
+    IMAGE_ROOT,
     ReviewSession,
 )
 
@@ -30,19 +33,22 @@ def main(
             help="path to detections JSON file, output from create_review_JSON()"
         ),
     ] = DEFAULT_DETECTIONS_OUTPUT_PATH,
+    camera_data: Annotated[
+        Path,
+        typer.Option(help="path to the camera data JSON file"),
+    ] = DEFAULT_CAMERA_DATA_PATH,
     images: Annotated[
         Path,
         typer.Option(help="path to the folder containing the images"),
-    ] = SUAS_ROOT,
+    ] = IMAGE_ROOT,
 ) -> int:
     """Loads a detections JSON file and opens the reviewer window."""
     logging.basicConfig(level=logging.INFO)
-    logger.info(f"Loading detections from {detection_data}, images from {images}")
+    logger.info(
+        f"Loading detections from {detection_data}, camera data from {camera_data}, images from {images}"
+    )
 
-    session = ReviewSession.load(detection_data, images)
-    if not session.detections:
-        logger.error(f"No detections in {detection_data}, check your data file")
-        return 1
+    session = ReviewSession.load(detection_data, camera_data, images)
 
     app = QApplication(sys.argv[:1])
     window = ReviewWindow(session)
