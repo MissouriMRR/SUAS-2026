@@ -99,9 +99,9 @@ async def mapping_pipeline(
         lat, lon = entry["drone_coordinates"]
         alt = entry.get("altitude", 0)
 
-        # Assumes rotation_deg is already [yaw, pitch, roll].
+        # Rotation deg in CameraParameters is stored as [roll, pitch, yaw]
         rot = entry.get("rotation_deg", [0, 0, 0])
-        yaw, pitch, roll = rot[0], rot[1], rot[2]
+        roll, pitch, yaw = rot[0], rot[1], rot[2]
 
         lines.append(f"{image_name} {lon} {lat} {alt} {yaw} {pitch} {roll}")
 
