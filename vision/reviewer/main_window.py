@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import override
 
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import QPointF, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QKeySequence, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -25,9 +25,17 @@ from PySide6.QtWidgets import (
 
 from vision.common.constants import DEFAULT_CONFIDENCE_THRESHOLD
 from vision.reviewer.image import STATUS_COLORS, ImageView
-from vision.reviewer.models import ReviewDetection, ReviewSession, ReviewStatus
+from vision.reviewer.models import (
+    CATEGORIES,
+    ReviewDetection,
+    ReviewSession,
+    ReviewStatus,
+)
 
 logger = logging.getLogger(__name__)
+
+# Default manual detection box size
+DEFAULT_BOX_SIZE: float = 10.0
 
 
 class ReviewWindow(QMainWindow):
@@ -54,7 +62,9 @@ class ReviewWindow(QMainWindow):
         self.resize(1600, 950)
 
         self.view: ImageView = ImageView(self)
+        # Connect image view signals to callbacks here
         self.view.selection_changed.connect(self._on_view_selection)
+        self.view.detection_requested.connect(self._add_detection)
         self.setCentralWidget(self.view)
 
         self.toolbar: QToolBar = self.addToolBar("Review")
@@ -154,6 +164,24 @@ class ReviewWindow(QMainWindow):
         )
         self._add_to_toolbar("Change &Category...", "C", self.change_category)
         self.toolbar.addSeparator()
+
+        # Need to make this one outside _add_to_toolbar so Esc can cancel the action
+        self.add_mode_action: QAction = QAction("Add", self)
+        self.add_mode_action.setCheckable(True)
+        self.add_mode_action.setShortcut(QKeySequence("D"))
+        self.add_mode_action.setToolTip(
+            "Click the image to add a detection centered on the cursor"
+        )
+        self.add_mode_action.toggled.connect(self._set_add_mode)
+        self.toolbar.addAction(self.add_mode_action)
+
+        # Esc cancels add mode
+        cancel = QAction("Disable Add", self)
+        cancel.setShortcut(QKeySequence("Escape"))
+        cancel.triggered.connect(lambda: self.add_mode_action.setChecked(False))
+        self.addAction(cancel)
+
+        self.toolbar.addSeparator()
         self._add_to_toolbar(
             "&Next Detection",
             "Tab",
@@ -198,6 +226,33 @@ class ReviewWindow(QMainWindow):
         self.confidence_filter.setValue(DEFAULT_CONFIDENCE_THRESHOLD)
         self.confidence_filter.valueChanged.connect(self._apply_filter)
         self.toolbar.addWidget(self.confidence_filter)
+
+    def _set_add_mode(self, enabled: bool) -> None:
+        """Turns add mode on or off"""
+        self.view.set_add_mode(enabled)
+        if enabled:
+            self.statusBar().showMessage("Click to add a detection.", 6000)
+
+    def _add_detection(self, point: QPointF) -> None:
+        """Adds a manual detection centered on the point that was clicked"""
+        height, width = self.view.image_size
+        if self._current_image is None or height == 0 or width == 0:
+            self.statusBar().showMessage("No image to add a detection to", 6000)
+            return
+
+        # Use first category by default, can change using change category
+        detection = self.session.add_detection(
+            image=self._current_image,
+            center=(point.x(), point.y()),
+            size=DEFAULT_BOX_SIZE,
+            category=CATEGORIES[0],
+            shape=(height, width),
+        )
+        # Add detection to image view
+        self.view.add_detection(detection)
+        self.view.select(detection)
+        self._after_edit()
+        self.statusBar().showMessage("Added a manual detection", 6000)
 
     def _build_status_bar(self) -> None:
         self.progress_label: QLabel = QLabel("", self)
@@ -368,12 +423,10 @@ class ReviewWindow(QMainWindow):
     def change_category(self) -> None:
         """Switches the label for the selected detection."""
         selected = self._selected_detection()
-        if not selected:
+        if not selected or selected.category not in CATEGORIES:
             return
-        if selected.category == "person":
-            selected.category = "tent"
-        elif selected.category == "tent":
-            selected.category = "person"
+        index = CATEGORIES.index(selected.category)
+        selected.category = CATEGORIES[(index + 1) % len(CATEGORIES)]
         self._after_edit()
 
     def _zoom_to_selected(self) -> None:
