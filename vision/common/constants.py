@@ -14,6 +14,9 @@ DEFAULT_CONFIDENCE_THRESHOLD: float = 0.6
 DEFAULT_DETECTIONS_OUTPUT_PATH: Path = Path("vision/reviewer/data/detections.json")
 DEFAULT_REVIEWER_OUTPUT_PATH: Path = Path("vision/reviewer/data/output.json")
 
+# Default path to the camera data JSON file
+DEFAULT_CAMERA_DATA_PATH: Path = Path("flight/data/camera.json")
+
 # The shape annotations below are documentation only, no way to enforce
 type Image = Annotated[NDArray[np.uint8], "(height, width, 3)"]
 

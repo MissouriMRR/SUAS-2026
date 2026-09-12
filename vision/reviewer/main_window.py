@@ -48,6 +48,7 @@ class ReviewWindow(QMainWindow):
         self._current_image: str | None = None
         self._updating: bool = False
         self._saved: bool = False
+        self._show_all_images: bool = False
 
         self.setWindowTitle(f"Detection Reviewer - {session.source}")
         self.resize(1600, 950)
@@ -64,24 +65,50 @@ class ReviewWindow(QMainWindow):
         self._build_actions()
         self._build_status_bar()
 
-        self.image_list.setCurrentRow(0)
+        self._populate_image_list()
         # Wait for the viewport to be laid out before selecting the first detection
         QTimer.singleShot(0, self._select_first_detection)
 
     def _build_image_list(self) -> None:
-        """Create the left side list of all images with detections"""
+        """Create the left side list of the images being reviewed"""
         self.image_list: QListWidget = QListWidget(self)
         self.image_list.currentRowChanged.connect(self._on_image_changed)
-        for image in self.session.images:
-            item = QListWidgetItem(Path(image).name)
-            item.setData(Qt.ItemDataRole.UserRole, image)
-            item.setToolTip(image)
-            self.image_list.addItem(item)
-        self._refresh_image_labels()
 
         dock = QDockWidget("Images", self)
         dock.setWidget(self.image_list)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
+
+    def _listed_images(self) -> list[str]:
+        """The images the list is currently showing."""
+        if self._show_all_images:
+            return self.session.all_images
+        return self.session.images
+
+    def _populate_image_list(self) -> None:
+        """Fills the image list, keeping the current image selected if it is still listed."""
+        images = self._listed_images()
+        previous = self._current_image
+        row = images.index(previous) if previous in images else 0
+
+        # Selected row can move around, so reselect the correct one when the image
+        # list is repopulated
+        self.image_list.blockSignals(True)
+        self.image_list.clear()
+        for image in images:
+            item = QListWidgetItem(Path(image).name)
+            item.setData(Qt.ItemDataRole.UserRole, image)
+            item.setToolTip(image)
+            self.image_list.addItem(item)
+        self.image_list.setCurrentRow(row)
+        self.image_list.blockSignals(False)
+
+        self._refresh_image_labels()
+        self._on_image_changed(row)
+
+    def _set_show_all_images(self, show_all: bool) -> None:
+        """Switches between listing every captured image and only the ones with detections."""
+        self._show_all_images = show_all
+        self._populate_image_list()
 
     def _build_detection_list(self) -> None:
         """Create the right side table of all detections for the current image"""
@@ -145,6 +172,16 @@ class ReviewWindow(QMainWindow):
         self._add_to_toolbar("Zoom to &Detection", "Z", self._zoom_to_selected)
         self._add_to_toolbar("Zoom &In", "+", lambda: self.view.zoom_by(1.25))
         self._add_to_toolbar("Zoom &Out", "-", lambda: self.view.zoom_by(0.8))
+        all_images = QAction("Show All &Images", self)
+        all_images.setCheckable(True)
+        all_images.setChecked(False)
+        all_images.setShortcut(QKeySequence("I"))
+        all_images.setToolTip(
+            "List every captured image, not just the ones with detections"
+        )
+        all_images.toggled.connect(self._set_show_all_images)
+        self.toolbar.addAction(all_images)
+
         labels = QAction("Show &Labels", self)
         labels.setCheckable(True)
         labels.setChecked(True)
@@ -289,7 +326,7 @@ class ReviewWindow(QMainWindow):
         to show, and selects its first (or last, when stepping backwards) one.
         Offers to save the review once the last detection has been stepped past.
         """
-        images = self.session.images
+        images = self._listed_images()
         row = self.image_list.currentRow()
         rows = range(row + 1, len(images)) if delta > 0 else range(row - 1, -1, -1)
         for next_row in rows:
