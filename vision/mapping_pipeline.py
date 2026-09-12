@@ -50,6 +50,8 @@ async def wait_for_task_completion(
             TaskStatus.CANCELED,
             TaskStatus.FAILED,
         ]:
+            seconds = info.processing_time / 1000
+            logger.info("Task finished in %d:%05.2f", seconds // 60, seconds % 60)
             break
 
         await asyncio.sleep(interval)
@@ -131,11 +133,14 @@ async def mapping_pipeline(
             "tiles": False,
             "cog": False,
             "orthophoto-png": True,
-            # uncomment these if we need more speed
-            # "feature-quality": "medium",
-            # "min-num-features": 4000,
-            # "matcher-neighbors": 8,
-            # "resize-to": 2048,
+            "feature-quality": "medium",
+            # Disable point cloud
+            "pc-ept": False,
+            "gltf": False,
+            # This will halve the quality of the final image but
+            # will cut total time by 40%
+            # "orthophoto-resolution": 10,
+            "orthophoto-compression": "LZW",
         },
     )
     logger.info("Task UUID: %s", task.uuid)
