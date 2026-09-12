@@ -1,8 +1,9 @@
 """Defines classes for points and line segments and some helper functions"""
 
-from dataclasses import dataclass
 import math
-from typing import Iterable, Iterator
+from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
+from typing import override
 
 
 def lerp(x: float, y: float, position: float) -> float:
@@ -76,6 +77,7 @@ class Point:
     x: float
     y: float
 
+    @override
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
@@ -179,11 +181,14 @@ class LineSegment:
         Calculate the length of this line segment.
     intersects(other: LineSegment) -> bool
         Checks whether this line segment intersects another line segment.
+    closest_point_to(point: Point) -> Point
+        Find the point on this line segment closest to another point.
     """
 
     p_1: Point
     p_2: Point
 
+    @override
     def __hash__(self) -> int:
         return hash((self.p_1, self.p_2))
 
@@ -223,8 +228,12 @@ class LineSegment:
             return False
 
         diff: Point = self.p_2 - self.p_1
-        val1: float = diff.x * (other.p_1.y - self.p_1.y) - diff.y * (other.p_1.x - self.p_1.x)
-        val2: float = diff.x * (other.p_2.y - self.p_1.y) - diff.y * (other.p_2.x - self.p_1.x)
+        val1: float = diff.x * (other.p_1.y - self.p_1.y) - diff.y * (
+            other.p_1.x - self.p_1.x
+        )
+        val2: float = diff.x * (other.p_2.y - self.p_1.y) - diff.y * (
+            other.p_2.x - self.p_1.x
+        )
 
         if val1 * val2 > 0:
             # The two endpoints of the other line segment are on the same side
@@ -238,11 +247,42 @@ class LineSegment:
             lerp(other.p_1.y, other.p_2.y, t_1),
         )
         # How far the intersection point would be along this line segment
-        t_2: float = (diff.x * (point.x - self.p_1.x) + diff.y * (point.y - self.p_1.y)) / (
-            diff.x * diff.x + diff.y * diff.y
-        )
+        t_2: float = (
+            diff.x * (point.x - self.p_1.x) + diff.y * (point.y - self.p_1.y)
+        ) / (diff.x * diff.x + diff.y * diff.y)
 
         return 0 <= t_2 <= 1
+
+    def closest_point_to(self, point: Point) -> Point:
+        """
+        Find the point on this line segment closest to the given point.
+        The point is projected onto this line segment, then the result is clamped
+        to the bounds of the line segment itself.
+
+        Parameters
+        ----------
+        point : Point
+            The point to find the closest point to.
+
+        Returns
+        -------
+        Point
+            The point on this line segment closest to the other point.
+        """
+        # If line is 0 length, just return the first point
+        if self.p_1 == self.p_2:
+            return self.p_1
+
+        slope: Point = self.p_2 - self.p_1
+        # Get vector from first point to requested point
+        diff: Point = point - self.p_1
+
+        # How far along this line segment the projection of the point lies
+        position: float = diff.dot(slope) / slope.dot(slope)
+
+        # Clamp position to [0, 1] to ensure it lies between the endpoints
+        position = min(max(position, 0.0), 1.0)
+        return self.p_1 + (position * slope)
 
     @classmethod
     def from_points(

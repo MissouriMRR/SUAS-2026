@@ -4,12 +4,29 @@ stays within the mission flight boundary.
 """
 
 import heapq
-from typing import Iterable, NamedTuple, TypeAlias
+import logging
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import NamedTuple
 
 from flight.waypoint.geometry import LineSegment, Point
 from flight.waypoint.graph import GraphNode
 
-Node: TypeAlias = GraphNode[Point, float]
+type Node = GraphNode[Point, float]
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class PathfindingGraph:
+    """
+    Stores nodes for path searching and the two boundaries
+    used for safe pathfinding.
+    """
+
+    nodes: list[Node]
+    safe_boundary: list[Point]
+    outer_boundary: list[Point]
 
 
 class _SearchNode(NamedTuple):
@@ -52,7 +69,9 @@ def _shrink_line_segment(line_segment: LineSegment) -> LineSegment:
     """
     direction: Point = line_segment.p_2 - line_segment.p_1
     direction /= direction.distance_from_origin()
-    return LineSegment(line_segment.p_1 + 1e-3 * direction, line_segment.p_2 - 1e-3 * direction)
+    return LineSegment(
+        line_segment.p_1 + 1e-3 * direction, line_segment.p_2 - 1e-3 * direction
+    )
 
 
 def _visitors(start_node: Node, goal_node: Node) -> Iterable[Point]:
@@ -89,8 +108,7 @@ def _visitors(start_node: Node, goal_node: Node) -> Iterable[Point]:
         visitor = visitor.visitor
 
     points.reverse()
-    for point in points:
-        yield point
+    yield from points
 
 
 def _search(
@@ -130,8 +148,7 @@ def _search(
         if node.visitor is not None:
             continue
 
-        # visitor is not None needed to satisfy mypy
-        if visitor == start_node or node == goal_node and visitor is not None:
+        if (visitor == start_node or node == goal_node) and visitor is not None:
             shrunk_straight_path: LineSegment = _shrink_line_segment(
                 LineSegment(visitor.value, node.value)
             )
@@ -147,25 +164,64 @@ def _search(
             return True
 
         visitor = node
-        for node, weight in node.edges.items():
-            if node.visitor is not None:
+        for current_node, weight in node.edges.items():
+            if current_node.visitor is not None:
                 continue
 
             distance_so_far: float = curr_distance_so_far + weight
             heapq.heappush(
                 search_queue,
                 _SearchNode(
-                    distance_so_far + LineSegment(node.value, goal_node.value).length(),
+                    distance_so_far
+                    + LineSegment(current_node.value, goal_node.value).length(),
                     distance_so_far,
                     visitor,
-                    node,
+                    current_node,
                 ),
             )
 
     return False
 
 
-def shortest_path_between(src: Point, dst: Point, boundary: Iterable[Node]) -> Iterable[Point]:
+def find_safe_point(point: Point, boundary_segments: Iterable[LineSegment]) -> Point:
+    """
+    Find the closest point on the boundary to the given point.
+    This is used when the point is inside the outer boundary but not inside
+    the shrunk boundary. We want the drone to safely move inside the closest point
+    of the "safe" boundary before doing any further pathfinding.
+
+    Parameters
+    ----------
+    point : Point
+        The point to find the closest boundary point to.
+    boundary_segments : Iterable[LineSegment]
+        The boundary segments to search for safe points in.
+
+    Returns
+    -------
+    Point
+        The closest point on the boundary to the given point.
+    """
+    closest_point = point
+    min_length = float("inf")
+    for segment in boundary_segments:
+        candidate_point = segment.closest_point_to(point)
+        length = LineSegment(point, candidate_point).length()
+
+        if length < min_length:
+            min_length = length
+            closest_point = candidate_point
+
+    # Nudge the point slightly further inside the boundary
+    # Normalize direction vector before applying
+    vector: Point = closest_point - point
+    vector = vector / vector.distance_from_origin()
+    return closest_point + vector
+
+
+def shortest_path_between(
+    src: Point, dst: Point, graph: PathfindingGraph
+) -> Iterable[Point]:
     """
     Find the shortest path between two points given a graph with all possible
     paths between boundary points.
@@ -176,10 +232,8 @@ def shortest_path_between(src: Point, dst: Point, boundary: Iterable[Node]) -> I
         The point we're currently at.
     dst : Point
         The point to move to.
-    boundary: Iterable[Node]
-        Graph nodes with all the boundary points and possible paths between
-        those points. The points must be in order, but it does not matter
-        whether they are in clockwise or counterclockwise order.
+    graph : PathfindingGraph
+        The pathfinding graph containing the boundary nodes and boundary line segments.
 
     Yields
     -------
@@ -193,33 +247,80 @@ def shortest_path_between(src: Point, dst: Point, boundary: Iterable[Node]) -> I
         If no path was found to the destination. In normal usage, this should
         never occur.
     """
-    boundary_nodes: list[Node] = list(boundary)
-    boundary_line_segments: Iterable[LineSegment] = list(
-        LineSegment.from_points((node.value for node in boundary_nodes), True)
+    boundary_nodes: list[Node] = list(graph.nodes)
+
+    safe_boundary_line_segments: Iterable[LineSegment] = list(
+        LineSegment.from_points(graph.safe_boundary, True)
     )
 
-    straight_path: LineSegment = LineSegment(src, dst)
-    if not any(
-        straight_path.intersects(boundary_line_segment)
-        for boundary_line_segment in boundary_line_segments
+    outer_boundary_line_segments: Iterable[LineSegment] = list(
+        LineSegment.from_points(graph.outer_boundary, True)
+    )
+
+    # If either points are outside the outer boundary, a safe path
+    # is not possible and should throw
+    if not src.is_inside_shape(graph.outer_boundary) or not dst.is_inside_shape(
+        graph.outer_boundary
     ):
-        yield dst
-        return
+        raise RuntimeError(
+            "src or dst is outside the outer boundary, impossible to find safe path"
+        )
 
-    # We use the A* search algorithm
+    # If the straight line path doesn't intersect the safe boundary,
+    # that will obviously be the shortest path.
+    straight_path: LineSegment = LineSegment(src, dst)
+    if src.is_inside_shape(graph.safe_boundary) and dst.is_inside_shape(
+        graph.safe_boundary
+    ):
+        if not any(
+            straight_path.intersects(boundary_line_segment)
+            for boundary_line_segment in safe_boundary_line_segments
+        ):
+            yield dst
+            return
+    else:
+        # One of the points is not inside the safe boundary, but as
+        # long as the path between the points is inside the outer boundary it
+        # is fine
+        if not any(
+            straight_path.intersects(boundary_line_segment)
+            for boundary_line_segment in outer_boundary_line_segments
+        ):
+            yield dst
+            return
 
-    start_node: Node = Node(src)
-    goal_node: Node = Node(dst)
+    start_node: Node = GraphNode(src)
+    goal_node: Node = GraphNode(dst)
     search_queue: list[_SearchNode] = []
+
+    # If either of the two provided points are outside the safe boundary,
+    # we want to find the nearest point on the safe boundary to use as the start/goal
+    safe_entry: Iterable[Point] = []
+    safe_exit: Iterable[Point] = []
+    if not src.is_inside_shape(graph.safe_boundary):
+        logger.info("src is outside safe boundary, finding closest entry point")
+        closest_entry = find_safe_point(src, safe_boundary_line_segments)
+        safe_entry = [closest_entry]
+        start_node = GraphNode(closest_entry)
+
+    if not dst.is_inside_shape(graph.safe_boundary):
+        logger.info("dst is outside safe boundary, finding closest exit point")
+        closest_exit = find_safe_point(dst, safe_boundary_line_segments)
+        # We want to return the real dst so it finishes with going straight to it
+        # The search algo will deal with getting to the closest_exit
+        safe_exit = [dst]
+        goal_node = GraphNode(closest_exit)
+
+    # We use the A* search algorithm once we are inside the safe boundary
 
     for boundary_node in boundary_nodes:
         boundary_node.visitor = None
 
-        straight_path = LineSegment(boundary_node.value, dst)
+        straight_path = LineSegment(boundary_node.value, goal_node.value)
         distance_to_goal: float = straight_path.length()
         boundary_node.connect(goal_node, distance_to_goal)
 
-        straight_path = LineSegment(src, boundary_node.value)
+        straight_path = LineSegment(start_node.value, boundary_node.value)
         distance_from_start: float = straight_path.length()
         heapq.heappush(
             search_queue,
@@ -231,18 +332,26 @@ def shortest_path_between(src: Point, dst: Point, boundary: Iterable[Node]) -> I
             ),
         )
 
-    success: bool = _search(search_queue, start_node, goal_node, boundary_line_segments)
+    success: bool = _search(
+        search_queue, start_node, goal_node, safe_boundary_line_segments
+    )
 
     for boundary_node in boundary_nodes:
         boundary_node.disconnect(goal_node)
 
     if success:
+        # If safe_entry and safe_exit are empty since they aren't needed
+        # they won't yield anything
+        yield from safe_entry
         yield from _visitors(start_node, goal_node)
+        yield from safe_exit
     else:
         raise RuntimeError("no path was found to the destination")
 
 
-def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) -> list[Node]:
+def create_pathfinding_graph(
+    boundary: Iterable[Point], safety_margin: float
+) -> PathfindingGraph:
     """
     Create a graph suitable to be used as the boundary graph when pathfinding.
 
@@ -257,8 +366,8 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
 
     Returns
     -------
-    list[Node]
-        A list of graph nodes constituting the pathfinding graph.
+    PathfindingGraph
+        A pathfinding graph containing the boundary nodes and safe boundary line segments.
     """
     points: list[Point] = list(boundary)
     points_moved_inward: list[Point] = []
@@ -286,7 +395,9 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
             inward_diff *= -1.0
 
         # The length of inward_diff in the direction of perp_vec_1
-        length_divisor: float = abs(inward_diff.dot(perp_vec_1) / perp_vec_1.distance_from_origin())
+        length_divisor: float = abs(
+            inward_diff.dot(perp_vec_1) / perp_vec_1.distance_from_origin()
+        )
         inward_diff /= length_divisor
 
         inward_diff *= safety_margin
@@ -298,7 +409,7 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
 
     # Rather inefficient
     # Thankfully, there shouldn't be too many boundary vertices
-    nodes: list[Node] = [Node(point) for point in points_moved_inward]
+    nodes: list[Node] = [GraphNode(point) for point in points_moved_inward]
     for node_1 in nodes:
         for node_2 in nodes:
             if node_1 == node_2:
@@ -310,7 +421,8 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
             direction: Point = straight_path.p_2 - straight_path.p_1
             direction /= direction.distance_from_origin()
             shrunk_straight_path: LineSegment = LineSegment(
-                straight_path.p_1 + 1e-3 * direction, straight_path.p_2 - 1e-3 * direction
+                straight_path.p_1 + 1e-3 * direction,
+                straight_path.p_2 - 1e-3 * direction,
             )
 
             if straight_path in boundary_line_segments or (
@@ -322,4 +434,4 @@ def create_pathfinding_graph(boundary: Iterable[Point], safety_margin: float) ->
             ):
                 node_1.connect(node_2, straight_path.length())
 
-    return nodes
+    return PathfindingGraph(nodes, points_moved_inward, points)
