@@ -62,7 +62,7 @@ async def move_to(
         # continuously checks current latitude, longitude and altitude of the drone
         drone_lat: float = position.lat
         drone_long: float = position.lon
-        drone_alt: float = position.alt
+        drone_alt: float = position.alt or 0.0
 
         total_distance: float = calculate_distance(
             drone_lat,
@@ -80,4 +80,3 @@ async def move_to(
 
         # tell machine to sleep to prevent constant polling, preventing battery drain
         await asyncio.sleep(0.1)
-    return
