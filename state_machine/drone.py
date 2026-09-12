@@ -285,9 +285,11 @@ class Drone:
         while (
             self.vehicle.location.global_relative_frame.alt
             and self.vehicle.location.global_relative_frame.alt > 0.2
-        ):  # Ensure drone gets within 8in above ground
+        ) and self.vehicle.armed:
+            # Drone has either descended to a point where it is close to the ground
+            # or has already disarmed due to hitting the ground
             await asyncio.sleep(0.5)
-        logger.info("Reached ground.")
+        logger.info("Landed.")
 
     async def open_servo(self, servo_num: int) -> None:
         """
