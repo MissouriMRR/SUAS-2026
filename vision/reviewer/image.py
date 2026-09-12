@@ -163,10 +163,13 @@ class ImageView(QGraphicsView):
         Emitted with a newly selected box, or None when nothing is selected.
     detection_activated : ReviewDetection
         Emitted when a box is double clicked.
+    detection_requested : QPointF
+        Emitted with a new detection point is added in add mode.
     """
 
     selection_changed: ClassVar[Signal] = Signal(ReviewDetection)
     detection_activated: ClassVar[Signal] = Signal(ReviewDetection)
+    detection_requested: ClassVar[Signal] = Signal(QPointF)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -180,6 +183,7 @@ class ImageView(QGraphicsView):
         self._pan_origin: QPointF = QPointF()
         self._labels_visible: bool = True
         self._user_zoomed: bool = False
+        self._add_mode: bool = False
 
         # Enable AA
         self.setRenderHints(
@@ -228,6 +232,31 @@ class ImageView(QGraphicsView):
 
         # Fit image to view size
         self.fit_to_window()
+
+    def add_detection(self, detection: ReviewDetection) -> DetectionItem:
+        """Adds a new detection to the image. Used when one is manually added."""
+        item = DetectionItem(detection)
+        item.set_label_visible(self._labels_visible)
+        self._scene.addItem(item)
+        self._items.append(item)
+        return item
+
+    @property
+    def image_size(self) -> tuple[int, int]:
+        """The shape of the currently displayed image."""
+        pixmap = self._pixmap_item.pixmap()
+        return pixmap.height(), pixmap.width()
+
+    def set_add_mode(self, enabled: bool) -> None:
+        """
+        Enables or disables add mode, handles cursor change
+        """
+        self._add_mode = enabled
+        if enabled:
+            self.viewport().setCursor(Qt.CursorShape.CrossCursor)
+        else:
+            # Back to normal
+            self.viewport().unsetCursor()
 
     def item_for(self, detection: ReviewDetection) -> DetectionItem | None:
         """Get the item for a detection"""
@@ -332,9 +361,26 @@ class ImageView(QGraphicsView):
             item = item.parentItem()
         return None
 
+    def _request_detection(self, event: QMouseEvent) -> bool:
+        """
+        Sends event to detection_requested when clicking with add mode on
+        with the click location
+        """
+        if not self._add_mode or event.button() != Qt.MouseButton.LeftButton:
+            return False
+        # Convert to scene coordinates before emitting event
+        self.detection_requested.emit(self.mapToScene(event.position().toPoint()))
+        # Accept the event to prevent default click behavior
+        event.accept()
+        return True
+
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle enabling dragging/panning the image around"""
+        # If adding a detection we don't want to pan
+        if self._request_detection(event):
+            return
+
         on_empty_space = self._detection_at(event) is None
         if event.button() == Qt.MouseButton.MiddleButton or (
             event.button() == Qt.MouseButton.LeftButton and on_empty_space

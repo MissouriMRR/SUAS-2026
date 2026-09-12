@@ -83,6 +83,10 @@ def filter_detections(
         if detection.category not in best_per_class:
             best_per_class[detection.category] = detection
 
+    logger.debug("Final detections:")
+    for detection in best_per_class.values():
+        logger.debug(detection)
+
     return list(best_per_class.values())
 
 

@@ -22,6 +22,13 @@ logger = logging.getLogger(__name__)
 SUAS_ROOT: Path = Path(__file__).resolve().parents[2]
 IMAGE_ROOT: Path = SUAS_ROOT / "images"
 
+# Possible categories for detections
+CATEGORIES: tuple[str, ...] = ("person", "tent")
+
+# Manual detections should outweigh model detections, so they are given
+# a confidence above 1.0
+MANUAL_CONFIDENCE: float = 1.001
+
 
 class ReviewStatus(Enum):
     """The status of a detection in the reviewer."""
@@ -186,6 +193,57 @@ class ReviewSession:
         ]
 
         return cls(detections, Path(detections_data_path), image_paths, image_root)
+
+    def add_detection(
+        self,
+        image: str,
+        center: tuple[float, float],
+        size: float,
+        category: str,
+        shape: tuple[int, int],
+    ) -> ReviewDetection:
+        """
+        Adds a manual detection.
+
+        Parameters
+        ----------
+        image : str
+            The path of the image the detection belongs to.
+        center : tuple[float, float]
+            The (x, y) point in the image the box is centered on.
+        size : float
+            Size of the bbox in pixels.
+        category : str
+            The category to label the new detection as.
+        shape : tuple[int, int]
+            The (height, width) of the image, used to keep the box in bounds.
+
+        Returns
+        -------
+        detection : ReviewDetection
+            The detection that was added to the session.
+        """
+        height, width = shape
+        half = size / 2.0
+
+        # Bound the box to the image so it doesn't go out of bounds
+        # Shift instead of cutting off bbox so it doesn't get filtered out
+        x = min(max(center[0], half), max(float(width) - half, half))
+        y = min(max(center[1], half), max(float(height) - half, half))
+
+        detection = ReviewDetection(
+            image=image,
+            category=category,
+            bbox=(x - half, y - half, x + half, y + half),
+            confidence=MANUAL_CONFIDENCE,
+            shape=shape,
+            status=ReviewStatus.ACCEPTED,
+        )
+        # Add to detection lists so it is saved
+        self.detections.append(detection)
+        self._by_image.setdefault(image, []).append(detection)
+        logger.info(f"Added a manual {category} detection at {detection.bbox}")
+        return detection
 
     def save(self, path: Path = DEFAULT_REVIEWER_OUTPUT_PATH):
         """Writes the accepted detections back to JSON.
