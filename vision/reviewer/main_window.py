@@ -200,15 +200,15 @@ class ReviewWindow(QMainWindow):
         self._add_to_toolbar("Zoom to &Detection", "Z", self._zoom_to_selected)
         self._add_to_toolbar("Zoom &In", "+", lambda: self.view.zoom_by(1.25))
         self._add_to_toolbar("Zoom &Out", "-", lambda: self.view.zoom_by(0.8))
-        all_images = QAction("Show All &Images", self)
-        all_images.setCheckable(True)
-        all_images.setChecked(False)
-        all_images.setShortcut(QKeySequence("I"))
-        all_images.setToolTip(
+        self.all_images_action: QAction = QAction("Show All &Images", self)
+        self.all_images_action.setCheckable(True)
+        self.all_images_action.setChecked(False)
+        self.all_images_action.setShortcut(QKeySequence("I"))
+        self.all_images_action.setToolTip(
             "List every captured image, not just the ones with detections"
         )
-        all_images.toggled.connect(self._set_show_all_images)
-        self.toolbar.addAction(all_images)
+        self.all_images_action.toggled.connect(self._set_show_all_images)
+        self.toolbar.addAction(self.all_images_action)
 
         labels = QAction("Show &Labels", self)
         labels.setCheckable(True)
@@ -281,6 +281,11 @@ class ReviewWindow(QMainWindow):
         row = self.image_list.currentRow() + delta
         if 0 <= row < self.image_list.count():
             self.image_list.setCurrentRow(row)
+            return
+
+        # Hit the end of the list, prompt to save if in add mode and show all images mode
+        if delta > 0 and self.view.add_mode and self._show_all_images:
+            self._prompt_save()
 
     def _populate_table(self, detections: list[ReviewDetection]) -> None:
         """Update detections table with new detections"""
@@ -377,9 +382,11 @@ class ReviewWindow(QMainWindow):
 
     def _step_image_detection(self, delta: int) -> None:
         """
-        Moves to the nearest image in that direction that still has a detection
-        to show, and selects its first (or last, when stepping backwards) one.
-        Offers to save the review once the last detection has been stepped past.
+        Moves to the previous/next image with detections to review.
+        Handles next action if it is the last image with detections:
+            If all categories have accepted detections, offer to save.
+            If not all categories have accepted detections, change to
+            show all images and go to the first image, enabling add mode.
         """
         images = self._listed_images()
         row = self.image_list.currentRow()
@@ -392,10 +399,18 @@ class ReviewWindow(QMainWindow):
             self._show_detection(detections[0] if delta > 0 else detections[-1])
             return
 
-        # Nothing left in this direction. Stepping off the end of the last image
-        # means every detection has been seen, so offer to save.
+        # Nothing left in this direction, handle next action
         if delta > 0 and self._selected_detection() is not None:
-            self._prompt_save()
+            missing_categories = self.session.missing_categories()
+            if not missing_categories:
+                self._prompt_save()
+            else:
+                self.all_images_action.setChecked(True)
+                self.add_mode_action.setChecked(True)
+                self.image_list.setCurrentRow(0)
+                self.statusBar().showMessage(
+                    f"Switched modes, missing categories: {missing_categories}", 8000
+                )
 
     def _prompt_save(self) -> None:
         """Asks whether to save now that the last detection has been reviewed."""
