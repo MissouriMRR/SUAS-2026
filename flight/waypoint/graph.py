@@ -1,12 +1,9 @@
 """Defines a graph node class"""
 
-from typing import Generic, TypeVar
-
-ValueT = TypeVar("ValueT")
-WeightT = TypeVar("WeightT")
+from typing import override
 
 
-class GraphNode(Generic[ValueT, WeightT]):
+class GraphNode[ValueT, WeightT]:
     """
     A node in a graph.
 
@@ -40,14 +37,16 @@ class GraphNode(Generic[ValueT, WeightT]):
             The value to associate with this node.
         """
         self.value: ValueT = value
-        self.edges: dict["GraphNode[ValueT, WeightT]", WeightT] = {}
-        self.visitor: "GraphNode[ValueT, WeightT] | None" = None
+        self.edges: dict[GraphNode[ValueT, WeightT], WeightT] = {}
+        self.visitor: GraphNode[ValueT, WeightT] | None = None
 
     # Somewhat hacky methods that make this work in a dict/set
 
+    @override
     def __hash__(self) -> int:
         return id(self)
 
+    @override
     def __eq__(self, rhs: object) -> bool:
         return self is rhs
 
