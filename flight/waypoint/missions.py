@@ -11,12 +11,11 @@ from pymavlink import mavutil
 from flight.extract_gps import BoundaryPointUtm, WaypointUtm
 from flight.waypoint import pathfinding
 from flight.waypoint.geometry import LineSegment, Point
-from flight.waypoint.graph import GraphNode
 
 # in meters, the buffer distance inside of flight boundary
 # that pathfinding will avoid (pathfinding will refuse to go this
 # close to the boundary)
-BOUNDARY_SHRINKAGE: Final[float] = 5.0
+BOUNDARY_SHRINKAGE: Final[float] = 20.0
 WAYPOINT_TOLERANCE: Final[float] = 29.0  # 100ft -> 29m
 WAYPOINT_MAX_LAPS: Final[int] = 10  # Taken from SUAS Rule 3.2.2
 
@@ -68,7 +67,7 @@ class WaypointMission:
         for point in boundary:
             boundary_vertices.append(Point(point.easting, point.northing))
 
-        self.search_graph: list[GraphNode[Point, float]] = (
+        self.search_graph: pathfinding.PathfindingGraph = (
             pathfinding.create_pathfinding_graph(boundary_vertices, BOUNDARY_SHRINKAGE)
         )
         self.boundary: list[BoundaryPointUtm] = boundary
@@ -97,10 +96,9 @@ class WaypointMission:
                 )
             )
         except RuntimeError:
-            # No path found, just use a direct path
-            # (this should never happen)
-            logger.warning("No path found, using direct path")
-            path = [start_point, end_point]
+            # Something is seriously wrong
+            logger.error("No path found in pathfinding, mission cannot be loaded")
+            raise
         return path
 
     def add_lap(self) -> None:
