@@ -1,16 +1,20 @@
 """Run tests for waypoint pathfinding."""
 
 import json
-from pathlib import Path
+import logging
 import random
+import sys
 import time
-from typing import Callable, Iterable, TypedDict
+from collections.abc import Callable, Iterable
+from pathlib import Path
+from typing import TypedDict, cast
 
 import utm
 
-from flight.waypoint.geometry import lerp, LineSegment, Point
-from flight.waypoint.graph import GraphNode
 from flight.waypoint import pathfinding
+from flight.waypoint.geometry import LineSegment, Point, lerp
+
+logger = logging.getLogger(__name__)
 
 
 class Coordinate(TypedDict):
@@ -71,8 +75,7 @@ def random_point_in_shape(vertices: Iterable[Point]) -> Point:
 
 
 def draw_random_paths(
-    vertices: list[Point],
-    nodes: list[GraphNode[Point, float]],
+    graph: pathfinding.PathfindingGraph,
     to_svg_coord: Callable[[float, float], tuple[float, float]],
 ) -> Iterable[str]:
     """
@@ -80,10 +83,8 @@ def draw_random_paths(
 
     Parameters
     ----------
-    vertices : list[Point]
-        The vertices of the boundary of the shape in the correct order.
-    nodes : list[GraphNode[Point, float]]
-        The nodes in the pathfinding search graph.
+    graph : pathfinding.PathfindingGraph
+        The pathfinding graph containing the nodes and boundaries.
     to_svg_coord : Callable[[float, float], tuple[float, float]]
         A callable to convert points to the coordinate space of the SVG
         drawing.
@@ -93,7 +94,9 @@ def draw_random_paths(
     str
         Strings to append to the SVG string.
     """
-    points: list[Point] = [random_point_in_shape(vertices) for _ in range(10)]
+    points: list[Point] = [
+        random_point_in_shape(graph.outer_boundary) for _ in range(10)
+    ]
     for line_segment in LineSegment.from_points(points, False):
         src: Point = line_segment.p_1
         dst: Point = line_segment.p_2
@@ -101,7 +104,7 @@ def draw_random_paths(
         dst_x, dst_y = to_svg_coord(dst.x, dst.y)
 
         begin_ns: int = time.perf_counter_ns()
-        path: list[Point] = list(pathfinding.shortest_path_between(src, dst, nodes))
+        path: list[Point] = list(pathfinding.shortest_path_between(src, dst, graph))
         end_ns: int = time.perf_counter_ns()
 
         time_microseconds = (end_ns - begin_ns) / 1000
@@ -120,14 +123,14 @@ def draw_random_paths(
         yield f'<circle cx="{dst_x:.2f}" cy="{dst_y:.2f}" r="4" fill="{color}"/>'
 
 
-def draw_graph(nodes: list[GraphNode[Point, float]]) -> str:
+def draw_graph(graph: pathfinding.PathfindingGraph) -> str:
     """
     Generate an SVG drawing of a graph.
 
     Parameters
     ----------
-    nodes : list[GraphNode[Point, float]]
-        The nodes in the pathfinding search graph.
+    graph : pathfinding.PathfindingGraph
+        The pathfinding search graph, containing nodes and boundaries.
 
     Returns
     -------
@@ -138,19 +141,17 @@ def draw_graph(nodes: list[GraphNode[Point, float]]) -> str:
 
     string_builder: list[str] = []
     string_builder.append(
-        f'<svg xmlns="http://www.w3.org/2000/svg"'
-        f' width="{svg_size}" height="{svg_size}"'
-        f' viewBox="0 0 {svg_size} {svg_size}">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_size}" height="{svg_size}" viewBox="0 0 {svg_size} {svg_size}">',
     )
 
     string_builder.append(
         f'<rect x="0" y="0" width="{svg_size}" height="{svg_size}" fill="white"/>'
     )
 
-    xmin: float = min(node.value.x for node in nodes)
-    xmax: float = max(node.value.x for node in nodes)
-    ymin: float = min(node.value.y for node in nodes)
-    ymax: float = max(node.value.y for node in nodes)
+    xmin: float = min(node.value.x for node in graph.nodes)
+    xmax: float = max(node.value.x for node in graph.nodes)
+    ymin: float = min(node.value.y for node in graph.nodes)
+    ymax: float = max(node.value.y for node in graph.nodes)
 
     size: float = max(xmax - xmin, ymax - ymin)
 
@@ -166,8 +167,8 @@ def draw_graph(nodes: list[GraphNode[Point, float]]) -> str:
         t_y: float = (y - ymin) / (ymax - ymin)
         return t_x * svg_size, (1 - t_y) * svg_size
 
-    for node_1 in nodes:
-        for node_2 in nodes:
+    for node_1 in graph.nodes:
+        for node_2 in graph.nodes:
             if node_1 == node_2:
                 continue
 
@@ -178,17 +179,14 @@ def draw_graph(nodes: list[GraphNode[Point, float]]) -> str:
             x_2, y_2 = to_svg_coord(node_2.value.x, node_2.value.y)
 
             string_builder.append(
-                f'<path d="M {x_1:.2f},{y_1:.2f} L {x_2:.2f},{y_2:.2f}"'
-                ' stroke-width="1" stroke="gray" fill="none"/>'
+                f'<path d="M {x_1:.2f},{y_1:.2f} L {x_2:.2f},{y_2:.2f}" stroke-width="1" stroke="gray" fill="none"/>'
             )
 
-    for node in nodes:
+    for node in graph.nodes:
         x, y = to_svg_coord(node.value.x, node.value.y)
         string_builder.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="4" fill="gray"/>')
 
-    string_builder.append(
-        "".join(draw_random_paths([node.value for node in nodes], nodes, to_svg_coord))
-    )
+    string_builder.append("".join(draw_random_paths(graph, to_svg_coord)))
 
     string_builder.append("</svg>")
 
@@ -247,24 +245,20 @@ def generate_random_waypoints(
     return json.dumps(waypoints)
 
 
-def main() -> None:
+def main(waypoint_data_path: Path) -> None:
     """Run tests for waypoint pathfinding."""
-    waypoint_data_filepath: str = str(
-        Path(__file__)
-        .parent.absolute()
-        .joinpath("..")
-        .joinpath("data")
-        .joinpath("waypoint_data.json")
-    )
-    with open(waypoint_data_filepath, "r", encoding="utf-8") as file:
+    with open(waypoint_data_path, "r", encoding="utf-8") as file:
         waypoint_data: WaypointData = json.load(file)
 
     boundary_coords: list[Coordinate] = waypoint_data["flyzones"]["boundaryPoints"]
     boundary_coords.pop()  # The last point is a duplicate of the first in the json
     force_zone_number: int
     force_zone_letter: str
-    _, _, force_zone_number, force_zone_letter = utm.from_latlon(
-        boundary_coords[0]["latitude"], boundary_coords[0]["longitude"]
+    _, _, force_zone_number, force_zone_letter = cast(
+        "tuple[float, float, int, str]",
+        utm.from_latlon(
+            boundary_coords[0]["latitude"], boundary_coords[0]["longitude"]
+        ),
     )
 
     boundary_vertices: list[Point] = []
@@ -278,18 +272,24 @@ def main() -> None:
     max_altitude: float = waypoint_data["flyzones"]["altitudeMax"]
 
     # Generate random waypoints to use for the waypoint state unit test
-    # Prints json data to be pasted in ../data/waypoint_data.json
     print(
         generate_random_waypoints(
-            boundary_vertices, force_zone_number, force_zone_letter, min_altitude, max_altitude
+            boundary_vertices,
+            force_zone_number,
+            force_zone_letter,
+            min_altitude,
+            max_altitude,
         )
     )
 
-    graph: list[GraphNode[Point, float]] = pathfinding.create_pathfinding_graph(
+    graph: pathfinding.PathfindingGraph = pathfinding.create_pathfinding_graph(
         boundary_vertices, 0.0
     )
     print(draw_graph(graph))
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 2:
+        logger.info("Need to provide a waypoint data file")
+        sys.exit(1)
+    main(Path(sys.argv[1]))
