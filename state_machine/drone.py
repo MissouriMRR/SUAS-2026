@@ -195,6 +195,11 @@ class Drone:
 
         logger.info("Drone discovered!")
 
+        if self._sim_mode is SimMode.REAL:
+            message_1: str = "Waiting for user input to continue... "
+            message_2: str = "(press enter when ready) "
+            input(f"\x1b[38;2;255;255;0m{message_1}\x1b[3m{message_2}\x1b[0m")
+
     def remove_arming_check(self) -> None:
         """
         For use with airsim.
