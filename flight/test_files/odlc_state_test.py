@@ -5,9 +5,9 @@ import json
 import logging
 
 from state_machine.drone import Drone
+from state_machine.flight_settings import FlightSettings
 from state_machine.state_machine import StateMachine
 from state_machine.states import Start
-from state_machine.flight_settings import FlightSettings
 
 
 async def run_test(flight_settings: FlightSettings) -> None:
@@ -57,4 +57,5 @@ async def run_test(flight_settings: FlightSettings) -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(run_test(FlightSettings.from_mission_config()))
