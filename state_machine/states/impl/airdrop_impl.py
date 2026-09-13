@@ -8,8 +8,10 @@ from typing import cast
 
 import aiofiles
 import utm
+from dronekit import LocationGlobalRelative
 
 from flight.extract_gps import extract_gps
+from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings, SimMode
@@ -68,14 +70,35 @@ async def run(self: Airdrop) -> State:
                 AirdropStatus, json.loads(await output.read())
             )
 
-        # Find if there is a loaded airdrop
+        # Find the closest loaded airdrop location
+        position: LocationGlobalRelative = (
+            self.drone.vehicle.location.global_relative_frame
+        )
+        drone_lat: float = position.lat
+        drone_long: float = position.lon
+
         airdrop_to_use: str = ""
         airdrop: str
         config: AirdropConfig
+        closest_distance: float = float("inf")
         for airdrop, config in airdrops.items():
-            if config["loaded"]:
+            if not config["loaded"]:
+                continue
+            try:
+                drop_location = drop_locations[airdrop]
+            except KeyError:
+                continue
+            distance_to_point = calculate_distance(
+                drone_lat,
+                drone_long,
+                0.0,
+                drop_location["latitude"],
+                drop_location["longitude"],
+                0.0,
+            )
+            if distance_to_point < closest_distance:
                 airdrop_to_use = airdrop
-                break
+                closest_distance = distance_to_point
 
         if airdrop_to_use == "":
             logging.warning("No beacons are loaded.")
