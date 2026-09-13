@@ -326,7 +326,7 @@ class CameraIRL(Camera):
                 latitude,
                 longitude,
                 altitude,
-                airspeed=5.0,
+                airspeed=12.5,
                 tolerance=WAYPOINT_TOLERANCE,
             )
         )
@@ -408,9 +408,11 @@ class CameraIRL(Camera):
         gimbal_attitude = self.camera.getAttitude()
 
         attitude: dronekit.Attitude = drone.attitude
-        roll_deg: float = gimbal_attitude[2] # Gimbal has its own imu outputs so we do not need to use the drone's roll and pitch 
+        # Gimbal has its own imu outputs so we do not need to use the drone's roll and pitch
+        roll_deg: float = gimbal_attitude[2]
         pitch_deg: float = gimbal_attitude[1]
-        yaw_deg: float = math.degrees(attitude.yaw) - gimbal_attitude[0] #Gimbal yaw angle decreases as it rotates clockwise
+        # Gimbal yaw angle decreases as it rotates clockwise
+        yaw_deg: float = math.degrees(attitude.yaw) - gimbal_attitude[0]
 
         return CameraParameters(
             rotation_deg=[roll_deg, pitch_deg, yaw_deg],
@@ -557,7 +559,7 @@ class CameraAirSim(Camera):
                 latitude,
                 longitude,
                 altitude,
-                airspeed=5.0,
+                airspeed=12.5,
                 tolerance=WAYPOINT_TOLERANCE,
             )
         )

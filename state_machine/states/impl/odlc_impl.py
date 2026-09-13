@@ -24,8 +24,8 @@ from state_machine.states.state import State
 from vision.common import camera_config
 from vision.odlc_pipeline import odlc_pipeline
 
-HORIZONTAL_PHOTO_SPACING: Final[float] = 15  # meters
-VERTICAL_PHOTO_SPACING: Final[float] = 15  # meters
+HORIZONTAL_PHOTO_SPACING: Final[float] = 25  # meters
+VERTICAL_PHOTO_SPACING: Final[float] = 25  # meters
 
 
 async def run(self: ODLC) -> State:
