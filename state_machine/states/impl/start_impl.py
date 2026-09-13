@@ -3,11 +3,6 @@
 import asyncio
 import logging
 
-from state_machine.state_tracker import (
-    update_drone,
-    update_flight_settings,
-    update_state,
-)
 from state_machine.states.start import Start
 from state_machine.states.state import State
 from state_machine.states.takeoff import Takeoff
@@ -35,9 +30,6 @@ async def run(self: Start) -> State:
 
     """
     try:
-        update_state("Start")
-        update_drone(self.drone)
-        update_flight_settings(self.flight_settings)
         logger.info("Start state running")
 
         await self.drone.connect_drone()

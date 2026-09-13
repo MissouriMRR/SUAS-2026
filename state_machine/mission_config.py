@@ -67,8 +67,6 @@ class MissionConfig(TypedDict):
         The hostname or IP address of the ODM node used to generate the map.
     odm_port : int
         The port of the ODM node used to generate the map.
-    waypoint_laps_run : int
-        The number of laps the drone has run through the waypoint state.
     """
 
     run_title: str
@@ -83,7 +81,6 @@ class MissionConfig(TypedDict):
     map_output_path: str
     odm_ip: str
     odm_port: int
-    waypoint_laps_run: int
 
 
 def get_mission_config() -> MissionConfig:

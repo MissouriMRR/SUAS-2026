@@ -7,6 +7,7 @@ import dronekit
 
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings, SimMode
+from state_machine.mission_progress import MissionProgress
 from state_machine.state_machine import StateMachine
 from state_machine.states import Start
 
@@ -19,7 +20,7 @@ class FlightManager:
     -------
     __init__(self) -> None
         Initialize a flight manager object.
-    run_manager(flight_settings: FlightSettings) -> Awaitable[None]
+    run_manager(flight_settings: FlightSettings, resume: bool) -> Awaitable[None]
         Run the state machine until completion in a separate process.
         Sets the drone address to the simulation or physical address.
     _run_state_machine(drone: Drone) -> None
@@ -40,6 +41,7 @@ class FlightManager:
     async def run_manager(
         self,
         flight_settings: FlightSettings,
+        resume: bool = False,
     ) -> None:
         """
         Run the state machine until completion in a separate process.
@@ -49,8 +51,17 @@ class FlightManager:
         ----------
         flight_settings : FlightSettings
             The flight settings to use.
+        resume : bool, default False
+            Whether to continue the mission recorded in the progress file
+            instead of starting a new one.
         """
         self.drone.use_settings(flight_settings.sim_mode)
+
+        if resume:
+            try:
+                self.drone.progress = MissionProgress.load_progress_file()
+            except FileNotFoundError:
+                pass
 
         logging.info("Initializing drone connection")
         await self.drone.connect_drone()

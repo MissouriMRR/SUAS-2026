@@ -5,10 +5,10 @@ File for the airdrop unit test
 import asyncio
 import logging
 
+from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
 from state_machine.state_machine import StateMachine
 from state_machine.states import Airdrop
-from state_machine.drone import Drone
 
 
 async def run(flight_settings: FlightSettings) -> None:
@@ -42,7 +42,9 @@ async def run(flight_settings: FlightSettings) -> None:
 
         logging.info("Done!")
     except KeyboardInterrupt:
-        logging.critical("Keyboard interrupt detected. Killing state machine and landing drone.")
+        logging.critical(
+            "Keyboard interrupt detected. Killing state machine and landing drone."
+        )
     finally:
         print("Done")
 
@@ -59,7 +61,7 @@ async def airdrop_run(drone: Drone, flight_settings: FlightSettings) -> None:
     flight_settings: FlightSettings
         settings for flight to be passed into the statemachine
     """
-    drone.odlc_scan = False
+    drone.progress.image_capture_complete = True
     await StateMachine(Airdrop(drone, flight_settings), drone, flight_settings).run()
 
 
