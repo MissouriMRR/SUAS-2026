@@ -1,8 +1,8 @@
 """Defines the State abstract base class, which all states should inherit from."""
 
-from abc import ABC, abstractmethod
 import logging
-from typing import Awaitable
+from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
@@ -34,6 +34,9 @@ class State(ABC):
 
     flight_settings() -> FlightSettings
         Get the flight settings this state is bound to.
+
+    record_progress() -> None
+        Record that this state is now running and save the mission progress.
 
     run() -> Awaitable["State"]
         Run this state.
@@ -89,6 +92,13 @@ class State(ABC):
             The flight settings object this state is bound to.
         """
         return self._flight_settings
+
+    def record_progress(self) -> None:
+        """
+        Record that this state is now running and save the mission progress, so
+        an interrupted mission can be resumed from here.
+        """
+        self._drone.record_state(self.name)
 
     @abstractmethod
     def run(self) -> Awaitable["State"] | Awaitable[None]:

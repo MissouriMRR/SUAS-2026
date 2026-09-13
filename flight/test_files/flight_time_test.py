@@ -62,7 +62,7 @@ async def run_test(flight_settings: FlightSettings) -> None:
     drone.use_settings(flight_settings.sim_mode)
 
     # Skip all states, to go from start -> takeoff -> land
-    drone.odlc_scan = False
+    drone.progress.image_capture_complete = True
     flight_settings.skip_waypoint = True
     flight_settings.skip_odlc_and_airdrop = True
 

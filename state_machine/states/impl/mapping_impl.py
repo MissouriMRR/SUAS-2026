@@ -6,11 +6,6 @@ import asyncio
 import logging
 from pathlib import Path
 
-from state_machine.state_tracker import (
-    update_drone,
-    update_flight_settings,
-    update_state,
-)
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.mapping import Mapping
 from state_machine.states.state import State
@@ -35,14 +30,17 @@ async def run(self: Mapping) -> State:
     camera_config.update_sim_mode(self.flight_settings.sim_mode)
 
     try:
-        update_state("Mapping")
-        update_drone(self.drone)
-        update_flight_settings(self.flight_settings)
+        self.record_progress()
 
         logging.info("Mapping")
 
         asyncio.ensure_future(
-            vision_mapping_logic(self, self.flight_settings.map_output_path, self.flight_settings.odm_ip, self.flight_settings.odm_port)
+            vision_mapping_logic(
+                self,
+                self.flight_settings.map_output_path,
+                self.flight_settings.odm_ip,
+                self.flight_settings.odm_port,
+            )
         )
 
         logging.info("Mapping task scheduled")
@@ -62,7 +60,9 @@ async def run(self: Mapping) -> State:
     return Airdrop(self.drone, self.flight_settings)
 
 
-async def vision_mapping_logic(_: Mapping, map_output_path: str, odm_ip: str, odm_port : int) -> None:
+async def vision_mapping_logic(
+    _: Mapping, map_output_path: str, odm_ip: str, odm_port: int
+) -> None:
     """
     Implements the vision logic for the Mapping state.
 

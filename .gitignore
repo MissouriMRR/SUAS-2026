@@ -167,7 +167,7 @@ vision/yolo/training/*.yaml
 *.pt
 *.onnx
 
-/state_machine/state.json
+state_machine/progress.json
 
 # ArduPilot param files
 *.parm

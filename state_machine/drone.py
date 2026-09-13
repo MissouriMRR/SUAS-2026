@@ -12,6 +12,7 @@ from flight.extract_gps import BoundaryPointUtm, GPSData, WaypointUtm, extract_g
 from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.missions import WAYPOINT_MAX_LAPS, WaypointMission
 from state_machine.flight_settings import FlightSettings, SimMode
+from state_machine.mission_progress import MissionProgress
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,9 @@ class Drone:
     baud : int | None
         The baud rate, or None to use the default.
     is_connected
-    odlc_scan : bool
-        A boolean to tell if the odlc zone needs to be scanned, used the
-        first run and if odlc needs to be scanned any other time
+    progress : MissionProgress
+        The progress made through the current mission. This is shared between
+        states, and is what a mission is resumed from.
     sim_mode
     _sim_mode : SimMode | None
         The simulation mode of this drone, or None if one has not been specified.
@@ -68,6 +69,8 @@ class Drone:
         Method to move vehicle above home location, then descend vertically.
     takeoff(self, takeoff_alt: float) -> Awaitable[None]
         Takeoff vertically to the passed altitude.
+    record_state(self, state: str, flight_settings: FlightSettings) -> None
+        Record that a state is now running and save the mission progress.
     use_settings(self, sim_mode: SimMode) -> None
         Modify the connection settings based on the given simulation mode.
     vehicle(self) -> dronekit.Vehicle
@@ -92,7 +95,7 @@ class Drone:
         self._vehicle: dronekit.Vehicle | None = None
         self.address: str = address
         self.baud: int | None = baud
-        self.odlc_scan: bool = True
+        self.progress: MissionProgress = MissionProgress.load_default()
         self.flight_start_time: float | None = None
         self.last_flight_time: float = 0.0
         self.waypoint_mission: WaypointMission | None = None
@@ -332,6 +335,17 @@ class Drone:
         """Close the owned DroneKit Vehicle object."""
         self.vehicle.close()
 
+    def record_state(self, state: str) -> None:
+        """Record that a state is now running and save the mission progress.
+
+        Parameters
+        ----------
+        state : str
+            The name of the state that is now running.
+        """
+        self.progress.state = state
+        self.progress.update_progress_file()
+
     def use_settings(self, sim_mode: SimMode) -> None:
         """Set the simulation mode of this drone and update the connection settings
         according to the simulation mode.
@@ -409,11 +423,19 @@ class Drone:
         boundary_points: list[BoundaryPointUtm] = gps_dict["boundary_points_utm"]
 
         # Initialize the waypoint mission, add all laps for max points
+        laps_to_upload: int = max(
+            WAYPOINT_MAX_LAPS - self.progress.waypoint_laps_complete, 1
+        )
         self.waypoint_mission = WaypointMission(
             self.vehicle, waypoints_utm, boundary_points
         )
-        for _ in range(WAYPOINT_MAX_LAPS):
+        for _ in range(laps_to_upload):
             self.waypoint_mission.add_lap()
         self.waypoint_mission.finalize()  # appends the dummy end command and uploads
 
-        logger.info("Uploaded %d laps", WAYPOINT_MAX_LAPS)
+        logger.info(
+            "Uploaded %d laps (%d of %d already flown)",
+            laps_to_upload,
+            self.progress.waypoint_laps_complete,
+            WAYPOINT_MAX_LAPS,
+        )

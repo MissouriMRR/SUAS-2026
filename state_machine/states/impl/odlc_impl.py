@@ -13,11 +13,6 @@ from flight.camera import CameraAirSim, CameraIRL
 from flight.extract_gps import BoundaryPointUtm, GPSData, extract_gps
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
-from state_machine.state_tracker import (
-    update_drone,
-    update_flight_settings,
-    update_state,
-)
 from state_machine.states.mapping import Mapping
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
@@ -57,9 +52,7 @@ async def run(self: ODLC) -> State:
         return Mapping(self.drone, self.flight_settings)
 
     try:
-        update_state("ODLC")
-        update_drone(self.drone)
-        update_flight_settings(self.flight_settings)
+        self.record_progress()
         logging.info("ODLC state running")
 
         capture_status: asyncio.Event = asyncio.Event()
@@ -77,6 +70,9 @@ async def run(self: ODLC) -> State:
 
         logging.info("ODLC flight scan complete. State completing...")
         flight_task.cancel()
+
+        self.drone.progress.image_capture_complete = True
+        self.drone.progress.update_progress_file()
     except asyncio.CancelledError:
         logging.error("ODLC state canceled")
         traceback.print_exc()

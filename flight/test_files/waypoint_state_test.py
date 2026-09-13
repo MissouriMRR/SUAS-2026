@@ -147,7 +147,6 @@ async def run_test(flight_settings: FlightSettings) -> None:
     drone: Drone = Drone()
     drone.use_settings(flight_settings.sim_mode)
     flight_settings.skip_odlc_and_airdrop = True
-    drone.odlc_scan = False
     await drone.connect_drone()
 
     state_task: asyncio.Task[None] = asyncio.ensure_future(

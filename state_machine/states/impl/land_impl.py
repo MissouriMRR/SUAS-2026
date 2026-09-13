@@ -4,11 +4,6 @@ import asyncio
 import logging
 
 from flight.extract_gps import extract_gps
-from state_machine.state_tracker import (
-    update_drone,
-    update_flight_settings,
-    update_state,
-)
 from state_machine.states.land import Land
 
 
@@ -30,9 +25,6 @@ async def run(self: Land) -> None:
 
     """
     try:
-        update_state("Land")
-        update_drone(self.drone)
-        update_flight_settings(self.flight_settings)
         logging.info("Land state running")
 
         # Get minimum altitude before landing

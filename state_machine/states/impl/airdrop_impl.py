@@ -13,11 +13,6 @@ from flight.extract_gps import extract_gps
 from flight.waypoint.goto import move_to
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings, SimMode
-from state_machine.state_tracker import (
-    update_drone,
-    update_flight_settings,
-    update_state,
-)
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.land import Land
 from state_machine.states.state import State
@@ -49,9 +44,7 @@ async def run(self: Airdrop) -> State:
         return Land(self.drone, self.flight_settings)
 
     try:
-        update_state("Airdrop")
-        update_drone(self.drone)
-        update_flight_settings(self.flight_settings)
+        self.record_progress()
         logging.info("Airdrop state running")
 
         fallback_locations: list[Location] = extract_gps(

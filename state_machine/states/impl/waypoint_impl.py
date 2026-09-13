@@ -10,11 +10,6 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 
 from flight.waypoint.missions import WAYPOINT_MAX_LAPS, WaypointMission
-from state_machine.state_tracker import (
-    update_drone,
-    update_flight_settings,
-    update_state,
-)
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
@@ -48,12 +43,12 @@ async def run(self: Waypoint) -> State:
             await waypoint_logic(self)
             logger.info(
                 "Waypoint state completed after %d lap(s). Currently at a flight time of %d:%05.2f",
-                self.flight_settings.waypoint_laps_run,
+                self.drone.progress.waypoint_laps_complete,
                 int(self.drone.flight_time // 60),
                 self.drone.flight_time % 60,
             )
 
-        return (ODLC if self.drone.odlc_scan else Airdrop)(
+        return (Airdrop if self.drone.progress.image_capture_complete else ODLC)(
             self.drone, self.flight_settings
         )
 
@@ -133,10 +128,12 @@ async def waypoint_logic(self: Waypoint) -> None:
     self : Waypoint
         The waypoint state object.
     """
-    update_state("Waypoint")
-    update_drone(self.drone)
-    update_flight_settings(self.flight_settings)
+    self.record_progress()
     logger.info("Waypoint state running")
+
+    # Laps flown on earlier runs of this mission still count toward the total,
+    # so this run's laps are added on top of them rather than replacing them
+    laps_before: int = self.drone.progress.waypoint_laps_complete
 
     if self.drone.waypoint_mission is None:
         logger.warning("Waypoint mission was not set up yet, setting up now")
@@ -173,7 +170,12 @@ async def waypoint_logic(self: Waypoint) -> None:
     ):
         position_in_lap: int = waypoint_num % waypoints_per_lap
         current_lap: int = waypoint_num // waypoints_per_lap + 1
-        self.flight_settings.waypoint_laps_run = current_lap - 1
+
+        # Save progress after each completed lap
+        laps_completed: int = laps_before + current_lap - 1
+        if laps_completed != self.drone.progress.waypoint_laps_complete:
+            self.drone.progress.waypoint_laps_complete = laps_completed
+            self.drone.progress.update_progress_file()
 
         if (
             not prompt_task.done()
@@ -219,7 +221,10 @@ async def waypoint_logic(self: Waypoint) -> None:
         if prompt_error is not None:
             logger.error("Lap prompt failed: %r", prompt_error)
 
-    self.flight_settings.waypoint_laps_run = self.drone.waypoint_mission.requested_laps
+    self.drone.progress.waypoint_laps_complete = (
+        laps_before + self.drone.waypoint_mission.requested_laps
+    )
+    self.drone.progress.update_progress_file()
 
     # Hand control back to GUIDED mode for subsequent states
     self.drone.vehicle.mode = dronekit.VehicleMode("GUIDED")
