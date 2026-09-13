@@ -9,7 +9,7 @@ from typing import Final
 
 import utm
 
-from flight.camera import CameraAirSim, CameraIRL
+from flight.camera import CameraAirSim, CameraIRL, CameraSim
 from flight.extract_gps import BoundaryPointUtm, GPSData, extract_gps
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
@@ -132,11 +132,11 @@ async def fly_scanning_pattern(self: ODLC, capture_status: asyncio.Event) -> Non
     utm_zone_number = object_boundary_utm[0].zone_number
     utm_zone_letter = object_boundary_utm[0].zone_letter
     if self.flight_settings.sim_mode is SimMode.REAL:
-        camera: CameraIRL | CameraAirSim | None = CameraIRL()
+        camera: CameraIRL | CameraAirSim | CameraSim = CameraIRL()
     elif self.flight_settings.sim_mode is SimMode.AIRSIM:
         camera = CameraAirSim()
     else:
-        camera = None
+        camera = CameraSim()
     reverse_direction: bool = False
     for i in range(step_count + 1):
         lerp_t = i / step_count
@@ -171,19 +171,17 @@ async def fly_scanning_pattern(self: ODLC, capture_status: asyncio.Event) -> Non
             end_easting, end_northing, utm_zone_number, utm_zone_letter
         )
 
-        if camera is not None:
-            await camera.scanning_move_to(
-                self.drone.vehicle,
-                lat,
-                lon,
-                gps_dict["scan_altitude"],
-                HORIZONTAL_PHOTO_SPACING,
-            )
+        await camera.scanning_move_to(
+            self.drone.vehicle,
+            lat,
+            lon,
+            gps_dict["scan_altitude"],
+            HORIZONTAL_PHOTO_SPACING,
+        )
 
         reverse_direction = not reverse_direction
 
-    if camera is not None:
-        camera.disconnect()
+    camera.disconnect()
     capture_status.set()
     logging.info("Scan complete")
 
