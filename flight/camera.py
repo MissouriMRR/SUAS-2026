@@ -646,3 +646,106 @@ class CameraAirSim(Camera):
             drone_coordinates=[location.lat, location.lon],
             altitude=location.alt,
         )
+
+
+class CameraSim(Camera):
+    """
+    Camera class for sim runs that will simulate the movement done in the
+    Camera class without actually taking any photos.
+
+    Methods
+    -------
+    capture_photo(path: str = f"{os.getcwd()}/images/") -> None
+    scanning_move_to(
+        drone: dronekit.Vehicle,
+        latitude: float,
+        longitude: float,
+        altitude: float,
+        interval: float
+    ) -> None
+        Move the drone to the specified latitude, longitude, and altitude.
+    _get_camera_parameters(drone: dronekit.Vehicle) -> None
+    """
+
+    @override
+    async def capture_photo(
+        self, path: str = f"{os.getcwd()}/images/"
+    ) -> tuple[str, str] | None:
+        return None
+
+    @override
+    async def scanning_move_to(
+        self,
+        drone: dronekit.Vehicle,
+        latitude: float,
+        longitude: float,
+        altitude: float,
+        interval: float,
+    ) -> None:
+        """
+        Moves to the drone to the requested waypoint while taking photos for the ODLC and Mapping states.
+
+        Parameters
+        ----------
+        drone : dronekit.Vehicle
+            The drone object with the camera.
+        latitude : float
+            The requested latitude to move to, in degrees.
+        longitude : float
+            The requested longitude to move to, in degrees.
+        altitude : float
+            The requested altitude to go to, in meters.
+        interval : float
+            The interval, in meters, at which to take photos.
+        """
+        goto_task: asyncio.Task[None] = asyncio.ensure_future(
+            move_to(
+                drone,
+                latitude,
+                longitude,
+                altitude,
+                airspeed=12.5,
+                tolerance=WAYPOINT_TOLERANCE,
+            )
+        )
+
+        start_pos: dronekit.LocationGlobalRelative = (
+            drone.location.global_relative_frame
+        )
+        assert (
+            start_pos.alt is not None
+        )  # throw if altitude is not present for any reason
+
+        start_lat: float = start_pos.lat
+        start_lon: float = start_pos.lon
+        start_alt: float = start_pos.alt
+
+        next_interval_count: int = 1
+        while not goto_task.done():
+            position: dronekit.LocationGlobalRelative = (
+                drone.location.global_relative_frame
+            )
+            assert position.alt is not None
+
+            drone_lat: float = position.lat
+            drone_long: float = position.lon
+            drone_alt: float = position.alt
+
+            distance: float = calculate_distance(
+                drone_lat, drone_long, drone_alt, start_lat, start_lon, start_alt
+            )
+
+            if distance >= next_interval_count * interval:
+                next_interval_count += 1
+                logger.info(f"Capturing photo at {distance}m")
+
+            await asyncio.sleep(0.25)
+        await asyncio.sleep(1.0)
+
+        logger.info("Capturing photo at final position")
+
+    @override
+    async def _get_camera_parameters(
+        self, drone: dronekit.Vehicle
+    ) -> CameraParameters | None:
+        return None
