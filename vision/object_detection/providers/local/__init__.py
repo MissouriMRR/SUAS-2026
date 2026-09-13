@@ -12,7 +12,7 @@ class LocalInferenceProvider(InferenceProvider):
     A provider to run object detection inference using the local machine.
     """
 
-    def __init__(self, max_runners: int = 3):
+    def __init__(self, max_runners: int = 1):
         """Set up internal variables and preload resources"""
         super().__init__()
         self.max_runners = max_runners
