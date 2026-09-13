@@ -148,8 +148,8 @@ async def fly_scanning_pattern(self: ODLC, capture_status: asyncio.Event) -> Non
         object_boundary_utm[1].easting - object_boundary_utm[0].easting,
         object_boundary_utm[1].northing - object_boundary_utm[0].northing,
     ) >= math.hypot(
-        object_boundary_utm[2].easting - object_boundary_utm[0].easting,
-        object_boundary_utm[2].northing - object_boundary_utm[0].northing,
+        object_boundary_utm[3].easting - object_boundary_utm[0].easting,
+        object_boundary_utm[3].northing - object_boundary_utm[0].northing,
     )
 
     # Ensure the first edge is long
