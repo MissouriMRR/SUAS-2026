@@ -7,10 +7,12 @@ import traceback
 from pathlib import Path
 from typing import Final
 
+import dronekit
 import utm
 
 from flight.camera import CameraAirSim, CameraIRL, CameraSim
 from flight.extract_gps import BoundaryPointUtm, GPSData, extract_gps
+from flight.waypoint.calculate_distance import calculate_distance
 from flight.waypoint.goto import move_to
 from state_machine.flight_settings import SimMode
 from state_machine.states.mapping import Mapping
@@ -81,6 +83,47 @@ async def run(self: ODLC) -> State:
     return Mapping(self.drone, self.flight_settings)
 
 
+def start_from_closest_corner(
+    drone: dronekit.Vehicle, object_boundary_utm: list[BoundaryPointUtm]
+) -> list[BoundaryPointUtm]:
+    """
+    Reorder the object boundary so that the corner closest to the current
+    position comes first, causing the scan pattern to start from there
+
+    Parameters
+    ----------
+    drone : dronekit.Vehicle
+        The drone whose current position the corners are compared against.
+    object_boundary_utm : list[BoundaryPointUtm]
+        The corners of the search area, in order around its perimeter.
+
+    Returns
+    -------
+    list[BoundaryPointUtm]
+        The corners in the same order around the perimeter, starting at the
+        corner closest to the drone.
+    """
+    position: dronekit.LocationGlobalRelative = drone.location.global_relative_frame
+    drone_lat: float = position.lat
+    drone_lon: float = position.lon
+
+    closest_index: int = 0
+    closest_distance: float = float("inf")
+    for index, corner in enumerate(object_boundary_utm):
+        lat: float
+        lon: float
+        lat, lon = utm.to_latlon(
+            corner.easting, corner.northing, corner.zone_number, corner.zone_letter
+        )
+        distance: float = calculate_distance(drone_lat, drone_lon, 0.0, lat, lon, 0.0)
+        if distance < closest_distance:
+            closest_index = index
+            closest_distance = distance
+
+    # Take closest_index first then in order after that
+    return object_boundary_utm[closest_index:] + object_boundary_utm[:closest_index]
+
+
 async def fly_scanning_pattern(self: ODLC, capture_status: asyncio.Event) -> None:
     """
     This will fly the drone in a zig-zag pattern, scanning the entire search area.
@@ -94,7 +137,9 @@ async def fly_scanning_pattern(self: ODLC, capture_status: asyncio.Event) -> Non
     """
 
     gps_dict: GPSData = extract_gps(self.flight_settings.mission_data_path)
-    object_boundary_utm: list[BoundaryPointUtm] = gps_dict["object_boundary_utm"]
+    object_boundary_utm: list[BoundaryPointUtm] = start_from_closest_corner(
+        self.drone.vehicle, gps_dict["object_boundary_utm"]
+    )
 
     # The mapping area should be roughly rectangular with 4 vertices
     # We are going to travel in line segments parallel to the long edges
