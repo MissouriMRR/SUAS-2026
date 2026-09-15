@@ -69,64 +69,54 @@
   },
   "waypoints": [
     {
-      "latitude": 36.21736924188489,
-      "longitude": -96.00272095680651,
-      "altitude": 51.0
+      "latitude": 36.2187499,
+      "longitude": -96.0027362,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21917160230679,
-      "longitude": -96.00361219988081,
-      "altitude": 51.0
+      "latitude": 36.2114374,
+      "longitude": -96.0027516,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.22003446416741,
-      "longitude": -96.00732069124298,
-      "altitude": 51.0
+      "latitude": 36.2114893,
+      "longitude": -96.0064316,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21925833262979,
-      "longitude": -96.01091516011213,
-      "altitude": 51.0
+      "latitude": 36.2142680,
+      "longitude": -96.0093499,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21800362763319,
-      "longitude": -96.01288586511856,
-      "altitude": 51.0
+      "latitude": 36.2170466,
+      "longitude": -96.0122681,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21580116046479,
-      "longitude": -96.0105988393989,
-      "altitude": 51.0
+      "latitude": 36.2186393,
+      "longitude": -96.0121286,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21354476829925,
-      "longitude": -96.00958418465031,
-      "altitude": 51.0
+      "latitude": 36.2194875,
+      "longitude": -96.0099721,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21260734066436,
-      "longitude": -96.00833801135664,
-      "altitude": 51.0
+      "latitude": 36.2198857,
+      "longitude": -96.0076332,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21199188147197,
-      "longitude": -96.00773792928942,
-      "altitude": 51.0
+      "latitude": 36.2195914,
+      "longitude": -96.0051012,
+      "altitude": 97.5
     },
     {
-      "latitude": 36.21135057889186,
-      "longitude": -96.00320882671765,
-      "altitude": 51.0
-    },
-    {
-      "latitude": 36.21311238245522,
-      "longitude": -96.00467719800245,
-      "altitude": 51.0
-    },
-    {
-      "latitude": 36.21642995099624,
-      "longitude": -96.00510251981895,
-      "altitude": 51.0
+      "latitude": 36.2187431,
+      "longitude": -96.0027409,
+      "altitude": 97.5
     }
   ],
   "scanAltitude": 51.0,

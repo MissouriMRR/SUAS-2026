@@ -6,7 +6,7 @@
     "standard_object_count": 2
   },
   "sim_mode_config": {
-    "mission_data_path": "flight/data/golf_data.json",
+    "mission_data_path": "flight/data/waypoint_zonex.json",
     "standard_object_count": 2
   },
   "airsim_mode_config": {
