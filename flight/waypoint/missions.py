@@ -40,7 +40,15 @@ class WaypointMission:
         self.mission: list[Command] = []
         # Mission sequence number of each real waypoint (the ones from the
         # mission data), excluding intermediary boundary-avoidance points.
-        self.waypoint_seqs: list[int] = []
+        # None for waypoints deliberately left out of the uploaded mission
+        self.waypoint_seqs: list[int | None] = []
+        # Indexes of `waypoint_seqs` of unuploaded waypoints that will be
+        # counted as reached by proximity instead
+        self.unuploaded_reached: set[int] = set()
+        # Last true waypoint of the previous lap, so the next lap is
+        # routed from there instead of from a waypoint never uploaded
+        self.last_routed_point: Point | None = None
+        self.last_routed_altitude: float = 0.0
         self.uploaded_laps: int = 0
         self.requested_laps: int = 0
         self.finalized: bool = False
@@ -101,23 +109,37 @@ class WaypointMission:
             raise
         return path
 
-    def add_lap(self) -> None:
+    def add_lap(self, is_last_lap: bool = False) -> None:
         """
         Adds a lap of waypoints from self.waypoints to the stored mission,
         avoiding the boundary using intermediary points if needed.
+
+        The final waypoint of the lap is intentionally not uploaded, except
+        for the last lap
+
+        Parameters
+        ----------
+        is_last_lap : bool
+            Whether this is the final lap being added to the mission.
         """
         last_point: Point
         last_altitude: float
-        if len(self.mission) == 0:
+        if self.last_routed_point is None:
             # First lap, get drone position, and take first point altitude
             last_point, _ = self._get_drone_pos()
             last_altitude = self.waypoints[0].altitude
         else:
-            # Subsequent laps are routed from the previous lap's final waypoint
-            last_point = Point(self.waypoints[-1].easting, self.waypoints[-1].northing)
-            last_altitude = self.waypoints[-1].altitude
+            # Subsequent laps are routed from wherever the previous lap's last
+            # uploaded waypoint left the drone
+            last_point = self.last_routed_point
+            last_altitude = self.last_routed_altitude
 
-        for waypoint in self.waypoints:
+        for waypoint_index, waypoint in enumerate(self.waypoints):
+            if waypoint_index == len(self.waypoints) - 1 and not is_last_lap:
+                # Skip the last waypoint of a lap
+                self.waypoint_seqs.append(None)
+                continue
+
             # Find the best path to the next waypoint,
             # avoiding the boundary.
             path = self._find_best_path(
@@ -172,6 +194,8 @@ class WaypointMission:
 
             last_point = Point(waypoint.easting, waypoint.northing)
             last_altitude = waypoint.altitude
+        self.last_routed_point = last_point
+        self.last_routed_altitude = last_altitude
         self.uploaded_laps += 1
 
     def request_lap(self) -> None:
@@ -196,6 +220,9 @@ class WaypointMission:
         """
         if self.finalized:
             return
+        if len(self.mission) == 0:
+            logger.error("Mission has no uploadable commands, cannot finalize")
+            return
         self.mission.append(self.mission[-1])
         self.finalized = True
         self.upload()
@@ -211,6 +238,34 @@ class WaypointMission:
         _ = self.mission.pop()
         self.finalized = False
 
+    def is_uploaded(self, waypoint_num: int) -> bool:
+        """
+        Whether a real waypoint is part of the mission uploaded to the vehicle.
+        """
+        if not 0 <= waypoint_num < len(self.waypoint_seqs):
+            return False
+        return self.waypoint_seqs[waypoint_num] is not None
+
+    def mark_reached(self, waypoint_num: int) -> None:
+        """
+        Count an unuploaded waypoint as reached. Uploaded waypoints are
+        tracked through the vehicle's mission index, so they ignore this.
+        """
+        if self.is_uploaded(waypoint_num):
+            return
+        self.unuploaded_reached.add(waypoint_num)
+
+    def passed_unuploaded(self, waypoint_num: int) -> bool:
+        """
+        Whether the drone has already flown past an unuploaded waypoint, and
+        so will never get any closer to it than it is right now.
+        """
+        next_seq: int = self.command_sequence.next
+        for seq in self.waypoint_seqs[waypoint_num + 1 :]:
+            if seq is not None:
+                return next_seq > seq
+        return self.finalized and next_seq >= len(self.mission)
+
     def waypoints_reached(self) -> int:
         """
         Count how many real waypoints (no intermediaries) the drone has reached so far,
@@ -223,7 +278,15 @@ class WaypointMission:
             The number of real waypoints reached since the mission started.
         """
         next_seq: int = self.command_sequence.next
-        return sum(1 for seq in self.waypoint_seqs if next_seq > seq)
+        reached: int = 0
+        for index, seq in enumerate(self.waypoint_seqs):
+            if seq is None:
+                if index not in self.unuploaded_reached:
+                    break
+            elif next_seq <= seq:
+                break
+            reached += 1
+        return reached
 
     def distance_to_waypoint(self, waypoint_num: int) -> float:
         """

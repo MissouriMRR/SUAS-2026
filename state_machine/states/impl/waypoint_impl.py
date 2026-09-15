@@ -9,14 +9,18 @@ import dronekit
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 
-from flight.waypoint.missions import WAYPOINT_MAX_LAPS, WaypointMission
+from flight.waypoint.missions import (
+    WAYPOINT_MAX_LAPS,
+    WAYPOINT_TOLERANCE,
+    WaypointMission,
+)
 from state_machine.states.airdrop import Airdrop
 from state_machine.states.odlc import ODLC
 from state_machine.states.state import State
 from state_machine.states.waypoint import Waypoint
 
 WAYPOINT_AIR_SPEED: Final[float] = 25.0  # in meters/second
-MISSION_POLL_INTERVAL: Final[float] = 0.1  # in seconds
+MISSION_POLL_INTERVAL: Final[float] = 0.05  # in seconds
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +200,20 @@ async def waypoint_logic(self: Waypoint) -> None:
             radius,
             radius * 3.28084,
         )
+        if not self.drone.waypoint_mission.is_uploaded(waypoint_num):
+            if radius <= WAYPOINT_TOLERANCE:
+                self.drone.waypoint_mission.mark_reached(waypoint_num)
+            elif self.drone.waypoint_mission.passed_unuploaded(waypoint_num):
+                logger.warning(
+                    "Flew past waypoint %d of lap %d at %.1f m / %.1f ft, outside the %.1f m tolerance",
+                    position_in_lap + 1,
+                    current_lap,
+                    radius,
+                    radius * 3.28084,
+                    WAYPOINT_TOLERANCE,
+                )
+                self.drone.waypoint_mission.mark_reached(waypoint_num)
+
         if self.drone.waypoint_mission.waypoints_reached() > waypoint_num:
             # This means the drone reached the waypoint it was going towards
             flight_time: float = self.drone.flight_time

@@ -429,8 +429,8 @@ class Drone:
         self.waypoint_mission = WaypointMission(
             self.vehicle, waypoints_utm, boundary_points
         )
-        for _ in range(laps_to_upload):
-            self.waypoint_mission.add_lap()
+        for lap in range(laps_to_upload):
+            self.waypoint_mission.add_lap(is_last_lap=lap == laps_to_upload - 1)
         self.waypoint_mission.finalize()  # appends the dummy end command and uploads
 
         logger.info(
