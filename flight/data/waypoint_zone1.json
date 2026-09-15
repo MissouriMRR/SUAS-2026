@@ -50,6 +50,10 @@
     ],
     "searchBoundary": [
       {
+        "latitude": 36.213147,
+        "longitude": -96.005545
+      },
+      {
         "latitude": 36.211822,
         "longitude": -96.005545
       },
@@ -60,10 +64,6 @@
       {
         "latitude": 36.213147,
         "longitude": -96.002627
-      },
-      {
-        "latitude": 36.213147,
-        "longitude": -96.005545
       }
     ]
   },
@@ -71,64 +71,64 @@
     {
       "latitude": 36.2187499,
       "longitude": -96.0027362,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2114374,
       "longitude": -96.0027516,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2114893,
       "longitude": -96.0064316,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2142680,
       "longitude": -96.0093499,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2170466,
       "longitude": -96.0122681,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2186393,
       "longitude": -96.0121286,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2194875,
       "longitude": -96.0099721,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2198857,
       "longitude": -96.0076332,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2195914,
       "longitude": -96.0051012,
-      "altitude": 67.1
+      "altitude": 64.62
     },
     {
       "latitude": 36.2187431,
       "longitude": -96.0027409,
-      "altitude": 67.1
+      "altitude": 64.62
     }
   ],
   "scanAltitude": 51.0,
   "scanHeading": 13,
   "defaultAirdropPoints": [
     {
-      "latitude": 36.21732,
-      "longitude": -96.008267
+      "latitude": 36.212485,
+      "longitude": -96.004961
     },
     {
-      "latitude": 36.217075,
-      "longitude": -96.009992
+      "latitude": 36.212485,
+      "longitude": -96.003211
     }
   ],
   "airdropAltitude": 51.0

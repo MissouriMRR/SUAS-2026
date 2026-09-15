@@ -50,20 +50,20 @@
     ],
     "searchBoundary": [
       {
-        "latitude": 36.213469,
-        "longitude": -96.002635
-      },
-      {
-        "latitude": 36.215795,
-        "longitude": -96.002635
-      },
-      {
         "latitude": 36.215795,
         "longitude": -96.004286
       },
       {
         "latitude": 36.213469,
         "longitude": -96.004286
+      },
+      {
+        "latitude": 36.213469,
+        "longitude": -96.002635
+      },
+      {
+        "latitude": 36.215795,
+        "longitude": -96.002635
       }
     ]
   },
@@ -71,52 +71,52 @@
     {
       "latitude": 36.2187499,
       "longitude": -96.0027362,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2114374,
       "longitude": -96.0027516,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2114893,
       "longitude": -96.0064316,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2142680,
       "longitude": -96.0093499,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2170466,
       "longitude": -96.0122681,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2186393,
       "longitude": -96.0121286,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2194875,
       "longitude": -96.0099721,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2198857,
       "longitude": -96.0076332,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2195914,
       "longitude": -96.0051012,
-      "altitude": 97.5
+      "altitude": 94.49
     },
     {
       "latitude": 36.2187431,
       "longitude": -96.0027409,
-      "altitude": 97.5
+      "altitude": 94.49
     }
   ],
   "scanAltitude": 51.0,

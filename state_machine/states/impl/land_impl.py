@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 from flight.extract_gps import extract_gps
+from flight.waypoint.goto import move_to
 from state_machine.states.land import Land
 
 
@@ -30,6 +31,12 @@ async def run(self: Land) -> None:
         # Get minimum altitude before landing
         gps_dict = extract_gps(self.flight_settings.mission_data_path)
         min_alt = gps_dict["altitude_limits"][0]
+
+        if self.flight_settings.mission_data_path == "flight/data/waypoint_zone1.json":
+            # Avoid zone2
+            await move_to(
+                self.drone.vehicle, 36.2131134, -96.0045938, gps_dict["scan_altitude"]
+            )
 
         # Instruct the drone to land
         self.drone.vehicle.airspeed = 20
