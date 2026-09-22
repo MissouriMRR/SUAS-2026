@@ -283,3 +283,5 @@ def calculate_airdrop_wind_offset(wind_speed: float, drop_altitude: float) -> fl
 
 # Setting the run_callable attribute of the Airdrop class to the run function
 Airdrop.run_callable = run
+
+__all__ = ["Airdrop"]

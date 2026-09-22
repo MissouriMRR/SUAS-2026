@@ -1,6 +1,7 @@
 """Declares the Mapping state class."""
 
-from typing import Awaitable, Callable, ClassVar
+from collections.abc import Awaitable, Callable
+from typing import ClassVar, override
 
 from state_machine.states.state import State
 
@@ -26,5 +27,6 @@ class Mapping(State):
 
     run_callable: ClassVar[Callable[["Mapping"], Awaitable[State]]]
 
+    @override
     def run(self) -> Awaitable[State]:
         return self.run_callable()

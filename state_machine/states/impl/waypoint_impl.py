@@ -234,3 +234,5 @@ async def waypoint_logic(self: Waypoint) -> None:
 
 # Set the run_callable attribute of the Waypoint class to the run function
 Waypoint.run_callable = run
+
+__all__ = ["Waypoint"]

@@ -1,6 +1,7 @@
 """Declares the Land state class."""
 
-from typing import Awaitable, Callable, ClassVar
+from collections.abc import Awaitable, Callable
+from typing import ClassVar, override
 
 from state_machine.states.state import State
 
@@ -24,5 +25,6 @@ class Land(State):
 
     run_callable: ClassVar[Callable[["Land"], Awaitable[None]]]
 
+    @override
     def run(self) -> Awaitable[None]:
         return self.run_callable()

@@ -31,7 +31,6 @@ async def run_servo_test(servo_id: int) -> None:
     await drone.open_servo(servo_id)
     await asyncio.sleep(5)
     await drone.close_servo(servo_id)
-    return
 
 
 if __name__ == "__main__":

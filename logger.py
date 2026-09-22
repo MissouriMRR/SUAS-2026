@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 import logging
-
-from typing import TextIO
-from multiprocessing import Queue
-from logging import Formatter, FileHandler, StreamHandler
+from datetime import UTC, datetime
+from logging import FileHandler, Formatter, StreamHandler
 from logging.handlers import QueueHandler, QueueListener
-from datetime import datetime
+from multiprocessing import Queue
+from typing import TextIO
 
-from colorlog import ColoredFormatter
-
-LOG_FILE: str = f"logs/{datetime.now()}.log"
+LOG_FILE: str = (
+    f"logs/{datetime.now(UTC).astimezone().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+)
 LOG_LEVEL = logging.DEBUG
-LOG_FORMAT: str = "%(levelname)s | %(asctime)s @ %(processName)s:%(funcName)s > %(message)s"
-COLOR_LOG_FORMAT: str = (
-    "%(log_color)s%(levelname)s | %(asctime)s @ "
-    + " %(processName)s:%(funcName)s > %(message)s%(reset)s"
+LOG_FORMAT: str = (
+    "%(levelname)s | %(asctime)s @ %(processName)s:%(funcName)s > %(message)s"
 )
 
 
@@ -41,9 +38,7 @@ def init_logger(queue: Queue[str]) -> QueueListener:
     file: FileHandler = logging.FileHandler(LOG_FILE)
     file.setFormatter(file_formatter)
 
-    console_formatter: Formatter = ColoredFormatter(COLOR_LOG_FORMAT)
     console: StreamHandler[TextIO] = logging.StreamHandler()
-    console.setFormatter(console_formatter)
 
     return QueueListener(queue, file, console)
 

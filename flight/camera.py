@@ -8,9 +8,9 @@ import math
 import os
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
-from typing import Any, override
+from typing import override
 
-import aiofiles  # type: ignore
+import aiofiles
 import aiohttp
 import airsim
 import dronekit
@@ -21,6 +21,8 @@ from flight.waypoint.goto import move_to
 from vision.common.constants import CameraParameters
 
 WAYPOINT_TOLERANCE: int = 1  # in meters
+IMAGES_DIR: str = f"{os.getcwd()}/images"
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,9 +69,7 @@ class Camera(ABC):
         self.session_id: int = 0
 
     @abstractmethod
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str] | None:
+    async def capture_photo(self, path: str = IMAGES_DIR) -> tuple[str, str] | None:
         """
         Capture a photo and save it to the specified path.
 
@@ -202,9 +202,7 @@ class CameraIRL(Camera):
         logger.info("IRL Camera initialized")
 
     @override
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str]:
+    async def capture_photo(self, path: str = IMAGES_DIR) -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -234,8 +232,6 @@ class CameraIRL(Camera):
         # Retrieve the image from the gimbal SD card
         session: aiohttp.ClientSession
         async with aiohttp.ClientSession() as session:
-            json_data: dict[str, Any]
-
             async with session.get(
                 f"{self.base_api_url}/api/v1/getmediacount?media_type=0&path=101SIYI_IMG"
             ) as response:
@@ -249,8 +245,7 @@ class CameraIRL(Camera):
 
             # Have to request for all images in the directory due to a SIYI firmware bug
             async with session.get(
-                f"{self.base_api_url}/api/v1/getmedialist?"
-                f"media_type=0&path=101SIYI_IMG&start=0&count={media_count}"
+                f"{self.base_api_url}/api/v1/getmedialist?media_type=0&path=101SIYI_IMG&start=0&count={media_count}"
             ) as response:
                 json_data = await response.json()
                 if response.status != 200:
@@ -488,9 +483,7 @@ class CameraAirSim(Camera):
         logger.info("Airsim Camera initialized")
 
     @override
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str]:
+    async def capture_photo(self, path: str = IMAGES_DIR) -> tuple[str, str]:
         """
         Capture a photo and save it to the specified path.
 
@@ -668,9 +661,7 @@ class CameraSim(Camera):
     """
 
     @override
-    async def capture_photo(
-        self, path: str = f"{os.getcwd()}/images/"
-    ) -> tuple[str, str] | None:
+    async def capture_photo(self, path: str = IMAGES_DIR) -> tuple[str, str] | None:
         return None
 
     @override
