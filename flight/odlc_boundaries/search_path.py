@@ -5,10 +5,11 @@ Functions for generating search paths to cover an area for finding the standard 
 # pylint: disable=C0200
 # NOTE: removes "consider using enumerate" error
 
-import logging
 import asyncio
-import utm
+import logging
+from typing import cast
 
+import utm
 from shapely.geometry import Polygon
 
 from flight.waypoint.goto import move_to
@@ -31,8 +32,9 @@ def latlon_to_utm(coords: dict[str, float]) -> dict[str, float]:
         An updated dictionary with additional keys and values with utm data
     """
 
-    utm_coords: tuple[float, float, int, str] = utm.from_latlon(
-        coords["latitude"], coords["longitude"]
+    utm_coords: tuple[float, float, int, str] = cast(
+        "tuple[float, float, int, str]",
+        utm.from_latlon(coords["latitude"], coords["longitude"]),
     )
     coords["utm_x"] = utm_coords[0]
     coords["utm_y"] = utm_coords[1]
@@ -91,16 +93,13 @@ def generate_search_paths(
     # shrink boundary by a fixed amount until the area it covers is 0
     # add the smaller boundary to our list of search paths on each iteration
     while boundary_shape.area > 0:
-        generated_search_paths.append(
-            tuple(zip(*boundary_shape.exterior.coords.xy))  # type: ignore[arg-type]
-        )
+        generated_search_paths.extend(zip(*boundary_shape.exterior.coords.xy))
         boundary_shape = boundary_shape.buffer(buffer_distance, single_sided=True)
 
     return generated_search_paths
 
 
 # duplicate code disabled for testing function
-# pylint: disable=duplicate-code
 async def run() -> None:
     """
     This function is just a driver to test the goto function and runs through the
@@ -194,7 +193,9 @@ if __name__ == "__main__":
     )
 
     # Generate search path
-    BUFFER_DISTANCE: int = -40  # use height/2 of camera image area on ground as buffer distance
+    BUFFER_DISTANCE: int = (
+        -40
+    )  # use height/2 of camera image area on ground as buffer distance
     search_paths: list[tuple[float, float]] = generate_search_paths(
         data_search_area_boundary_utm, BUFFER_DISTANCE
     )

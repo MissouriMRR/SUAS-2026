@@ -1,18 +1,16 @@
 """Utility functions for types."""
 
-from typing import Type, TypeGuard, TypeVar
-
-T = TypeVar("T")
+from typing import TypeGuard
 
 
-def assert_list_type(obj: object, item_type: Type[T]) -> list[T]:
+def assert_list_type[T](obj: object, item_type: type[T]) -> list[T]:
     """Assert that an object is a list with the specified item type.
 
     Parameters
     ----------
     obj : object
         The object to check and return.
-    item_type : Type[T]
+    item_type : type[T]
         The type of items in the list. Due to type erasure, this must not be a generic type.
 
     Returns
@@ -28,17 +26,17 @@ def assert_list_type(obj: object, item_type: Type[T]) -> list[T]:
     """
     if check_list_type(obj, item_type):
         return obj
-    raise TypeError(f"object is not of type 'list[{item_type.__name__}]'")
+    raise TypeError(f"object is not of type 'list[{item_type}]'")
 
 
-def check_list_type(obj: object, item_type: Type[T]) -> TypeGuard[list[T]]:
+def check_list_type[T](obj: object, item_type: type[T]) -> TypeGuard[list[T]]:
     """Check if an object is a list with the specified item type.
 
     Parameters
     ----------
     obj : object
         The object to check.
-    item_type : Type[T]
+    item_type : type[T]
         The type of items in the list. Due to type erasure, this must not be a generic type.
 
     Returns

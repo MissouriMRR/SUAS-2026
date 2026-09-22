@@ -4,6 +4,8 @@ import asyncio
 import json
 import logging
 
+import aiofiles
+
 from state_machine.drone import Drone
 from state_machine.flight_settings import FlightSettings
 from state_machine.state_machine import StateMachine
@@ -36,15 +38,16 @@ async def run_test(flight_settings: FlightSettings) -> None:
     activated_odlcs: int = 0
     while activated_odlcs != flight_settings.standard_object_count:
         try:
-            with open("flight/data/output.json", "r", encoding="UTF-8") as file:
-                output_data: str = json.load(file)
+            async with aiofiles.open(
+                "flight/data/output.json", "r", encoding="UTF-8"
+            ) as file:
+                output_data = json.loads(await file.read())
+                activated_odlcs = len(output_data)
 
-            activated_odlcs = len(output_data)
-
-            if activated_odlcs == 5:
-                print("All 5 ODLCs were found.")
-            else:
-                print(f"{activated_odlcs} ODLCs found.")
+                if activated_odlcs == 5:
+                    print("All 5 ODLCs were found.")
+                else:
+                    print(f"{activated_odlcs} ODLCs found.")
 
         except FileNotFoundError:
             print("Output JSON file not found.")

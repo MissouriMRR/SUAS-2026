@@ -229,7 +229,9 @@ def test_localize_detection(data_path: Path = TEST_DATA_PATH) -> list[float]:
 
     errors_m: list[float] = []
 
-    logger.info(TABLE_ROW, "object", "error (m)", "localized (lat, lon)", "error (x,y) m")
+    logger.info(
+        TABLE_ROW, "object", "error (m)", "localized (lat, lon)", "error (x,y) m"
+    )
     logger.info(TABLE_RULE)
 
     labeled: LabeledDetection

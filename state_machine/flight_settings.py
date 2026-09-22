@@ -6,8 +6,11 @@ from asyncio import Event
 from enum import Enum
 from typing import Final
 
-from state_machine import mission_config
-from state_machine.mission_config import MissionConfig, SimModeConfig
+from state_machine.mission_config import (
+    MissionConfig,
+    SimModeConfig,
+    get_mission_config,
+)
 
 DEFAULT_RUN_TITLE: Final[str] = "SUAS Test Flight"
 DEFAULT_RUN_DESCRIPTION: Final[str] = "Test flight for SUAS 2025"
@@ -200,7 +203,7 @@ class FlightSettings:
                 sim_mode.name,
             )
 
-        config: MissionConfig = mission_config.get_mission_config()
+        config: MissionConfig = get_mission_config()
         sim_mode_config: SimModeConfig = (
             config["airsim_mode_config"]
             if airsim_flag

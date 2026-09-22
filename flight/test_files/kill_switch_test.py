@@ -61,7 +61,9 @@ async def start_test() -> None:
     logging.basicConfig(level=logging.INFO)
 
     flight_task: asyncio.Task[None] = asyncio.ensure_future(start_flight())
-    kill_switch_task: asyncio.Task[None] = asyncio.ensure_future(start_kill_switch(flight_task))
+    kill_switch_task: asyncio.Task[None] = asyncio.ensure_future(
+        start_kill_switch(flight_task)
+    )
 
     while not kill_switch_task.done():
         await asyncio.sleep(1)

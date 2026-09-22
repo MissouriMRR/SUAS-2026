@@ -1,6 +1,7 @@
 """Declares the Start state class."""
 
-from typing import Awaitable, Callable, ClassVar
+from collections.abc import Awaitable, Callable
+from typing import ClassVar, override
 
 from state_machine.states.state import State
 
@@ -24,5 +25,6 @@ class Start(State):
 
     run_callable: ClassVar[Callable[["Start"], Awaitable[State]]]
 
+    @override
     def run(self) -> Awaitable[State]:
         return self.run_callable()

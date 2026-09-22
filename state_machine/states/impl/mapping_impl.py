@@ -1,7 +1,5 @@
 """Implements the behavior of the Mapping state."""
 
-# pylint: disable=too-many-locals
-
 import asyncio
 import logging
 from pathlib import Path
@@ -92,3 +90,5 @@ async def vision_mapping_logic(
 
 # Setting the run_callable attribute of the Mapping class to the run function
 Mapping.run_callable = run
+
+__all__ = ["Mapping"]

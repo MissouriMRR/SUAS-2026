@@ -270,3 +270,5 @@ async def vision_odlc_logic(self: ODLC, capture_status: asyncio.Event) -> None:
 
 # Setting the run_callable attribute of the ODLC class to the run function
 ODLC.run_callable = run
+
+__all__ = ["ODLC"]

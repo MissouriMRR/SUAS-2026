@@ -35,7 +35,9 @@ class StateMachine:
         Cancel the currently running state loop.
     """
 
-    def __init__(self, initial_state: State, drone: Drone, flight_settings: FlightSettings):
+    def __init__(
+        self, initial_state: State, drone: Drone, flight_settings: FlightSettings
+    ):
         """
         Initialize a new state machine object.
 
@@ -77,13 +79,13 @@ class StateMachine:
         self.run_task = run_task
         logging.info("State Machine started")
         await run_task
-        if self.run_task is not None:
-            self.run_task = None
-            logging.info(
-                "State Machine complete. Final flight time: %d:%05.2f",
-                int(self.drone.last_flight_time // 60),
-                self.drone.last_flight_time % 60,
-            )
+
+        self.run_task = None
+        logging.info(
+            "State Machine complete. Final flight time: %d:%05.2f",
+            int(self.drone.last_flight_time // 60),
+            self.drone.last_flight_time % 60,
+        )
 
         # Wait for any pending task in the running event loop
         # This can happen when for example mapping processing is still running

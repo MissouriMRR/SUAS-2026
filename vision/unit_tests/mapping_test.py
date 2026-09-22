@@ -8,7 +8,7 @@ from vision.mapping_pipeline import mapping_pipeline
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    flight_settings : FlightSettings = FlightSettings.from_mission_config()
+    flight_settings: FlightSettings = FlightSettings.from_mission_config()
     asyncio.run(
         mapping_pipeline(
             "flight/data/camera.json",
